@@ -23,6 +23,7 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **Runtime**: Node.js with Express.js REST API.
 - **Language**: TypeScript (ES modules).
 - **API Design**: RESTful for novel creation and content generation.
+- **Production Mode**: Auto-detects by checking for dist/public folder existence (no need for NODE_ENV variable).
 
 ### Data Storage
 - **Database**: PostgreSQL with Drizzle ORM.
@@ -66,3 +67,9 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **Payment Processing**: Stripe.
 - **Email Service**: Resend for transactional emails (welcome, subscription confirmation, novel/audiobook completion, upgrade prompts).
 - **TTS Services**: OpenAI TTS exclusively.
+
+## Recent Deployment Fixes (October 2025)
+- **Auto-Detection Production Mode**: Server automatically detects production vs development by checking for `dist/public` folder, eliminating dependency on NODE_ENV environment variable.
+- **Custom Deployment Script**: `deploy.sh` handles build process with npm legacy-peer-deps and proper dependency management.
+- **Build Tools**: vite and esbuild moved to dependencies (not devDependencies) to ensure deployment compatibility.
+- **Disk Management**: Enhanced .gitignore to prevent git bloat from large files and build artifacts.
