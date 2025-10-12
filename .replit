@@ -1,0 +1,105 @@
+modules = ["nodejs-20", "web", "postgresql-16"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["ffmpeg"]
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["bash", "deploy.sh"]
+run = ["npm", "run", "start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 32927
+externalPort = 3000
+
+[[ports]]
+localPort = 33269
+externalPort = 3003
+
+[[ports]]
+localPort = 35633
+externalPort = 8000
+
+[[ports]]
+localPort = 37557
+externalPort = 8080
+
+[[ports]]
+localPort = 38003
+externalPort = 4200
+
+[[ports]]
+localPort = 38495
+externalPort = 5173
+
+[[ports]]
+localPort = 40375
+externalPort = 3001
+
+[[ports]]
+localPort = 40535
+externalPort = 8008
+
+[[ports]]
+localPort = 41329
+externalPort = 5000
+
+[[ports]]
+localPort = 41803
+externalPort = 8081
+
+[[ports]]
+localPort = 42095
+externalPort = 9000
+
+[[ports]]
+localPort = 42431
+externalPort = 8099
+
+[[ports]]
+localPort = 44897
+externalPort = 6800
+
+[[ports]]
+localPort = 45109
+externalPort = 3002
+
+[[ports]]
+localPort = 45131
+externalPort = 6000
+
+[env]
+PORT = "5000"
+REPLIT_DISABLE_PACKAGE_LAYER = "1"
+REPLIT_KEEP_PACKAGE_DEV_DEPENDENCIES = "0"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[agent]
+integrations = ["javascript_anthropic:1.0.0", "javascript_object_storage:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_stripe:1.0.0"]

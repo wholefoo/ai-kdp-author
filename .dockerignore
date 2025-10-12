@@ -1,0 +1,16 @@
+.git
+node_modules
+dist
+.cache
+.local
+.env
+.env.*
+uploads
+attached_assets
+temp
+docs
+client/src/tutorial-scripts
+client/src/video-scripts
+*.log
+.DS_Store
+README.md

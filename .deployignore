@@ -1,0 +1,12 @@
+.git
+node_modules
+dist
+.cache
+.local
+.env.local
+uploads
+attached_assets
+temp
+docs
+*.log
+.DS_Store

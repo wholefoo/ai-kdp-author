@@ -1,0 +1,10 @@
+# Allow all search engines to crawl all pages
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://ai-kdp-author.com/sitemap.xml
+
+# Disallow admin pages (optional - add if you want to hide certain paths)
+# User-agent: *
+# Disallow: /admin

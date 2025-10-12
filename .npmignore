@@ -1,0 +1,10 @@
+# Deployment ignore
+.git
+.replit
+replit.nix
+*.md
+docs/
+tests/
+*.test.*
+*.spec.*
+.env.example
