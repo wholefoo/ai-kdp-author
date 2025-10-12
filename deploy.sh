@@ -14,13 +14,17 @@ echo "Cleaning up workspace..."
 rm -rf node_modules dist .cache .local
 rm -f *.log *.sql *.zip *.backup
 
-# Install all dependencies (needed for build)
+# Install all dependencies (including devDependencies needed for build)
 echo "Installing dependencies..."
 npm install --legacy-peer-deps --no-audit --no-fund
 
-# Build the application
+# Verify vite is installed
+echo "Verifying build tools..."
+npx vite --version || echo "Warning: vite not found"
+
+# Build the application using npx to ensure local packages are used
 echo "Building application..."
-npm run build
+npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
 
 # Remove devDependencies to save space (keep only production deps)
 echo "Removing dev dependencies to save space..."
