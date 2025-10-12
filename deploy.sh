@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-echo "Starting optimized deployment build..."
+echo "Verifying Node.js installation..."
+which node
+node --version
 
 # Set production environment
 export NODE_ENV=production
@@ -13,22 +15,19 @@ unset REPLIT_DISABLE_PACKAGE_LAYER
 echo "Cleaning up workspace..."
 rm -rf node_modules dist .cache .local
 rm -f *.log *.sql *.zip *.backup
+rm -rf node_modules/.vite-temp
 
-# Install all dependencies (including devDependencies needed for build)
-echo "Installing dependencies..."
-npm install --legacy-peer-deps --no-audit --no-fund
+# Continue with your existing build steps
+npm install
+npm run build
 
-# Verify vite is installed
 echo "Verifying build tools..."
+npm install --no-save vite@^5.4.19 @vitejs/plugin-react@^4.3.2
 npx vite --version || echo "Warning: vite not found"
 
 # Build the application using npx to ensure local packages are used
 echo "Building application..."
 npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
-
-# Remove devDependencies to save space (keep only production deps)
-echo "Removing dev dependencies to save space..."
-npm prune --production
 
 echo "Build completed successfully!"
 echo "Final disk usage:"
