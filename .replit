@@ -1,6 +1,6 @@
 modules = ["nodejs-20"]
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
-run = "node --enable-source-maps dist/index.js"
+run = "npm run dev"
 
 [nix]
 channel = "stable-24_05"
@@ -14,69 +14,8 @@ build = ["bash", "deploy.sh"]
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 32927
-externalPort = 3000
-
-[[ports]]
-localPort = 33269
-externalPort = 3003
-
-[[ports]]
-localPort = 35633
-externalPort = 8000
-
-[[ports]]
-localPort = 37557
-externalPort = 8080
-
-[[ports]]
-localPort = 38003
-externalPort = 4200
-
-[[ports]]
-localPort = 38495
-externalPort = 5173
-
-[[ports]]
-localPort = 40375
-externalPort = 3001
-
-[[ports]]
-localPort = 40535
-externalPort = 8008
-
-[[ports]]
-localPort = 41329
-externalPort = 5000
-
-[[ports]]
-localPort = 41803
-externalPort = 8081
-
-[[ports]]
-localPort = 42095
-externalPort = 9000
-
-[[ports]]
-localPort = 42431
-externalPort = 8099
-
-[[ports]]
-localPort = 44897
-externalPort = 6800
-
-[[ports]]
-localPort = 45109
-externalPort = 3002
-
-[[ports]]
-localPort = 45131
-externalPort = 6000
-
 [env]
 PORT = "5000"
-REPLIT_KEEP_PACKAGE_DEV_DEPENDENCIES = "0"
 
 [workflows]
 runButton = "Project"
