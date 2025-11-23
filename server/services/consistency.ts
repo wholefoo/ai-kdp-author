@@ -99,7 +99,7 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 2025. Updated per user request.
+        model: "gpt-5.1", // Updated to ChatGPT 5.1
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.3
@@ -134,7 +134,7 @@ Respond in JSON format with score, description, issues array, and improvements a
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 2025. Updated per user request.
+        model: "gpt-5.1", // Updated to ChatGPT 5.1
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.3
@@ -167,7 +167,7 @@ Respond in JSON format with score, description, issues array, and improvements a
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 2025. Updated per user request.
+        model: "gpt-5.1", // Updated to ChatGPT 5.1
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.3
@@ -201,7 +201,7 @@ Respond in JSON format with score, description, issues array, and improvements a
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 2025. Updated per user request.
+        model: "gpt-5.1", // Updated to ChatGPT 5.1
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.3
@@ -234,7 +234,7 @@ Respond in JSON format with score, description, issues array, and improvements a
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 2025. Updated per user request.
+        model: "gpt-5.1", // Updated to ChatGPT 5.1
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.3

@@ -28,7 +28,7 @@ export class ChapterRevisionService {
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-5.1",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt }
@@ -185,7 +185,7 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-5.1",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: chapterText }

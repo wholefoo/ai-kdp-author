@@ -12,7 +12,7 @@ const anthropic = new Anthropic({
 });
 
 // Model configurations
-const PRIMARY_MODEL = "gpt-5"; // OpenAI GPT-5
+const PRIMARY_MODEL = "gpt-5.1"; // OpenAI GPT-5.1
 const SECONDARY_MODEL = "claude-sonnet-4-20250514"; // Claude Sonnet 4 (actual Claude 4 model)
 const TERTIARY_MODEL = "gpt-4o"; // OpenAI GPT-4o final fallback
 
@@ -57,17 +57,17 @@ export class UnifiedAIService {
     };
 
     // Handle different parameter names for different models
-    if (modelName === "gpt-5") {
+    if (modelName === "gpt-5.1") {
       // GPT-5 specific configuration - needs extra tokens for reasoning
       const baseTokens = request.maxTokens || 4000;
       // GPT-5 needs significantly more tokens: reasoning tokens + actual content tokens
       // For complex Novel Composer requests, allocate 2x the base tokens minimum
       const reasoningBuffer = Math.max(baseTokens, 500); // At least 500 extra tokens for reasoning
       requestData.max_completion_tokens = baseTokens + reasoningBuffer;
-      console.log(`🧠 GPT-5 token allocation: ${requestData.max_completion_tokens} (${baseTokens} content + ${reasoningBuffer} reasoning)`);
-      // GPT-5 only supports temperature=1 according to docs
+      console.log(`🧠 GPT-5.1 token allocation: ${requestData.max_completion_tokens} (${baseTokens} content + ${reasoningBuffer} reasoning)`);
+      // GPT-5.1 only supports temperature=1 according to docs
       if (request.temperature && request.temperature !== 1) {
-        console.log(`⚠️  GPT-5 only supports temperature=1, ignoring requested temperature=${request.temperature}`);
+        console.log(`⚠️  GPT-5.1 only supports temperature=1, ignoring requested temperature=${request.temperature}`);
       }
     } else {
       // GPT-4o and other models
@@ -222,7 +222,7 @@ export class UnifiedAIService {
         maxTokens: 50 // GPT-5 needs tokens for reasoning + content
       };
       
-      const response = await this.callOpenAI(testRequest, 'gpt-5');
+      const response = await this.callOpenAI(testRequest, 'gpt-5.1');
       console.log(`🧪 GPT-5 test response:`, response.content);
       return true;
     } catch (error) {

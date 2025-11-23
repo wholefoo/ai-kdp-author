@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import type { Outline, Progress } from "@shared/schema";
 import { aiService } from "./aiService";
 
-// the newest OpenAI model is "gpt-5" which was released August 2025. Updated per user request.
+// the newest OpenAI model is "gpt-5.1 which was released with the latest ChatGPT update. Updated per user request.
 export const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });

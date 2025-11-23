@@ -289,7 +289,7 @@ Provide specific, actionable suggestions that focus on:
 Format as bullet points, each starting with an action verb.`;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-5.1",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: 800
@@ -343,7 +343,7 @@ Return only the improved text without explanations.`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-5.1",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_tokens: Math.min(4000, text.length * 2)
