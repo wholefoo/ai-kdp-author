@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import Anthropic from '@anthropic-ai/sdk';
 
-// Unified AI service with GPT-5.1 primary and Claude 3.5 Sonnet fallback
+// Unified AI service with GPT-5.1 primary and Claude Opus 4.5 fallback
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -13,7 +13,7 @@ const anthropic = new Anthropic({
 
 // Model configurations
 const PRIMARY_MODEL = "gpt-5.1"; // OpenAI GPT-5.1
-const SECONDARY_MODEL = "claude-3-5-sonnet-20241022"; // Claude 3.5 Sonnet (latest Claude model)
+const SECONDARY_MODEL = "claude-opus-4-5"; // Claude Opus 4.5 (latest and most capable Claude model)
 const TERTIARY_MODEL = "gpt-4o"; // OpenAI GPT-4o final fallback
 
 export interface AIRequest {
