@@ -58,13 +58,12 @@ export class UnifiedAIService {
 
     // Handle different parameter names for different models
     if (modelName === "gpt-5.1") {
-      // GPT-5.1 specific configuration - needs extra tokens for reasoning
-      const baseTokens = request.maxTokens || 8000;
-      // GPT-5.1 needs significantly more tokens: reasoning tokens + actual content tokens
-      // For complex Novel Composer requests, allocate 3x-4x the base tokens for complete responses
-      const reasoningBuffer = Math.max(baseTokens * 2, 10000); // Substantial reasoning budget
-      requestData.max_completion_tokens = Math.min(baseTokens + reasoningBuffer, 32000); // Cap at 32k to avoid excessive costs
-      console.log(`🧠 GPT-5.1 token allocation: ${requestData.max_completion_tokens} (${baseTokens} content + ${reasoningBuffer} reasoning)`);
+      // GPT-5.1 specific configuration - needs substantial tokens for reasoning and content
+      const baseTokens = request.maxTokens || 16000;
+      // GPT-5.1 needs extremely high token limits to avoid truncation on complex tasks
+      // Allocate 4-5x the base tokens for complete responses
+      requestData.max_completion_tokens = 128000; // Use the highest reasonable limit (prevents truncation)
+      console.log(`🧠 GPT-5.1 token allocation: ${requestData.max_completion_tokens} tokens (generous limit to prevent truncation)`);
       // GPT-5.1 supports temperature=1 for consistency
       requestData.temperature = 1;
     } else {
@@ -112,13 +111,20 @@ export class UnifiedAIService {
       const finishReason = response.choices[0]?.finish_reason;
       
       if (!content || content.trim() === '') {
-        console.error(`❌ No content in ${modelName} response. Full response:`, JSON.stringify(response, null, 2));
+        console.error(`❌ No content in ${modelName} response (finish_reason: ${finishReason}). Full response:`, JSON.stringify(response, null, 2));
+        
+        // If GPT-5.1 returned empty with length limit, trigger fallback to Claude
+        if (modelName === 'gpt-5.1' && finishReason === 'length') {
+          console.warn(`⚠️  GPT-5.1 returned empty response with finish_reason=length. Triggering fallback to Claude...`);
+          throw new Error(`GPT-5.1 truncated with no output - fallback to secondary`);
+        }
+        
         throw new Error(`No content received from OpenAI ${modelName}`);
       }
       
-      // Warn if response was truncated due to length
+      // Warn if response was truncated due to length (but at least we have some content)
       if (finishReason === 'length') {
-        console.warn(`⚠️  ${modelName} response was truncated (finish_reason: length). Consider increasing token limit for future requests.`);
+        console.warn(`⚠️  ${modelName} response was truncated (finish_reason: length). Content truncated but partial response returned (${content.length} chars).`);
       }
 
       console.log(`✅ Successfully extracted ${content.length} characters from ${modelName}`);
