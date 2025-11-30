@@ -58,17 +58,15 @@ export class UnifiedAIService {
 
     // Handle different parameter names for different models
     if (modelName === "gpt-5.1") {
-      // GPT-5 specific configuration - needs extra tokens for reasoning
-      const baseTokens = request.maxTokens || 4000;
-      // GPT-5 needs significantly more tokens: reasoning tokens + actual content tokens
-      // For complex Novel Composer requests, allocate 2x the base tokens minimum
-      const reasoningBuffer = Math.max(baseTokens, 500); // At least 500 extra tokens for reasoning
-      requestData.max_completion_tokens = baseTokens + reasoningBuffer;
+      // GPT-5.1 specific configuration - needs extra tokens for reasoning
+      const baseTokens = request.maxTokens || 8000;
+      // GPT-5.1 needs significantly more tokens: reasoning tokens + actual content tokens
+      // For complex Novel Composer requests, allocate 3x-4x the base tokens for complete responses
+      const reasoningBuffer = Math.max(baseTokens * 2, 10000); // Substantial reasoning budget
+      requestData.max_completion_tokens = Math.min(baseTokens + reasoningBuffer, 32000); // Cap at 32k to avoid excessive costs
       console.log(`🧠 GPT-5.1 token allocation: ${requestData.max_completion_tokens} (${baseTokens} content + ${reasoningBuffer} reasoning)`);
-      // GPT-5.1 only supports temperature=1 according to docs
-      if (request.temperature && request.temperature !== 1) {
-        console.log(`⚠️  GPT-5.1 only supports temperature=1, ignoring requested temperature=${request.temperature}`);
-      }
+      // GPT-5.1 supports temperature=1 for consistency
+      requestData.temperature = 1;
     } else {
       // GPT-4o and other models
       requestData.max_tokens = request.maxTokens || 4000;
@@ -111,9 +109,16 @@ export class UnifiedAIService {
       }, null, 2));
 
       const content = response.choices[0]?.message?.content;
+      const finishReason = response.choices[0]?.finish_reason;
+      
       if (!content || content.trim() === '') {
         console.error(`❌ No content in ${modelName} response. Full response:`, JSON.stringify(response, null, 2));
         throw new Error(`No content received from OpenAI ${modelName}`);
+      }
+      
+      // Warn if response was truncated due to length
+      if (finishReason === 'length') {
+        console.warn(`⚠️  ${modelName} response was truncated (finish_reason: length). Consider increasing token limit for future requests.`);
       }
 
       console.log(`✅ Successfully extracted ${content.length} characters from ${modelName}`);
