@@ -1,20 +1,12 @@
 import OpenAI from "openai";
-import Anthropic from '@anthropic-ai/sdk';
 
-// Unified AI service with GPT-5.1 primary and Claude Opus 4.5 fallback
+// Unified AI service with GPT-5.1 only
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  authToken: process.env.ANTHROPIC_AUTH_TOKEN,
-});
-
-// Model configurations
-const PRIMARY_MODEL = "gpt-5.1"; // OpenAI GPT-5.1
-const SECONDARY_MODEL = "claude-opus-4-5"; // Claude Opus 4.5 (latest and most capable Claude model)
-const TERTIARY_MODEL = "gpt-4o"; // OpenAI GPT-4o final fallback
+// Model configuration
+const PRIMARY_MODEL = "gpt-5.1"; // OpenAI GPT-5.1 (sole model)
 
 export interface AIRequest {
   messages: Array<{
@@ -113,13 +105,7 @@ export class UnifiedAIService {
       if (!content || content.trim() === '') {
         console.error(`❌ No content in ${modelName} response (finish_reason: ${finishReason}). Full response:`, JSON.stringify(response, null, 2));
         
-        // If GPT-5.1 returned empty with length limit, trigger fallback to Claude
-        if (modelName === 'gpt-5.1' && finishReason === 'length') {
-          console.warn(`⚠️  GPT-5.1 returned empty response with finish_reason=length. Triggering fallback to Claude...`);
-          throw new Error(`GPT-5.1 truncated with no output - fallback to secondary`);
-        }
-        
-        throw new Error(`No content received from OpenAI ${modelName}`);
+        throw new Error(`No content received from OpenAI ${modelName} (finish_reason: ${finishReason})`);
       }
       
       // Warn if response was truncated due to length (but at least we have some content)
@@ -150,76 +136,10 @@ export class UnifiedAIService {
     }
   }
 
-  private async callAnthropic(request: AIRequest): Promise<AIResponse> {
-    // Convert OpenAI format to Anthropic format
-    const systemMessage = request.messages.find(m => m.role === 'system')?.content || '';
-    const userMessages = request.messages.filter(m => m.role === 'user' || m.role === 'assistant');
-
-    // Enhanced system message to prevent commentary and truncation
-    const enhancedSystemMessage = systemMessage + 
-      (request.responseFormat?.type === 'json_object' ? 
-        '\n\nIMPORTANT: Return ONLY valid, complete JSON. Do not add any commentary, notes, or explanations. Do not truncate the response. The response must be parseable JSON without any additional text.' : 
-        '');
-
-    const response = await anthropic.messages.create({
-      model: SECONDARY_MODEL,
-      max_tokens: Math.max(request.maxTokens || 4000, 8000), // Increase token limit for complete responses
-      temperature: request.temperature || 0.7,
-      system: enhancedSystemMessage,
-      messages: userMessages.map(m => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
-    });
-
-    const content = response.content[0];
-    if (!content || content.type !== 'text') {
-      throw new Error("No text content received from Anthropic");
-    }
-
-    return {
-      content: content.text,
-      model: SECONDARY_MODEL,
-      usage: response.usage ? {
-        promptTokens: response.usage.input_tokens,
-        completionTokens: response.usage.output_tokens,
-        totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-      } : undefined,
-    };
-  }
 
   async generateContent(request: AIRequest): Promise<AIResponse> {
-    // Try GPT-5 first
-    try {
-      console.log(`🎯 Attempting AI generation with primary model: ${PRIMARY_MODEL}`);
-      return await this.callOpenAI(request, PRIMARY_MODEL);
-    } catch (primaryError) {
-      console.warn(`❌ Primary model (${PRIMARY_MODEL}) failed:`, primaryError instanceof Error ? primaryError.message : 'Unknown error');
-      
-      // Try Claude Sonnet 4 as secondary model
-      try {
-        console.log(`🔄 Falling back to secondary model: ${SECONDARY_MODEL}`);
-        const response = await this.callAnthropic(request);
-        console.log(`✅ Successfully used secondary model: ${SECONDARY_MODEL}`);
-        return response;
-      } catch (secondaryError) {
-        console.warn(`❌ Secondary model (${SECONDARY_MODEL}) failed:`, secondaryError instanceof Error ? secondaryError.message : 'Unknown error');
-        
-        // Try GPT-4o as final fallback
-        try {
-          console.log(`🔄 Falling back to tertiary model: ${TERTIARY_MODEL}`);
-          const response = await this.callOpenAI(request, TERTIARY_MODEL);
-          console.log(`✅ Successfully used tertiary model: ${TERTIARY_MODEL}`);
-          return response;
-        } catch (tertiaryError) {
-          console.error(`💥 All models failed.`);
-          console.error(`Primary (${PRIMARY_MODEL}) error:`, primaryError);
-          console.error(`Secondary (${SECONDARY_MODEL}) error:`, secondaryError);
-          console.error(`Tertiary (${TERTIARY_MODEL}) error:`, tertiaryError);
-          throw new Error(`AI generation failed: Primary (${PRIMARY_MODEL}): ${primaryError instanceof Error ? primaryError.message : 'Unknown error'}, Secondary (${SECONDARY_MODEL}): ${secondaryError instanceof Error ? secondaryError.message : 'Unknown error'}, Tertiary (${TERTIARY_MODEL}): ${tertiaryError instanceof Error ? tertiaryError.message : 'Unknown error'}`);
-        }
-      }
-    }
+    console.log(`🎯 Generating content with GPT-5.1...`);
+    return await this.callOpenAI(request, PRIMARY_MODEL);
   }
 
   // Test function to debug GPT-5 issues
@@ -242,17 +162,17 @@ export class UnifiedAIService {
     }
   }
 
-  // Check availability of all AI models
+  // Check availability of GPT-5.1
   async checkModelAvailability(): Promise<{ [key: string]: boolean }> {
     const results: { [key: string]: boolean } = {};
     
     console.log(`🏥 Running AI model health check...`);
     
-    // Test GPT-5 (needs more tokens for reasoning)
+    // Test GPT-5.1
     try {
       const testRequest: AIRequest = {
         messages: [{ role: 'user', content: 'Say "Hello" and nothing else.' }],
-        maxTokens: 200 // GPT-5 needs sufficient tokens: reasoning + content
+        maxTokens: 200 // GPT-5.1 needs sufficient tokens: reasoning + content
       };
       await this.callOpenAI(testRequest, PRIMARY_MODEL);
       results[PRIMARY_MODEL] = true;
@@ -260,34 +180,6 @@ export class UnifiedAIService {
     } catch (error) {
       results[PRIMARY_MODEL] = false;
       console.log(`❌ ${PRIMARY_MODEL} is unavailable:`, error instanceof Error ? error.message : 'Unknown error');
-    }
-    
-    // Test Claude Sonnet 4
-    try {
-      const testRequest: AIRequest = {
-        messages: [{ role: 'user', content: 'Test' }],
-        maxTokens: 5
-      };
-      await this.callAnthropic(testRequest);
-      results[SECONDARY_MODEL] = true;
-      console.log(`✅ ${SECONDARY_MODEL} is available`);
-    } catch (error) {
-      results[SECONDARY_MODEL] = false;
-      console.log(`❌ ${SECONDARY_MODEL} is unavailable:`, error instanceof Error ? error.message : 'Unknown error');
-    }
-    
-    // Test GPT-4o
-    try {
-      const testRequest: AIRequest = {
-        messages: [{ role: 'user', content: 'Test' }],
-        maxTokens: 5
-      };
-      await this.callOpenAI(testRequest, TERTIARY_MODEL);
-      results[TERTIARY_MODEL] = true;
-      console.log(`✅ ${TERTIARY_MODEL} is available`);
-    } catch (error) {
-      results[TERTIARY_MODEL] = false;
-      console.log(`❌ ${TERTIARY_MODEL} is unavailable:`, error instanceof Error ? error.message : 'Unknown error');
     }
     
     return results;
