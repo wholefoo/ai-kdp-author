@@ -1,12 +1,13 @@
 import OpenAI from "openai";
 
-// Unified AI service with GPT-5.1 only
+// AI service with GPT-5.1 primary and GPT-4o emergency fallback
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Model configuration
-const PRIMARY_MODEL = "gpt-5.1"; // OpenAI GPT-5.1 (sole model)
+const PRIMARY_MODEL = "gpt-5.1"; // OpenAI GPT-5.1 (primary)
+const FALLBACK_MODEL = "gpt-4o"; // OpenAI GPT-4o (emergency fallback only)
 
 export interface AIRequest {
   messages: Array<{
@@ -138,8 +139,24 @@ export class UnifiedAIService {
 
 
   async generateContent(request: AIRequest): Promise<AIResponse> {
-    console.log(`🎯 Generating content with GPT-5.1...`);
-    return await this.callOpenAI(request, PRIMARY_MODEL);
+    console.log(`🎯 Attempting AI generation with primary model: ${PRIMARY_MODEL}`);
+    try {
+      return await this.callOpenAI(request, PRIMARY_MODEL);
+    } catch (primaryError) {
+      console.warn(`⚠️  ${PRIMARY_MODEL} failed:`, primaryError instanceof Error ? primaryError.message : 'Unknown error');
+      console.log(`🔄 Falling back to emergency model: ${FALLBACK_MODEL}`);
+      
+      try {
+        const response = await this.callOpenAI(request, FALLBACK_MODEL);
+        console.log(`✅ Emergency fallback to ${FALLBACK_MODEL} succeeded`);
+        return response;
+      } catch (fallbackError) {
+        console.error(`💥 Both ${PRIMARY_MODEL} and ${FALLBACK_MODEL} failed`);
+        console.error(`Primary error:`, primaryError);
+        console.error(`Fallback error:`, fallbackError);
+        throw new Error(`AI generation failed: ${PRIMARY_MODEL} failed, then ${FALLBACK_MODEL} fallback also failed. Primary: ${primaryError instanceof Error ? primaryError.message : 'Unknown'}, Fallback: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown'}`);
+      }
+    }
   }
 
   // Test function to debug GPT-5 issues
@@ -162,7 +179,7 @@ export class UnifiedAIService {
     }
   }
 
-  // Check availability of GPT-5.1
+  // Check availability of GPT-5.1 and GPT-4o fallback
   async checkModelAvailability(): Promise<{ [key: string]: boolean }> {
     const results: { [key: string]: boolean } = {};
     
@@ -172,7 +189,7 @@ export class UnifiedAIService {
     try {
       const testRequest: AIRequest = {
         messages: [{ role: 'user', content: 'Say "Hello" and nothing else.' }],
-        maxTokens: 200 // GPT-5.1 needs sufficient tokens: reasoning + content
+        maxTokens: 200
       };
       await this.callOpenAI(testRequest, PRIMARY_MODEL);
       results[PRIMARY_MODEL] = true;
@@ -180,6 +197,20 @@ export class UnifiedAIService {
     } catch (error) {
       results[PRIMARY_MODEL] = false;
       console.log(`❌ ${PRIMARY_MODEL} is unavailable:`, error instanceof Error ? error.message : 'Unknown error');
+    }
+    
+    // Test GPT-4o fallback
+    try {
+      const testRequest: AIRequest = {
+        messages: [{ role: 'user', content: 'Say "Hello" and nothing else.' }],
+        maxTokens: 50
+      };
+      await this.callOpenAI(testRequest, FALLBACK_MODEL);
+      results[FALLBACK_MODEL] = true;
+      console.log(`✅ ${FALLBACK_MODEL} is available (emergency fallback)`);
+    } catch (error) {
+      results[FALLBACK_MODEL] = false;
+      console.log(`❌ ${FALLBACK_MODEL} is unavailable:`, error instanceof Error ? error.message : 'Unknown error');
     }
     
     return results;
