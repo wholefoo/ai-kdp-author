@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { aiService } from "./aiService";
 
-// Updated to use unified AI service with GPT-5 primary and Claude 4 fallback
+// Updated to use unified AI service with GPT-5.1 primary and GPT-4o fallback
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -77,7 +77,7 @@ export class CharacterConsistencyService {
       const chapterNum = i + 1;
 
       try {
-        console.log(`Extracting characters from chapter ${chapterNum} with AI service (GPT-5 primary, Claude 4 fallback)...`);
+        console.log(`Extracting characters from chapter ${chapterNum} with AI service (GPT-5.1 primary, GPT-4o fallback)...`);
         
         const aiResponse = await aiService.generateJSON({
           messages: [
@@ -144,7 +144,7 @@ Focus on named characters and significant unnamed characters (like "the old shop
       if (characterMentions.length < 2) continue; // Need multiple mentions to find inconsistencies
 
       try {
-        console.log(`Analyzing inconsistencies for ${characterName} with AI service (GPT-5 primary, Claude 4 fallback)...`);
+        console.log(`Analyzing inconsistencies for ${characterName} with AI service (GPT-5.1 primary, GPT-4o fallback)...`);
         
         const aiResponse = await aiService.generateJSON({
           messages: [

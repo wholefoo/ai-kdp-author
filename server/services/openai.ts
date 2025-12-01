@@ -85,7 +85,7 @@ export class NovelGenerationService {
                                  .replace(/\{customInstructionsSection\}/g, customInstructionsSection);
 
       // Use unified AI service with fallback
-      console.log('Generating outline with AI service (GPT-5 primary, Claude 4 fallback)...');
+      console.log('Generating outline with AI service (GPT-5.1 primary, GPT-4o fallback)...');
       
       const aiResponse = await aiService.generateJSON({
         messages: [
@@ -141,7 +141,7 @@ Generate the full chapter content in Markdown format. Include:
 Do not include any JSON formatting, just pure Markdown text. Count your words carefully to meet the ${targetChapterLength} word target.
 `;
 
-      console.log(`Generating chapter ${chapterNumber} with AI service (GPT-5 primary, Claude 4 fallback)...`);
+      console.log(`Generating chapter ${chapterNumber} with AI service (GPT-5.1 primary, GPT-4o fallback)...`);
       
       const aiResponse = await aiService.generateContent({
         messages: [
@@ -216,7 +216,7 @@ Requirements:
 
 Respond with a JSON array of plot objects.`;
 
-      console.log('Generating plot suggestions with AI service (GPT-5 primary, Claude 4 fallback)...');
+      console.log('Generating plot suggestions with AI service (GPT-5.1 primary, GPT-4o fallback)...');
       
       const aiResponse = await aiService.generateJSON({
         messages: [

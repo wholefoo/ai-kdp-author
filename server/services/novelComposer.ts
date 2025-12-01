@@ -30,7 +30,7 @@ export class NovelComposerService {
     ).join('\n\n');
 
     try {
-      console.log('Analyzing source content with AI service (ChatGPT 5 primary, Claude 4 fallback)...');
+      console.log('Analyzing source content with AI service (GPT-5.1 primary, GPT-4o fallback)...');
       
       const result = await aiService.generateJSON({
         messages: [
@@ -92,7 +92,7 @@ Respond in JSON format:
     const avgWordsPerChapter = Math.round(options.targetWordCount / options.targetChapters);
 
     try {
-      console.log('Generating detailed outline with AI service (ChatGPT 5 primary, Claude 4 fallback)...');
+      console.log('Generating detailed outline with AI service (GPT-5.1 primary, GPT-4o fallback)...');
       
       const result = await aiService.generateJSON({
         messages: [
@@ -202,7 +202,7 @@ Respond in JSON format:
     ].filter(Boolean).join('\n');
 
     try {
-      console.log(`Generating Chapter ${actualChapterNumber} with AI service (ChatGPT 5 primary, Claude 4 fallback)...`);
+      console.log(`Generating Chapter ${actualChapterNumber} with AI service (GPT-5.1 primary, GPT-4o fallback)...`);
       
       const response = await aiService.generateContent({
         messages: [
@@ -309,7 +309,7 @@ Format as markdown with the chapter heading followed by the chapter content.`
     }
 
     try {
-      console.log(`Generating ${options.sectionType} with AI service (ChatGPT 5 primary, Claude 4 fallback)...`);
+      console.log(`Generating ${options.sectionType} with AI service (GPT-5.1 primary, GPT-4o fallback)...`);
       
       const response = await aiService.generateContent({
         messages: [
