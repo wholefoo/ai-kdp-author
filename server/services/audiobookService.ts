@@ -255,7 +255,12 @@ export class AudiobookService {
       
       const finalBuffer = Buffer.concat(audioBuffers);
       console.log(`✅ OpenAI TTS completed with ${chunks.length} chunks (${finalBuffer.length} bytes total)`);
-      return finalBuffer;
+      
+      // Normalize audio to ensure consistent loudness
+      console.log(`🔊 Normalizing audio levels...`);
+      const normalizedBuffer = await this.normalizeAudio(finalBuffer, options.format);
+      
+      return normalizedBuffer;
       
     } catch (error: any) {
       console.error('❌ OpenAI TTS API error:', error);
@@ -516,6 +521,63 @@ export class AudiobookService {
   }
 
   /**
+   * Normalize audio to ensure consistent loudness levels
+   */
+  private async normalizeAudio(audioBuffer: Buffer, format: string): Promise<Buffer> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const tempInputPath = join(this.baseAudioDir, `temp_input_${Date.now()}.${format}`);
+        const tempOutputPath = join(this.baseAudioDir, `temp_output_${Date.now()}.${format}`);
+        
+        // Write input buffer to temporary file
+        await fs.writeFile(tempInputPath, audioBuffer);
+        console.log(`📝 Wrote temporary audio file for normalization: ${tempInputPath}`);
+        
+        // Apply loudnorm filter to normalize audio
+        ffmpeg()
+          .input(tempInputPath)
+          .audioFilters('loudnorm=I=-16:TP=-1.5:LRA=11')
+          .audioCodec(format === 'mp3' ? 'libmp3lame' : format === 'aac' ? 'aac' : format === 'opus' ? 'libopus' : format === 'flac' ? 'flac' : 'libmp3lame')
+          .on('end', async () => {
+            try {
+              console.log(`✅ Audio normalization completed`);
+              const normalizedBuffer = await fs.readFile(tempOutputPath);
+              
+              // Cleanup temporary files
+              await fs.unlink(tempInputPath).catch(() => {});
+              await fs.unlink(tempOutputPath).catch(() => {});
+              
+              console.log(`🧹 Cleaned up temporary files`);
+              resolve(normalizedBuffer);
+            } catch (error) {
+              console.error('Failed to read normalized audio:', error);
+              reject(error);
+            }
+          })
+          .on('error', (err) => {
+            console.error('FFmpeg normalization error:', err);
+            // Cleanup and return original buffer on error
+            fs.unlink(tempInputPath).catch(() => {});
+            fs.unlink(tempOutputPath).catch(() => {});
+            console.warn(`⚠️ Normalization failed, returning original audio`);
+            resolve(audioBuffer);
+          })
+          .on('stderr', (stderrLine) => {
+            if (stderrLine.includes('Error') || stderrLine.includes('Failed')) {
+              console.warn(`⚠️ FFmpeg warning: ${stderrLine}`);
+            }
+          })
+          .save(tempOutputPath);
+          
+      } catch (error) {
+        console.error('Audio normalization error:', error);
+        console.warn(`⚠️ Normalization failed, returning original audio`);
+        resolve(audioBuffer);
+      }
+    });
+  }
+
+  /**
    * Estimate audio duration based on text length and speed
    */
   private estimateAudioDuration(text: string, speed: number): number {
@@ -667,8 +729,11 @@ export class AudiobookService {
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       
-      console.log(`✅ Voice preview generated successfully (${buffer.length} bytes)`);
-      return buffer;
+      // Normalize audio to ensure consistent loudness
+      const normalizedBuffer = await this.normalizeAudio(buffer, options.format);
+      
+      console.log(`✅ Voice preview generated successfully (${normalizedBuffer.length} bytes)`);
+      return normalizedBuffer;
       
     } catch (error: any) {
       console.error('❌ Voice preview generation failed:', error);
