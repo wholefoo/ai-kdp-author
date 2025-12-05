@@ -19,6 +19,7 @@ import { proofreadingService } from "./services/proofreadingService";
 import { chapterRevisionService } from "./services/chapterRevision";
 import { narrativeArcService } from "./services/narrativeArcService";
 import { emailService } from "./services/emailService";
+import { marketingService } from "./services/marketingService";
 import qualityRoutes from "./routes/qualityRoutes";
 import multer from "multer";
 import OpenAI from "openai";
@@ -5411,6 +5412,234 @@ Return ONLY valid JSON, no additional text.`;
     } catch (error: any) {
       console.error('Error generating tags:', error);
       res.status(500).json({ error: error.message || 'Failed to generate tags' });
+    }
+  });
+
+  // ==================== MARKETING CAMPAIGN ROUTES ====================
+
+  // Get all marketing campaigns for user
+  app.get('/api/marketing/campaigns', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const campaigns = await storage.getUserMarketingCampaigns(userId);
+      res.json(campaigns);
+    } catch (error: any) {
+      console.error('Error fetching marketing campaigns:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch marketing campaigns' });
+    }
+  });
+
+  // Get marketing campaign by ID
+  app.get('/api/marketing/campaigns/:id', isAuthenticated, async (req, res) => {
+    try {
+      const campaign = await storage.getMarketingCampaign(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ error: 'Marketing campaign not found' });
+      }
+      res.json(campaign);
+    } catch (error: any) {
+      console.error('Error fetching marketing campaign:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch marketing campaign' });
+    }
+  });
+
+  // Get marketing campaign by novel ID
+  app.get('/api/marketing/novels/:novelId/campaign', isAuthenticated, async (req, res) => {
+    try {
+      const campaign = await storage.getMarketingCampaignByNovelId(req.params.novelId);
+      res.json(campaign || null);
+    } catch (error: any) {
+      console.error('Error fetching marketing campaign for novel:', error);
+      res.status(500).json({ error: error.message || 'Failed to fetch marketing campaign' });
+    }
+  });
+
+  // Create marketing campaign for a novel
+  app.post('/api/marketing/novels/:novelId/campaign', isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const novel = await storage.getNovel(req.params.novelId);
+      if (!novel) {
+        return res.status(404).json({ error: 'Novel not found' });
+      }
+
+      // Check if campaign already exists
+      const existingCampaign = await storage.getMarketingCampaignByNovelId(req.params.novelId);
+      if (existingCampaign) {
+        return res.json(existingCampaign);
+      }
+
+      const campaign = await storage.createMarketingCampaign({
+        novelId: req.params.novelId,
+        userId,
+        novelTitle: novel.title,
+        genre: novel.genre,
+        targetAudience: req.body.targetAudience || null
+      });
+
+      res.status(201).json(campaign);
+    } catch (error: any) {
+      console.error('Error creating marketing campaign:', error);
+      res.status(500).json({ error: error.message || 'Failed to create marketing campaign' });
+    }
+  });
+
+  // Generate full marketing campaign
+  app.post('/api/marketing/campaigns/:id/generate', isAuthenticated, async (req, res) => {
+    try {
+      const campaign = await storage.getMarketingCampaign(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ error: 'Marketing campaign not found' });
+      }
+
+      const novel = await storage.getNovel(campaign.novelId);
+      if (!novel) {
+        return res.status(404).json({ error: 'Novel not found' });
+      }
+
+      // Update status to in_progress
+      await storage.updateMarketingCampaign(req.params.id, { status: 'in_progress' });
+
+      // Generate full marketing content
+      const marketingContent = await marketingService.generateFullMarketingCampaign(novel);
+      
+      const updatedCampaign = await storage.updateMarketingCampaign(req.params.id, marketingContent);
+      res.json(updatedCampaign);
+    } catch (error: any) {
+      console.error('Error generating marketing campaign:', error);
+      await storage.updateMarketingCampaign(req.params.id, { status: 'draft' });
+      res.status(500).json({ error: error.message || 'Failed to generate marketing campaign' });
+    }
+  });
+
+  // Generate specific marketing content type
+  app.post('/api/marketing/campaigns/:id/generate/:contentType', isAuthenticated, async (req, res) => {
+    try {
+      const campaign = await storage.getMarketingCampaign(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ error: 'Marketing campaign not found' });
+      }
+
+      const novel = await storage.getNovel(campaign.novelId);
+      if (!novel) {
+        return res.status(404).json({ error: 'Novel not found' });
+      }
+
+      const { contentType } = req.params;
+      let content: any;
+      let updates: any = {};
+
+      switch (contentType) {
+        case 'amazon-description':
+          content = await marketingService.generateAmazonDescription(novel);
+          updates = { amazonDescription: content };
+          break;
+        case 'amazon-keywords':
+          content = await marketingService.generateAmazonKeywords(novel);
+          updates = { amazonKeywords: content };
+          break;
+        case 'amazon-categories':
+          content = await marketingService.generateAmazonCategories(novel);
+          updates = { amazonCategories: content };
+          break;
+        case 'twitter':
+          content = await marketingService.generateSocialMediaPosts(novel, 'twitter');
+          updates = { twitterPosts: content };
+          break;
+        case 'facebook':
+          content = await marketingService.generateSocialMediaPosts(novel, 'facebook');
+          updates = { facebookPosts: content };
+          break;
+        case 'instagram':
+          content = await marketingService.generateSocialMediaPosts(novel, 'instagram');
+          updates = { instagramPosts: content };
+          break;
+        case 'linkedin':
+          content = await marketingService.generateSocialMediaPosts(novel, 'linkedin');
+          updates = { linkedinPosts: content };
+          break;
+        case 'email-subjects':
+          content = await marketingService.generateEmailSubjectLines(novel);
+          updates = { emailSubjectLines: content };
+          break;
+        case 'email-newsletter':
+          content = await marketingService.generateEmailNewsletter(novel);
+          updates = { emailNewsletter: content };
+          break;
+        case 'press-release':
+          content = await marketingService.generatePressRelease(novel);
+          updates = { pressRelease: content };
+          break;
+        case 'author-bio':
+          content = await marketingService.generateAuthorBio(novel);
+          updates = { authorBio: content };
+          break;
+        case 'book-blurb':
+          content = await marketingService.generateBookBlurb(novel);
+          updates = { bookBlurb: content };
+          break;
+        case 'elevator-pitch':
+          content = await marketingService.generateElevatorPitch(novel);
+          updates = { elevatorPitch: content };
+          break;
+        case 'quotable-excerpts':
+          content = await marketingService.generateQuotableExcerpts(novel);
+          updates = { quotableExcerpts: content };
+          break;
+        case 'chapter-teasers':
+          content = await marketingService.generateChapterTeasers(novel);
+          updates = { chapterTeasers: content };
+          break;
+        case 'launch-timeline':
+          content = await marketingService.generateLaunchTimeline(novel);
+          updates = { launchTimeline: content };
+          break;
+        case 'pricing':
+          content = await marketingService.generatePricingRecommendation(novel);
+          updates = { pricingRecommendation: content };
+          break;
+        default:
+          return res.status(400).json({ error: 'Invalid content type' });
+      }
+
+      const updatedCampaign = await storage.updateMarketingCampaign(req.params.id, updates);
+      res.json({ content, campaign: updatedCampaign });
+    } catch (error: any) {
+      console.error(`Error generating ${req.params.contentType}:`, error);
+      res.status(500).json({ error: error.message || 'Failed to generate content' });
+    }
+  });
+
+  // Update marketing campaign
+  app.patch('/api/marketing/campaigns/:id', isAuthenticated, async (req, res) => {
+    try {
+      const updatedCampaign = await storage.updateMarketingCampaign(req.params.id, req.body);
+      if (!updatedCampaign) {
+        return res.status(404).json({ error: 'Marketing campaign not found' });
+      }
+      res.json(updatedCampaign);
+    } catch (error: any) {
+      console.error('Error updating marketing campaign:', error);
+      res.status(500).json({ error: error.message || 'Failed to update marketing campaign' });
+    }
+  });
+
+  // Delete marketing campaign
+  app.delete('/api/marketing/campaigns/:id', isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteMarketingCampaign(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting marketing campaign:', error);
+      res.status(500).json({ error: error.message || 'Failed to delete marketing campaign' });
     }
   });
 
