@@ -69,6 +69,11 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **TTS Services**: OpenAI TTS exclusively.
 
 ## Recent Changes (December 2025)
+- **Marketing & Promotion Module**: Full-featured AI-powered marketing toolkit for book launches
+  - Database: `marketingCampaigns` table stores campaign data per novel
+  - Service: `marketingService.ts` generates all marketing content using GPT-4o
+  - Features: Amazon descriptions/keywords/categories, social media posts (Twitter/Facebook/Instagram/LinkedIn), email campaigns, press releases, author bios, book blurbs, elevator pitches, quotable excerpts, chapter teasers, launch timelines, pricing recommendations
+  - UI: `PromotionHub` component integrated into Publish Hub as "Promote" tab
 - **Audio Normalization Framework**: Added infrastructure for professional audio normalization (loudnorm filter with I=-16 LUFS, TP=-1.5dB, LRA=11) in server/services/audiobookService.ts methods `normalizeAudio()` and `applyLoudnormFilter()`
 - **Audio Normalization Status**: Currently DISABLED temporarily for stability. To re-enable: uncomment calls in `generateOpenAIAudio()` and `generateVoicePreview()` methods. Has 5-second timeout and graceful fallback to original audio on any failure.
 - **Partial Download Fix**: Partial audiobook download feature now working. Users can download completed chapters at any time during generation with status tracking (failed, partial_completed, generating).
