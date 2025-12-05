@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, LibraryIcon, FileText, Headphones } from "lucide-react";
+import { Download, LibraryIcon, FileText, Megaphone } from "lucide-react";
 import { ManuscriptExportWizard } from "./manuscript-export-wizard";
 import ManuscriptExport from "./manuscript-export";
+import PromotionHub from "./promotion-hub";
 import Library from "../pages/library";
 import type { Novel } from "@shared/schema";
 
@@ -23,18 +24,22 @@ export default function PublishHub({ novel }: PublishHubProps) {
       </div>
 
       <Tabs defaultValue="library" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="library" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="library" className="flex items-center gap-2" data-testid="tab-library">
             <LibraryIcon className="h-4 w-4" />
             My Novels
           </TabsTrigger>
-          <TabsTrigger value="export" className="flex items-center gap-2">
+          <TabsTrigger value="export" className="flex items-center gap-2" data-testid="tab-export">
             <Download className="h-4 w-4" />
             Export Wizard
           </TabsTrigger>
-          <TabsTrigger value="formats" className="flex items-center gap-2">
+          <TabsTrigger value="formats" className="flex items-center gap-2" data-testid="tab-formats">
             <FileText className="h-4 w-4" />
             Quick Export
+          </TabsTrigger>
+          <TabsTrigger value="promote" className="flex items-center gap-2" data-testid="tab-promote">
+            <Megaphone className="h-4 w-4" />
+            Promote
           </TabsTrigger>
         </TabsList>
 
@@ -93,6 +98,10 @@ export default function PublishHub({ novel }: PublishHubProps) {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="promote" className="space-y-6">
+          <PromotionHub novel={novel} />
         </TabsContent>
       </Tabs>
     </div>
