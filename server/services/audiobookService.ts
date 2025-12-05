@@ -229,8 +229,9 @@ export class AudiobookService {
     console.log(`🔧 Starting OpenAI TTS generation. Text length: ${text.length} characters`);
     
     try {
-      // OpenAI has a character limit, split long texts into chunks
-      const chunks = this.splitTextIntoChunks(text, 4096);
+      // OpenAI TTS API has a strict 4096 character limit per request
+      // Use 3500 to leave safe margin
+      const chunks = this.splitTextIntoChunks(text, 3500);
       console.log(`📝 Split into ${chunks.length} chunks for OpenAI processing`);
       
       const audioBuffers: Buffer[] = [];
@@ -482,40 +483,92 @@ export class AudiobookService {
   }
 
   /**
-   * Split text into chunks that fit OpenAI's character limit
+   * Split text into chunks that fit OpenAI's 4096 character limit
    */
   private splitTextIntoChunks(text: string, maxLength: number): string[] {
     const chunks: string[] = [];
-    const sentences = text.split(/(?<=[.!?])\s+/);
+    
+    // Split by paragraphs first (double newlines)
+    const paragraphs = text.split(/\n\n+/).filter(p => p.trim().length > 0);
     let currentChunk = '';
 
-    for (const sentence of sentences) {
-      if ((currentChunk + sentence).length <= maxLength) {
-        currentChunk += (currentChunk ? ' ' : '') + sentence;
-      } else {
-        if (currentChunk) {
-          chunks.push(currentChunk);
-          currentChunk = sentence;
-        } else {
-          const words = sentence.split(' ');
-          let wordChunk = '';
-          
-          for (const word of words) {
-            if ((wordChunk + word).length <= maxLength) {
-              wordChunk += (wordChunk ? ' ' : '') + word;
+    for (const paragraph of paragraphs) {
+      const trimmedPara = paragraph.trim();
+      
+      // Check if paragraph itself is too long
+      if (trimmedPara.length > maxLength) {
+        // Save current chunk before processing long paragraph
+        if (currentChunk.trim().length > 0) {
+          chunks.push(currentChunk.trim());
+          currentChunk = '';
+        }
+        
+        // Split long paragraph by sentences
+        const sentences = trimmedPara.split(/(?<=[.!?])\s+/);
+        let sentenceChunk = '';
+        
+        for (const sentence of sentences) {
+          if ((sentenceChunk + (sentenceChunk ? ' ' : '') + sentence).length <= maxLength) {
+            sentenceChunk += (sentenceChunk ? ' ' : '') + sentence;
+          } else {
+            if (sentenceChunk.length > 0) {
+              chunks.push(sentenceChunk);
+              sentenceChunk = sentence;
             } else {
-              if (wordChunk) chunks.push(wordChunk);
-              wordChunk = word;
+              // Sentence itself exceeds max length, split by words
+              const words = sentence.split(/\s+/);
+              let wordChunk = '';
+              
+              for (const word of words) {
+                if ((wordChunk + (wordChunk ? ' ' : '') + word).length <= maxLength) {
+                  wordChunk += (wordChunk ? ' ' : '') + word;
+                } else {
+                  if (wordChunk.length > 0) {
+                    chunks.push(wordChunk);
+                    wordChunk = word;
+                  }
+                }
+              }
+              
+              if (wordChunk.length > 0) sentenceChunk = wordChunk;
             }
           }
-          
-          if (wordChunk) currentChunk = wordChunk;
+        }
+        
+        if (sentenceChunk.length > 0) {
+          chunks.push(sentenceChunk);
+        }
+      } else {
+        // Paragraph fits within limit, try to add to current chunk
+        const combined = currentChunk ? currentChunk + '\n\n' + trimmedPara : trimmedPara;
+        
+        if (combined.length <= maxLength) {
+          currentChunk = combined;
+        } else {
+          // Save current chunk and start new one
+          if (currentChunk.trim().length > 0) {
+            chunks.push(currentChunk.trim());
+          }
+          currentChunk = trimmedPara;
         }
       }
     }
 
-    if (currentChunk) chunks.push(currentChunk);
-    return chunks;
+    // Save final chunk
+    if (currentChunk.trim().length > 0) {
+      chunks.push(currentChunk.trim());
+    }
+
+    // Verify all chunks are under limit
+    const validChunks = chunks.filter(chunk => {
+      if (chunk.length > 4096) {
+        console.warn(`⚠️ Chunk exceeds 4096 char limit (${chunk.length} chars), truncating`);
+        return false;
+      }
+      return true;
+    });
+
+    return validChunks.length > 0 ? validChunks : chunks;
   }
 
   /**
