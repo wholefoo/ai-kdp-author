@@ -277,40 +277,65 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
 
   const handleDownloadPartialAudiobook = async (audiobookId: string, title: string) => {
     try {
-      // Show progress toast immediately
       toast({
         title: "Preparing download...",
-        description: "Creating ZIP file with all completed chapters. This may take several minutes for large files.",
+        description: "Creating ZIP file with completed chapters. This may take several minutes for large files.",
       });
 
-      // Use direct link instead of blob for large files to avoid memory issues
-      const downloadUrl = `/api/audiobook/${audiobookId}/download-partial`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minute timeout for large files
+      
+      const response = await fetch(`/api/audiobook/${audiobookId}/download-partial`, {
+        method: 'GET',
+        credentials: 'include',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        let errorMessage = 'Download failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.details || `Error ${response.status}`;
+        } catch {
+          errorMessage = `Download failed with status ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const blob = await response.blob();
+      if (blob.size === 0) {
+        throw new Error('Downloaded file is empty - no completed chapters found');
+      }
+
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
-      a.href = downloadUrl;
-      a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_complete_audiobook.zip`;
-      a.target = '_blank'; // Open in new tab to show download progress
+      a.href = url;
+      a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_partial_audiobook.zip`;
       document.body.appendChild(a);
       a.click();
+      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      // Show success message after click
-      setTimeout(() => {
-        toast({
-          title: "Download initiated",
-          description: "Download should start shortly. Keep this tab open until download completes.",
-        });
-      }, 1000);
+      toast({
+        title: "Download completed",
+        description: "Your partial audiobook has been downloaded successfully!",
+      });
 
     } catch (error: any) {
-      let errorMessage = "Failed to start download";
-      if (error.message) {
+      let errorMessage = "Failed to download partial audiobook";
+      if (error.name === 'AbortError') {
+        errorMessage = "Download timed out. The file may be too large - try the chunked download instead.";
+      } else if (error.message) {
         errorMessage = error.message;
       }
       
+      console.error('Partial download error:', error);
       toast({
         title: "Download failed",
-        description: `Failed to download: ${errorMessage}`,
+        description: errorMessage,
         variant: "destructive",
       });
     }
