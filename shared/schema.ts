@@ -369,3 +369,80 @@ export const updateBlogPostSchema = createInsertSchema(blogPosts).pick({
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 export type UpdateBlogPost = z.infer<typeof updateBlogPostSchema>;
 export type BlogPost = typeof blogPosts.$inferSelect;
+
+// Marketing campaigns for novel promotion
+export const marketingCampaigns = pgTable("marketing_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  novelId: varchar("novel_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  novelTitle: text("novel_title").notNull(),
+  genre: text("genre").notNull(),
+  targetAudience: text("target_audience"),
+  
+  // Amazon KDP content
+  amazonDescription: text("amazon_description"),
+  amazonKeywords: text("amazon_keywords").array().default([]),
+  amazonCategories: text("amazon_categories").array().default([]),
+  
+  // Social media content
+  twitterPosts: jsonb("twitter_posts").default([]), // Array of tweet objects
+  facebookPosts: jsonb("facebook_posts").default([]),
+  instagramPosts: jsonb("instagram_posts").default([]),
+  linkedinPosts: jsonb("linkedin_posts").default([]),
+  
+  // Email marketing
+  emailSubjectLines: text("email_subject_lines").array().default([]),
+  emailNewsletter: text("email_newsletter"),
+  
+  // Press and promotional
+  pressRelease: text("press_release"),
+  authorBio: text("author_bio"),
+  bookBlurb: text("book_blurb"),
+  elevatorPitch: text("elevator_pitch"),
+  
+  // Quotes and excerpts
+  quotableExcerpts: jsonb("quotable_excerpts").default([]),
+  chapterTeasers: jsonb("chapter_teasers").default([]),
+  
+  // Launch strategy
+  launchTimeline: jsonb("launch_timeline").default([]),
+  pricingRecommendation: jsonb("pricing_recommendation"),
+  
+  status: varchar("status").default("draft"), // draft, in_progress, completed
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertMarketingCampaignSchema = createInsertSchema(marketingCampaigns).pick({
+  novelId: true,
+  userId: true,
+  novelTitle: true,
+  genre: true,
+  targetAudience: true,
+});
+
+export const updateMarketingCampaignSchema = createInsertSchema(marketingCampaigns).pick({
+  targetAudience: true,
+  amazonDescription: true,
+  amazonKeywords: true,
+  amazonCategories: true,
+  twitterPosts: true,
+  facebookPosts: true,
+  instagramPosts: true,
+  linkedinPosts: true,
+  emailSubjectLines: true,
+  emailNewsletter: true,
+  pressRelease: true,
+  authorBio: true,
+  bookBlurb: true,
+  elevatorPitch: true,
+  quotableExcerpts: true,
+  chapterTeasers: true,
+  launchTimeline: true,
+  pricingRecommendation: true,
+  status: true,
+}).partial();
+
+export type InsertMarketingCampaign = z.infer<typeof insertMarketingCampaignSchema>;
+export type UpdateMarketingCampaign = z.infer<typeof updateMarketingCampaignSchema>;
+export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;

@@ -7,6 +7,7 @@ import {
   audiobooks,
   aboutPage,
   blogPosts,
+  marketingCampaigns,
   type Novel, 
   type InsertNovel, 
   type UpdateNovel, 
@@ -25,7 +26,10 @@ import {
   type UpdateAboutPage,
   type BlogPost,
   type InsertBlogPost,
-  type UpdateBlogPost
+  type UpdateBlogPost,
+  type MarketingCampaign,
+  type InsertMarketingCampaign,
+  type UpdateMarketingCampaign
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -110,6 +114,14 @@ export interface IStorage {
   deleteBlogPost(id: string): Promise<boolean>;
   getAllBlogPosts(publishedOnly?: boolean): Promise<BlogPost[]>;
   incrementBlogPostViews(id: string): Promise<BlogPost | undefined>;
+
+  // Marketing campaign operations
+  getMarketingCampaign(id: string): Promise<MarketingCampaign | undefined>;
+  getMarketingCampaignByNovelId(novelId: string): Promise<MarketingCampaign | undefined>;
+  createMarketingCampaign(campaign: InsertMarketingCampaign): Promise<MarketingCampaign>;
+  updateMarketingCampaign(id: string, updates: UpdateMarketingCampaign): Promise<MarketingCampaign | undefined>;
+  deleteMarketingCampaign(id: string): Promise<boolean>;
+  getUserMarketingCampaigns(userId: string): Promise<MarketingCampaign[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -369,7 +381,13 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const audiobook: Audiobook = {
       id,
-      ...insertAudiobook,
+      novelId: insertAudiobook.novelId,
+      title: insertAudiobook.title,
+      voice: insertAudiobook.voice || 'alloy',
+      model: insertAudiobook.model || 'tts-1',
+      speed: insertAudiobook.speed || 100,
+      format: insertAudiobook.format || 'mp3',
+      selectedChapters: insertAudiobook.selectedChapters || [],
       userId: insertAudiobook.userId || null,
       status: 'pending',
       progress: {},
@@ -443,6 +461,31 @@ export class MemStorage implements IStorage {
 
   async incrementBlogPostViews(id: string): Promise<BlogPost | undefined> {
     throw new Error("Use DatabaseStorage for blog post operations");
+  }
+
+  // Marketing campaign operations (MemStorage stub implementations)
+  async getMarketingCampaign(id: string): Promise<MarketingCampaign | undefined> {
+    throw new Error("Use DatabaseStorage for marketing campaign operations");
+  }
+
+  async getMarketingCampaignByNovelId(novelId: string): Promise<MarketingCampaign | undefined> {
+    throw new Error("Use DatabaseStorage for marketing campaign operations");
+  }
+
+  async createMarketingCampaign(campaign: InsertMarketingCampaign): Promise<MarketingCampaign> {
+    throw new Error("Use DatabaseStorage for marketing campaign operations");
+  }
+
+  async updateMarketingCampaign(id: string, updates: UpdateMarketingCampaign): Promise<MarketingCampaign | undefined> {
+    throw new Error("Use DatabaseStorage for marketing campaign operations");
+  }
+
+  async deleteMarketingCampaign(id: string): Promise<boolean> {
+    throw new Error("Use DatabaseStorage for marketing campaign operations");
+  }
+
+  async getUserMarketingCampaigns(userId: string): Promise<MarketingCampaign[]> {
+    throw new Error("Use DatabaseStorage for marketing campaign operations");
   }
 
   // Subscription tier operations (MemStorage stub implementations)
@@ -1077,6 +1120,64 @@ export class DatabaseStorage implements IStorage {
       .where(eq(blogPosts.id, id))
       .returning();
     return updated;
+  }
+
+  // Marketing campaign operations
+  async getMarketingCampaign(id: string): Promise<MarketingCampaign | undefined> {
+    const [campaign] = await db
+      .select()
+      .from(marketingCampaigns)
+      .where(eq(marketingCampaigns.id, id))
+      .limit(1);
+    return campaign;
+  }
+
+  async getMarketingCampaignByNovelId(novelId: string): Promise<MarketingCampaign | undefined> {
+    const [campaign] = await db
+      .select()
+      .from(marketingCampaigns)
+      .where(eq(marketingCampaigns.novelId, novelId))
+      .limit(1);
+    return campaign;
+  }
+
+  async createMarketingCampaign(campaign: InsertMarketingCampaign): Promise<MarketingCampaign> {
+    const [created] = await db
+      .insert(marketingCampaigns)
+      .values({
+        ...campaign,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async updateMarketingCampaign(id: string, updates: UpdateMarketingCampaign): Promise<MarketingCampaign | undefined> {
+    const [updated] = await db
+      .update(marketingCampaigns)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketingCampaigns.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMarketingCampaign(id: string): Promise<boolean> {
+    await db
+      .delete(marketingCampaigns)
+      .where(eq(marketingCampaigns.id, id));
+    return true;
+  }
+
+  async getUserMarketingCampaigns(userId: string): Promise<MarketingCampaign[]> {
+    return await db
+      .select()
+      .from(marketingCampaigns)
+      .where(eq(marketingCampaigns.userId, userId))
+      .orderBy(desc(marketingCampaigns.createdAt));
   }
 }
 
