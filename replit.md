@@ -68,6 +68,11 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **Email Service**: Resend for transactional emails (welcome, subscription confirmation, novel/audiobook completion, upgrade prompts).
 - **TTS Services**: OpenAI TTS exclusively.
 
+## Recent Changes (December 2025)
+- **Audio Normalization Framework**: Added infrastructure for professional audio normalization (loudnorm filter with I=-16 LUFS, TP=-1.5dB, LRA=11) in server/services/audiobookService.ts methods `normalizeAudio()` and `applyLoudnormFilter()`
+- **Audio Normalization Status**: Currently DISABLED temporarily for stability. To re-enable: uncomment calls in `generateOpenAIAudio()` and `generateVoicePreview()` methods. Has 5-second timeout and graceful fallback to original audio on any failure.
+- **Partial Download Fix**: Partial audiobook download feature now working. Users can download completed chapters at any time during generation with status tracking (failed, partial_completed, generating).
+
 ## Recent Deployment Fixes (October 2025)
 - **Auto-Detection Production Mode**: Server automatically detects production vs development by checking for `dist/public` folder, eliminating dependency on NODE_ENV environment variable.
 - **Custom Deployment Script**: `deploy.sh` handles build process with npm legacy-peer-deps and proper dependency management.
