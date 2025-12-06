@@ -4542,6 +4542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let subscriptionData = null;
       let hasActiveSubscription = false;
       
+      // Check if user has a Stripe subscription
       if (user.stripeSubscriptionId) {
         try {
           const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
@@ -4562,6 +4563,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (stripeError) {
           console.error("Error fetching subscription from Stripe:", stripeError);
         }
+      }
+      
+      // If no Stripe subscription, check database tier (for dev/test accounts without Stripe)
+      if (!hasActiveSubscription && user.subscriptionTier && user.subscriptionTier !== 'trial') {
+        hasActiveSubscription = user.subscriptionStatus === 'active' || user.subscriptionStatus === null;
       }
 
       res.json({
