@@ -4567,7 +4567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If no Stripe subscription, check database tier (for dev/test accounts without Stripe)
       if (!hasActiveSubscription && user.subscriptionTier && user.subscriptionTier !== 'trial') {
-        hasActiveSubscription = user.subscriptionStatus === 'active' || user.subscriptionStatus === null;
+        hasActiveSubscription = true;
       }
 
       res.json({
