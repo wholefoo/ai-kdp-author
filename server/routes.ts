@@ -4577,6 +4577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Expires': '0',
         'Surrogate-Control': 'no-store'
       });
+      res.removeHeader('ETag'); // Prevent conditional revalidation
       
       res.json({
         hasActiveSubscription,
