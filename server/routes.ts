@@ -4535,6 +4535,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any)?.claims?.sub;
       const user = await storage.getUser(userId);
       
+      console.log("🔍 DEBUG Subscription Status Check:");
+      console.log("  userId:", userId);
+      console.log("  user found:", !!user);
+      if (user) {
+        console.log("  user.subscriptionTier:", user.subscriptionTier);
+        console.log("  user.isAdmin:", user.isAdmin);
+        console.log("  user.stripeSubscriptionId:", user.stripeSubscriptionId);
+      }
+      
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
