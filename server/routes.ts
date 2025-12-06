@@ -4578,6 +4578,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!hasActiveSubscription && user.subscriptionTier && user.subscriptionTier !== 'trial') {
         hasActiveSubscription = true;
       }
+      
+      // Admin users automatically get unlimited subscription access
+      if (user.isAdmin) {
+        hasActiveSubscription = true;
+      }
 
       // Prevent browser caching to ensure fresh subscription status
       res.set({
