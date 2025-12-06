@@ -71,9 +71,8 @@ export default function SubscriptionGuard({ children, feature, requiresPro = tru
     );
   }
 
-  // Admin users have access to all features regardless of subscription status
-  // Only grant admin access if we successfully fetched the status and user is confirmed admin
-  if (!hasError && subscriptionStatus?.isAdmin) {
+  // Admin users have access to all features regardless of subscription status or errors
+  if (subscriptionStatus?.isAdmin) {
     return <>{children}</>;
   }
 
