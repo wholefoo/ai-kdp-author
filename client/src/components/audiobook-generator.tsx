@@ -126,7 +126,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
   // Initialize all chapters as selected by default
   useEffect(() => {
     if (chapters.length > 0 && selectedChapters.length === 0) {
-      setSelectedChapters(chapters.map((_, index) => index));
+      setSelectedChapters(chapters.map((_: any, index: number) => index));
     }
   }, [chapters.length]);
 
@@ -224,7 +224,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
   };
 
   const handleSelectAllChapters = () => {
-    setSelectedChapters(chapters.map((_, index) => index));
+    setSelectedChapters(chapters.map((_: any, index: number) => index));
   };
 
   const handleDeselectAllChapters = () => {
@@ -539,7 +539,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                   </div>
 
                   <div className="grid gap-2 max-h-60 overflow-y-auto">
-                    {chapters.map((chapter, index) => (
+                    {chapters.map((chapter: any, index: number) => (
                       <div
                         key={index}
                         className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-accent/10 transition-colors"
