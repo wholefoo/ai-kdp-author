@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Download, Search, Calendar, FileText, Eye, Trash2, Filter, Users, TrendingUp, Headphones, Upload, Plus } from "lucide-react";
+import { BookOpen, Download, Search, Calendar, FileText, Eye, Trash2, Filter, Users, TrendingUp, Headphones, Upload, Plus, Zap } from "lucide-react";
 import { Novel } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +36,18 @@ export default function Library() {
   const { data: novels = [], isLoading } = useQuery<Novel[]>({
     queryKey: ["/api/novels"],
   });
+
+  // Real-time polling for generating novels
+  useEffect(() => {
+    const generatingNovels = novels.filter(n => n.status.includes("generating"));
+    if (generatingNovels.length === 0) return;
+
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/novels"] });
+    }, 2000); // Refresh every 2 seconds during generation
+
+    return () => clearInterval(interval);
+  }, [novels, queryClient]);
 
   const deleteNovelMutation = useMutation({
     mutationFn: async (novelId: string) => {
@@ -392,19 +404,43 @@ export default function Library() {
                   <div className="space-y-3">
                     {/* Progress Bar for Generating Novels */}
                     {(novel.status.includes("generating") || novel.status === "batch_completed") && (
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-slate-600">
-                          <span>Progress</span>
-                          <span>{(novel.progress as any)?.overall || 0}%</span>
+                      <div className="space-y-2 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Zap className="h-3 w-3 text-blue-600 animate-pulse" />
+                          <span className="text-xs font-medium text-blue-900">Generating in progress...</span>
                         </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2">
+                        
+                        <div className="flex justify-between text-xs text-slate-600 mb-1">
+                          <span>Overall Progress</span>
+                          <span className="font-semibold">{(novel.progress as any)?.overall || 0}%</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                            className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300" 
                             style={{ width: `${(novel.progress as any)?.overall || 0}%` }}
                           ></div>
                         </div>
+                        
+                        {/* Step Details */}
+                        <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                          <div>
+                            <p className="text-slate-500">Outline</p>
+                            <p className="font-medium text-slate-700">{(novel.progress as any)?.step1 || 0}%</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-500">Chapters</p>
+                            <p className="font-medium text-slate-700">{(novel.progress as any)?.step2 || 0}%</p>
+                          </div>
+                        </div>
+
                         {(novel.progress as any)?.currentStatus && (
-                          <p className="text-xs text-slate-500">{(novel.progress as any).currentStatus}</p>
+                          <p className="text-xs text-slate-600 italic mt-2">📝 {(novel.progress as any).currentStatus}</p>
+                        )}
+                        
+                        {(novel.progress as any)?.currentChapter && (
+                          <p className="text-xs text-slate-600">
+                            Chapter {(novel.progress as any).currentChapter} of {(novel.progress as any).totalChapters || novel.targetChapterCount}
+                          </p>
                         )}
                       </div>
                     )}
