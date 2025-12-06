@@ -412,12 +412,12 @@ export default function Library() {
                         
                         <div className="flex justify-between text-xs text-slate-600 mb-1">
                           <span>Overall Progress</span>
-                          <span className="font-semibold">{(novel.progress as any)?.overall || 0}%</span>
+                          <span className="font-semibold">{typeof (novel.progress as any)?.overall === 'number' ? (novel.progress as any).overall : 0}%</span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
                           <div 
                             className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300" 
-                            style={{ width: `${(novel.progress as any)?.overall || 0}%` }}
+                            style={{ width: `${typeof (novel.progress as any)?.overall === 'number' ? (novel.progress as any).overall : 0}%` }}
                           ></div>
                         </div>
                         
@@ -425,21 +425,21 @@ export default function Library() {
                         <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
                           <div>
                             <p className="text-slate-500">Outline</p>
-                            <p className="font-medium text-slate-700">{(novel.progress as any)?.step1 || 0}%</p>
+                            <p className="font-medium text-slate-700">{typeof (novel.progress as any)?.step1 === 'number' ? (novel.progress as any).step1 : 0}%</p>
                           </div>
                           <div>
                             <p className="text-slate-500">Chapters</p>
-                            <p className="font-medium text-slate-700">{(novel.progress as any)?.step2 || 0}%</p>
+                            <p className="font-medium text-slate-700">{typeof (novel.progress as any)?.step2 === 'number' ? (novel.progress as any).step2 : 0}%</p>
                           </div>
                         </div>
 
-                        {(novel.progress as any)?.currentStatus && (
+                        {typeof (novel.progress as any)?.currentStatus === 'string' && (novel.progress as any).currentStatus && (
                           <p className="text-xs text-slate-600 italic mt-2">📝 {(novel.progress as any).currentStatus}</p>
                         )}
                         
-                        {(novel.progress as any)?.currentChapter && (
+                        {typeof (novel.progress as any)?.currentChapter === 'number' && (novel.progress as any).currentChapter && (
                           <p className="text-xs text-slate-600">
-                            Chapter {(novel.progress as any).currentChapter} of {(novel.progress as any).totalChapters || novel.targetChapterCount}
+                            Chapter {(novel.progress as any).currentChapter} of {typeof (novel.progress as any)?.totalChapters === 'number' ? (novel.progress as any).totalChapters : novel.targetChapterCount}
                           </p>
                         )}
                       </div>
@@ -450,7 +450,7 @@ export default function Library() {
                       <div>
                         <p className="text-slate-500">Chapters</p>
                         <p className="font-medium" data-testid={`text-chapters-${novel.id}`}>
-                          {novel.actualChapterCount || (novel.chapters as string[])?.filter(ch => ch?.trim()).length || 0}
+                          {novel.actualChapterCount || (Array.isArray(novel.chapters) ? novel.chapters.filter(ch => ch?.trim()).length : 0)}
                           {novel.targetChapterCount ? ` / ${novel.targetChapterCount}` : ''}
                         </p>
                       </div>
