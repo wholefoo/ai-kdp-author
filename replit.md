@@ -69,6 +69,17 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **TTS Services**: OpenAI TTS exclusively.
 
 ## Recent Changes (December 2025)
+- **Novel Generation Pipeline Fix**: Fixed critical issue where novel generation was stopping after outline completion
+  - Issue: Outline generated successfully but chapter generation was never triggered
+  - Solution: Implemented automatic chapter generation in the outline endpoint (server/routes.ts line 1054-1193)
+  - After outline completes, system automatically initiates chapter-by-chapter generation without manual API calls
+  - Chapters generate sequentially with real-time progress updates (overall %, individual steps, chapter counter)
+  - Full pipeline: outline → chapters → compilation → completion with proper error handling
+  - Frontend polling (2-second intervals) captures progress and displays to user during generation
+- **React Rendering Error Fix**: Fixed "Objects are not valid as a React child" error in library.tsx
+  - Added type guards for novel.chapters (Array.isArray checks) to prevent rendering objects
+  - Added typeof checks for progress properties (number, string validation)
+  - Now safely handles all data types returned from API
 - **Marketing & Promotion Module**: Full-featured AI-powered marketing toolkit for book launches
   - Database: `marketingCampaigns` table stores campaign data per novel
   - Service: `marketingService.ts` generates all marketing content using GPT-4o
