@@ -22,8 +22,12 @@ export default function SubscriptionGuard({ children, feature, requiresPro = tru
 
   useEffect(() => {
     if (!authLoading && user) {
+      console.log("🔍 CLIENT: Fetching subscription status...");
       apiRequest("/api/subscription/status", "GET")
         .then((data) => {
+          console.log("🔍 CLIENT: Raw response from /api/subscription/status:", JSON.stringify(data, null, 2));
+          console.log("🔍 CLIENT: hasActiveSubscription =", data?.hasActiveSubscription);
+          console.log("🔍 CLIENT: isAdmin =", data?.isAdmin);
           setSubscriptionStatus(data);
           setHasError(false);
           setIsLoading(false);
