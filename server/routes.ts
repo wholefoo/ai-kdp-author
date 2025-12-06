@@ -1047,6 +1047,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalChapters: outline.chapters.length,
             }
           });
+
+          // Automatically start chapter generation after outline is complete
+          console.log(`📖 Outline complete for novel ${id}, starting chapter generation...`);
+          
+          // Get the updated novel to ensure we have the latest data
+          const updatedNovel = await storage.getNovel(id);
+          if (!updatedNovel) {
+            throw new Error('Novel not found after outline generation');
+          }
+
+          // Start chapter generation immediately
+          setImmediate(async () => {
+            try {
+              await storage.updateNovel(id, {
+                status: "generating_chapters",
+                progress: {
+                  overall: 30,
+                  step1: 100,
+                  step2: 0,
+                  step3: 0,
+                  currentStatus: "Starting chapter generation...",
+                  currentChapter: 1,
+                  totalChapters: outline.chapters.length,
+                }
+              });
+
+              const chapters: string[] = [];
+              let previousContent = "";
+              const totalChapters = outline.chapters.length;
+
+              // Use the original novel generation service for consistent, full-length chapters
+              for (let i = 1; i <= totalChapters; i++) {
+                const chapterInfo = outline?.chapters?.[i-1];
+                if (!chapterInfo) {
+                  console.error(`Chapter ${i} not found in outline`);
+                  continue;
+                }
+
+                // Generate chapter using the full-strength original method
+                let chapterContent = await novelGenerationService.generateChapter(
+                  i,
+                  outline as any,
+                  previousContent,
+                  novel.targetChapterLength || 4000
+                );
+
+                // Post-process for proper formatting
+                chapterContent = ensureProperFormatting(chapterContent);
+
+                const wordCount = chapterContent.split(/\s+/).length;
+                const paragraphCount = chapterContent.split('\n\n').filter(p => p.trim()).length;
+                console.log(`Chapter ${i} generated: ${wordCount} words, ${paragraphCount} paragraphs`);
+
+                chapters.push(chapterContent);
+                previousContent = chapterContent;
+
+                const chaptersProgress = (i / totalChapters) * 100;
+                const overallProgress = 30 + (chaptersProgress * 0.6); // Chapters are 60% of total work
+
+                await storage.updateNovel(id, {
+                  chapters,
+                  progress: {
+                    overall: Math.round(overallProgress),
+                    step1: 100,
+                    step2: Math.round(chaptersProgress),
+                    step3: 0,
+                    currentStatus: `Generated Chapter ${i}: "${outline!.chapters[i-1].title}"`,
+                    currentChapter: i + 1,
+                    totalChapters,
+                    estimatedTimeRemaining: `${Math.round((totalChapters - i) * 2)} minutes`,
+                  }
+                });
+              }
+
+              // Start compilation
+              await storage.updateNovel(id, {
+                status: "compiling",
+                progress: {
+                  overall: 90,
+                  step1: 100,
+                  step2: 100,
+                  step3: 50,
+                  currentStatus: "Compiling final manuscript...",
+                  totalChapters,
+                }
+              });
+
+              // Final quality pass on complete manuscript
+              let manuscript = await novelGenerationService.compileManuscript(novel.title, chapters);
+              const qualityService = new ContentQualityService();
+              manuscript = await qualityService.fixCommonIssues(manuscript);
+              
+              const wordCount = novelGenerationService.calculateWordCount(manuscript);
+              const readingTime = novelGenerationService.calculateReadingTime(wordCount);
+              const estimatedPages = novelGenerationService.calculateEstimatedPages(wordCount);
+
+              await storage.updateNovel(id, {
+                manuscriptContent: manuscript,
+                status: "completed",
+                wordCount,
+                actualChapterCount: totalChapters,
+                progress: {
+                  overall: 100,
+                  step1: 100,
+                  step2: 100,
+                  step3: 100,
+                  currentStatus: "Novel generation complete!",
+                  totalChapters,
+                }
+              });
+
+              // Send novel completion email
+              if (novel.userId) {
+                const user = await storage.getUser(novel.userId);
+                if (user?.email) {
+                  const userName = user.firstName || user.email.split('@')[0];
+                  emailService.sendNovelCompletionEmail(
+                    user.email,
+                    userName,
+                    novel.title,
+                    id,
+                    wordCount
+                  ).catch(err => console.error('Failed to send novel completion email:', err));
+                }
+              }
+
+            } catch (error) {
+              await storage.updateNovel(id, {
+                status: "error",
+                error: error instanceof Error ? error.message : 'Unknown error',
+                progress: {
+                  overall: 0,
+                  step1: 100,
+                  step2: 0,
+                  step3: 0,
+                  currentStatus: "Error generating chapters",
+                }
+              });
+              console.error('Error in automatic chapter generation:', error);
+            }
+          });
+
         } catch (error) {
           await storage.updateNovel(id, {
             status: "error",
