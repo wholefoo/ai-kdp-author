@@ -4535,15 +4535,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any)?.claims?.sub;
       const user = await storage.getUser(userId);
       
-      console.log("🔍 DEBUG Subscription Status Check:");
-      console.log("  userId:", userId);
-      console.log("  user found:", !!user);
-      if (user) {
-        console.log("  user.subscriptionTier:", user.subscriptionTier);
-        console.log("  user.isAdmin:", user.isAdmin);
-        console.log("  user.stripeSubscriptionId:", user.stripeSubscriptionId);
-      }
-      
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -4575,7 +4566,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If no Stripe subscription, check database tier (for dev/test accounts without Stripe)
-      if (!hasActiveSubscription && user.subscriptionTier && user.subscriptionTier !== 'trial') {
+      const tier = user.subscriptionTier || 'trial';
+      if (!hasActiveSubscription && tier && tier !== 'trial') {
         hasActiveSubscription = true;
       }
       
@@ -4597,7 +4589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasActiveSubscription,
         subscriptionStatus: subscriptionData?.status || user.subscriptionStatus,
         subscriptionEndDate: user.subscriptionEndDate,
-        subscriptionTier: user.subscriptionTier || 'trial',
+        subscriptionTier: tier,
         isAdmin: user.isAdmin || false,
         stripeSubscription: subscriptionData,
       });
