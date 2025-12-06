@@ -4570,6 +4570,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         hasActiveSubscription = true;
       }
 
+      // Prevent browser caching to ensure fresh subscription status
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+      });
+      
       res.json({
         hasActiveSubscription,
         subscriptionStatus: subscriptionData?.status || user.subscriptionStatus,
