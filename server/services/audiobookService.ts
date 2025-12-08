@@ -170,7 +170,11 @@ export class AudiobookService {
           speed: normalizedSpeed
         };
         console.log(`🔧 Speed conversion: ${options.speed} → ${normalizedSpeed}`);
-        const audioBuffer = await this.generateChapterAudio(chapterText, audioOptions);
+        let audioBuffer = await this.generateChapterAudio(chapterText, audioOptions);
+        
+        // Resample to 44.1 kHz for KDP audiobook compliance
+        console.log(`🔄 Resampling Chapter ${chapter.chapterNumber} to 44.1 kHz for KDP compliance...`);
+        audioBuffer = await this.resampleTo44100Hz(audioBuffer, options.format);
         
         // Save audio file to object storage
         const audioFileName = `chapter_${String(chapter.chapterNumber).padStart(2, '0')}.${options.format}`;
@@ -661,6 +665,7 @@ export class AudiobookService {
 
           ffmpeg(tempInputPath)
             .audioFilters('loudnorm=I=-16:TP=-1.5:LRA=11')
+            .audioFrequency(44100) // KDP-compliant 44.1 kHz sample rate
             .audioCodec(getCodec(format))
             .on('end', () => {
               clearTimeout(timeout);
@@ -668,7 +673,7 @@ export class AudiobookService {
                 .then((normalizedBuffer) => {
                   fs.unlink(tempInputPath).catch(() => {});
                   fs.unlink(tempOutputPath).catch(() => {});
-                  console.log(`✅ Audio normalized successfully (${normalizedBuffer.length} bytes)`);
+                  console.log(`✅ Audio normalized and resampled to 44.1 kHz (${normalizedBuffer.length} bytes)`);
                   resolve(normalizedBuffer);
                 })
                 .catch((err) => {
@@ -691,6 +696,71 @@ export class AudiobookService {
         .catch((err) => {
           clearTimeout(timeout);
           console.warn(`Failed to write temp audio file: ${err.message}`);
+          resolve(audioBuffer);
+        });
+    });
+  }
+
+  /**
+   * Resample audio to 44.1 kHz for KDP audiobook compliance
+   * This is used as a standalone step when normalization is not needed
+   */
+  private resampleTo44100Hz(audioBuffer: Buffer, format: string): Promise<Buffer> {
+    return new Promise((resolve) => {
+      const tempInputPath = join(this.baseAudioDir, `temp_resample_in_${Date.now()}.${format}`);
+      const tempOutputPath = join(this.baseAudioDir, `temp_resample_out_${Date.now()}.${format}`);
+      
+      const timeout = setTimeout(() => {
+        console.warn(`⏰ Audio resampling timeout (10s), using original audio`);
+        fs.unlink(tempInputPath).catch(() => {});
+        fs.unlink(tempOutputPath).catch(() => {});
+        resolve(audioBuffer);
+      }, 10000);
+
+      fs.writeFile(tempInputPath, audioBuffer)
+        .then(() => {
+          const getCodec = (fmt: string) => {
+            const codecMap: Record<string, string> = {
+              'mp3': 'libmp3lame',
+              'aac': 'aac',
+              'opus': 'libopus',
+              'flac': 'flac'
+            };
+            return codecMap[fmt] || 'libmp3lame';
+          };
+
+          ffmpeg(tempInputPath)
+            .audioFrequency(44100) // KDP-compliant 44.1 kHz sample rate
+            .audioCodec(getCodec(format))
+            .on('end', () => {
+              clearTimeout(timeout);
+              fs.readFile(tempOutputPath)
+                .then((resampledBuffer) => {
+                  fs.unlink(tempInputPath).catch(() => {});
+                  fs.unlink(tempOutputPath).catch(() => {});
+                  console.log(`✅ Audio resampled to 44.1 kHz (${resampledBuffer.length} bytes)`);
+                  resolve(resampledBuffer);
+                })
+                .catch((err) => {
+                  clearTimeout(timeout);
+                  console.warn(`Failed to read resampled audio: ${err.message}`);
+                  fs.unlink(tempInputPath).catch(() => {});
+                  fs.unlink(tempOutputPath).catch(() => {});
+                  resolve(audioBuffer);
+                });
+            })
+            .on('error', (err) => {
+              clearTimeout(timeout);
+              console.warn(`FFmpeg resampling error: ${err.message}`);
+              fs.unlink(tempInputPath).catch(() => {});
+              fs.unlink(tempOutputPath).catch(() => {});
+              resolve(audioBuffer);
+            })
+            .save(tempOutputPath);
+        })
+        .catch((err) => {
+          clearTimeout(timeout);
+          console.warn(`Failed to write temp audio file for resampling: ${err.message}`);
           resolve(audioBuffer);
         });
     });
