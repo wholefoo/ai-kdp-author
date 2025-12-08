@@ -717,67 +717,44 @@ export class AudiobookService {
       const tempInputPath = join(this.baseAudioDir, `temp_kdp_in_${timestamp}.${format}`);
       const tempOutputPath = join(this.baseAudioDir, `temp_kdp_out_${timestamp}.mp3`);
       
-      // 30-second timeout for processing (chapters can be long)
+      // 180-second timeout for processing (chapters can be ~35MB, need more time)
       const timeout = setTimeout(() => {
-        console.warn(`⏰ KDP audio processing timeout (30s), using original audio`);
+        console.warn(`⏰ KDP audio processing timeout (180s), using original audio`);
         fs.unlink(tempInputPath).catch(() => {});
         fs.unlink(tempOutputPath).catch(() => {});
         resolve(audioBuffer);
-      }, 30000);
+      }, 180000);
 
       fs.writeFile(tempInputPath, audioBuffer)
         .then(() => {
-          // Complex filter chain for KDP compliance:
-          // 1. Add 2 seconds silence at start
-          // 2. Add 2 seconds silence at end  
-          // 3. Normalize loudness to -20 LUFS (within -23 to -18 dB range)
-          // 4. Limit peaks to -3 dB
-          const filterComplex = [
-            // Add 2 seconds of silence at the beginning
-            'apad=pad_dur=2',
-            // Normalize loudness to -20 LUFS with -3 dB true peak limit
-            'loudnorm=I=-20:TP=-3:LRA=11:print_format=summary',
-            // Ensure consistent stereo output
-            'aformat=channel_layouts=stereo'
-          ].join(',');
-
+          // Simplified approach: Use adelay/apad for silence and loudnorm for normalization
+          // This is more reliable than complex concat filters
           ffmpeg(tempInputPath)
-            // Add 2 seconds silence at start using filter
-            .complexFilter([
-              // Generate 2 seconds of silence
-              {
-                filter: 'aevalsrc',
-                options: { exprs: '0', duration: 2, sample_rate: 44100 },
-                outputs: 'silence_start'
-              },
-              // Input audio normalized
-              {
-                filter: 'loudnorm',
-                options: { I: -20, TP: -3, LRA: 11 },
-                inputs: '0:a',
-                outputs: 'normalized'
-              },
-              // Generate 2 seconds of silence for end
-              {
-                filter: 'aevalsrc', 
-                options: { exprs: '0', duration: 2, sample_rate: 44100 },
-                outputs: 'silence_end'
-              },
-              // Concatenate: silence + audio + silence
-              {
-                filter: 'concat',
-                options: { n: 3, v: 0, a: 1 },
-                inputs: ['silence_start', 'normalized', 'silence_end'],
-                outputs: 'final'
-              }
-            ], 'final')
-            .audioFrequency(44100)        // 44.1 kHz sample rate
+            .audioFilters([
+              // Add 2 seconds delay at start (44100 samples/sec * 2 sec = 88200 samples)
+              'adelay=2000|2000',
+              // Add 2 seconds padding at end
+              'apad=pad_dur=2',
+              // Normalize loudness to -20 LUFS (within KDP's -23 to -18 dB range) with -3 dB peak limit
+              'loudnorm=I=-20:TP=-3:LRA=11',
+              // Ensure stereo output
+              'aformat=channel_layouts=stereo'
+            ])
+            .audioFrequency(44100)        // 44.1 kHz sample rate (REQUIRED by KDP)
             .audioChannels(2)              // Stereo
             .audioBitrate('192k')          // 192 kbps
             .audioCodec('libmp3lame')      // MP3 codec
             .outputOptions([
               '-write_xing', '0'           // CBR encoding (no Xing/LAME header for true CBR)
             ])
+            .on('start', (cmd) => {
+              console.log(`🔧 FFmpeg KDP processing started: ${cmd.substring(0, 200)}...`);
+            })
+            .on('progress', (progress) => {
+              if (progress.percent) {
+                console.log(`📊 FFmpeg progress: ${Math.round(progress.percent)}%`);
+              }
+            })
             .on('end', () => {
               clearTimeout(timeout);
               fs.readFile(tempOutputPath)
@@ -788,7 +765,6 @@ export class AudiobookService {
                   resolve(processedBuffer);
                 })
                 .catch((err) => {
-                  clearTimeout(timeout);
                   console.warn(`Failed to read KDP-processed audio: ${err.message}`);
                   fs.unlink(tempInputPath).catch(() => {});
                   fs.unlink(tempOutputPath).catch(() => {});
@@ -798,11 +774,11 @@ export class AudiobookService {
             .on('error', (err) => {
               clearTimeout(timeout);
               console.warn(`FFmpeg KDP processing error: ${err.message}, falling back to simple processing`);
+              fs.unlink(tempInputPath).catch(() => {});
               // Fallback to simpler processing without complex filter
               this.processForKDPComplianceSimple(audioBuffer, format)
                 .then(resolve)
                 .catch(() => {
-                  fs.unlink(tempInputPath).catch(() => {});
                   fs.unlink(tempOutputPath).catch(() => {});
                   resolve(audioBuffer);
                 });
@@ -826,12 +802,13 @@ export class AudiobookService {
       const tempInputPath = join(this.baseAudioDir, `temp_kdp_simple_in_${timestamp}.${format}`);
       const tempOutputPath = join(this.baseAudioDir, `temp_kdp_simple_out_${timestamp}.mp3`);
       
+      // 120-second timeout for fallback processing
       const timeout = setTimeout(() => {
-        console.warn(`⏰ Simple KDP processing timeout (20s), using original audio`);
+        console.warn(`⏰ Simple KDP processing timeout (120s), using original audio`);
         fs.unlink(tempInputPath).catch(() => {});
         fs.unlink(tempOutputPath).catch(() => {});
         resolve(audioBuffer);
-      }, 20000);
+      }, 120000);
 
       fs.writeFile(tempInputPath, audioBuffer)
         .then(() => {
