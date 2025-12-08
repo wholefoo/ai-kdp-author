@@ -1120,7 +1120,7 @@ export class AudiobookService {
     options: AudiobookOptions
   ): Promise<Buffer> {
     try {
-      console.log(`🎤 Generating voice preview with ${options.voice} voice`);
+      console.log(`🎤 Generating voice preview with ${options.voice} voice (${options.ttsProvider})`);
       console.log(`📝 Sample text length: ${sampleText.length} characters`);
       
       const limitedText = sampleText.length > 500 
@@ -1131,20 +1131,36 @@ export class AudiobookService {
       
       console.log(`🎤 Voice preview request - Original speed: ${options.speed}, Normalized: ${normalizedSpeed}`);
       
-      const response = await openai.audio.speech.create({
-        model: options.model,
-        voice: options.voice,
-        input: limitedText,
-        response_format: options.format as any,
-        speed: normalizedSpeed,
-      });
+      // Route to correct TTS provider
+      if (options.ttsProvider === 'gemini') {
+        console.log(`🔀 Routing to Gemini TTS for preview`);
+        const { GeminiTtsService } = await import('./geminiTts');
+        const geminiService = new GeminiTtsService();
+        const audioBuffer = await geminiService.generateAudio(limitedText, {
+          voice: options.voice as any,
+          model: (options.model === 'gemini-2.5-flash-tts' || options.model === 'gemini-2.5-pro-tts' ? options.model : 'gemini-2.5-flash-tts') as any,
+          speed: normalizedSpeed,
+          language: 'en'
+        });
+        console.log(`✅ Voice preview generated successfully with Gemini (${audioBuffer.length} bytes)`);
+        return audioBuffer;
+      } else {
+        // Use OpenAI for preview
+        console.log(`🔀 Routing to OpenAI TTS for preview`);
+        const response = await openai.audio.speech.create({
+          model: options.model,
+          voice: options.voice as any,
+          input: limitedText,
+          response_format: options.format as any,
+          speed: normalizedSpeed,
+        });
 
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      // Audio normalization temporarily disabled for stability
-      console.log(`✅ Voice preview generated successfully (${buffer.length} bytes)`);
-      return buffer;
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        console.log(`✅ Voice preview generated successfully with OpenAI (${buffer.length} bytes)`);
+        return buffer;
+      }
       
     } catch (error: any) {
       console.error('❌ Voice preview generation failed:', error);

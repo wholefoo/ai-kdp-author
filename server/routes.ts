@@ -3876,12 +3876,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { AudiobookService } = await import('./services/audiobookService');
       const audiobookService = new AudiobookService();
+      // Determine TTS provider from voice choice
+      const geminiVoices = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'];
+      const previewProvider = geminiVoices.includes(voice) ? 'gemini' : 'openai';
+
       const audioBuffer = await audiobookService.generateVoicePreview(
         sampleText,
         {
-          ttsProvider: 'openai',
+          ttsProvider: previewProvider,
           voice: voice as any,
-          model: 'tts-1',
+          model: previewProvider === 'gemini' ? 'gemini-2.5-flash-tts' : 'tts-1',
           speed: speed,
           format: 'mp3'
         }
