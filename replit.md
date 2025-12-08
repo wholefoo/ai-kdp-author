@@ -107,7 +107,16 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 
 - **Audio Normalization Status**: Currently DISABLED temporarily for stability. To re-enable: uncomment calls in `generateOpenAIAudio()` and `generateVoicePreview()` methods. Has 5-second timeout and graceful fallback to original audio on any failure.
 
-- **44.1 kHz Audio Resampling for KDP Compliance**: All audiobook chapter audio is now automatically resampled to 44.1 kHz sample rate after generation, as required by Amazon KDP audiobook specifications. Uses FFmpeg with 10-second timeout and graceful fallback to original audio on failure. Applied via `resampleTo44100Hz()` method in audiobookService.ts.
+- **Full KDP Audiobook Compliance Processing**: All audiobook chapters are now automatically processed to meet Amazon KDP requirements:
+  - **Format**: MP3 with libmp3lame codec
+  - **Sample Rate**: 44.1 kHz
+  - **Bit Rate**: 192 kbps CBR (Constant Bit Rate)
+  - **Channels**: Stereo (consistent across all files)
+  - **Loudness**: Normalized to -20 LUFS (within -23 to -18 dB range)
+  - **Peak Level**: Limited to -3 dB (no clipping)
+  - **Silence Padding**: 2 seconds of silence at start and end of each chapter
+  - Implementation: `processForKDPCompliance()` method with fallback to `processForKDPComplianceSimple()` in audiobookService.ts
+  - 30-second timeout with graceful fallback to original audio on failure
 
 - **Partial Download Fix**: Partial audiobook download feature now working. Users can download completed chapters at any time during generation with status tracking (failed, partial_completed, generating).
 
