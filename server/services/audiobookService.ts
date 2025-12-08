@@ -744,9 +744,10 @@ export class AudiobookService {
     recommended: boolean,
     characteristics: string[],
     bestFor: string,
-    provider: 'openai'
+    provider: 'openai' | 'gemini'
   }> {
     return [
+      // OpenAI voices
       { 
         voice: 'alloy', 
         name: 'Alloy',
@@ -806,6 +807,307 @@ export class AudiobookService {
         characteristics: ['Gentle', 'Soothing', 'Calming'],
         bestFor: 'Romance and literary fiction',
         provider: 'openai'
+      },
+      // Gemini voices
+      { 
+        voice: 'Zephyr', 
+        name: 'Zephyr',
+        description: 'Dynamic, energetic voice', 
+        gender: 'neutral', 
+        recommended: true,
+        characteristics: ['Energetic', 'Clear', 'Modern'],
+        bestFor: 'Contemporary fiction and tech content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Puck', 
+        name: 'Puck',
+        description: 'Playful, youthful voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Playful', 'Young', 'Charming'],
+        bestFor: 'Comedy and light-hearted stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Charon', 
+        name: 'Charon',
+        description: 'Deep, mysterious voice', 
+        gender: 'male', 
+        recommended: true,
+        characteristics: ['Deep', 'Mysterious', 'Commanding'],
+        bestFor: 'Dark fiction and thrillers',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Kore', 
+        name: 'Kore',
+        description: 'Warm, inviting female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Warm', 'Friendly', 'Inviting'],
+        bestFor: 'Romance and character-driven stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Fenrir', 
+        name: 'Fenrir',
+        description: 'Strong, powerful voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Strong', 'Powerful', 'Bold'],
+        bestFor: 'Fantasy and adventure epics',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Leda', 
+        name: 'Leda',
+        description: 'Elegant, refined female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Elegant', 'Refined', 'Sophisticated'],
+        bestFor: 'Literary fiction and classics',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Orus', 
+        name: 'Orus',
+        description: 'Authoritative, commanding voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Authoritative', 'Commanding', 'Professional'],
+        bestFor: 'Documentary and educational content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Aoede', 
+        name: 'Aoede',
+        description: 'Lyrical, soulful female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Lyrical', 'Soulful', 'Expressive'],
+        bestFor: 'Poetry and emotional narratives',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Callirrhoe', 
+        name: 'Callirrhoe',
+        description: 'Sweet, gentle female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Sweet', 'Gentle', 'Tender'],
+        bestFor: 'Young adult romance',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Autonoe', 
+        name: 'Autonoe',
+        description: 'Clear, articulate female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Clear', 'Articulate', 'Precise'],
+        bestFor: 'Technical and instructional content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Enceladus', 
+        name: 'Enceladus',
+        description: 'Resonant, deep male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Resonant', 'Deep', 'Powerful'],
+        bestFor: 'Epic fantasy and science fiction',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Iapetus', 
+        name: 'Iapetus',
+        description: 'Gruff, distinctive male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Gruff', 'Distinctive', 'Character'],
+        bestFor: 'Western and noir fiction',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Umbriel', 
+        name: 'Umbriel',
+        description: 'Dark, brooding male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Dark', 'Brooding', 'Intense'],
+        bestFor: 'Horror and psychological thrillers',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Algieba', 
+        name: 'Algieba',
+        description: 'Smooth, suave male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Smooth', 'Suave', 'Sophisticated'],
+        bestFor: 'Crime fiction and detective stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Despina', 
+        name: 'Despina',
+        description: 'Playful, cheerful female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Playful', 'Cheerful', 'Upbeat'],
+        bestFor: 'Children\'s books and comedies',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Erinome', 
+        name: 'Erinome',
+        description: 'Vibrant, spirited female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Vibrant', 'Spirited', 'Energetic'],
+        bestFor: 'Adventure and action narratives',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Algenib', 
+        name: 'Algenib',
+        description: 'Warm, friendly male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Warm', 'Friendly', 'Approachable'],
+        bestFor: 'Self-help and inspirational books',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Laomedeia', 
+        name: 'Laomedeia',
+        description: 'Soothing, calming female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Soothing', 'Calming', 'Peaceful'],
+        bestFor: 'Meditation and wellness content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Achernar', 
+        name: 'Achernar',
+        description: 'Bright, cheerful male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Bright', 'Cheerful', 'Uplifting'],
+        bestFor: 'Feel-good and humorous fiction',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Alnilam', 
+        name: 'Alnilam',
+        description: 'Majestic, grand voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Majestic', 'Grand', 'Epic'],
+        bestFor: 'High fantasy and mythology',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Schedar', 
+        name: 'Schedar',
+        description: 'Wise, seasoned male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Wise', 'Seasoned', 'Experienced'],
+        bestFor: 'Historical fiction and sagas',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Gacrux', 
+        name: 'Gacrux',
+        description: 'Dramatic, expressive male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Dramatic', 'Expressive', 'Theatrical'],
+        bestFor: 'Drama and character studies',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Pulcherrima', 
+        name: 'Pulcherrima',
+        description: 'Beautiful, melodious female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Beautiful', 'Melodious', 'Musical'],
+        bestFor: 'Lyrical narratives and poetry',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Achird', 
+        name: 'Achird',
+        description: 'Crisp, clear male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Crisp', 'Clear', 'Precise'],
+        bestFor: 'News and informative content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Zubenelgenubi', 
+        name: 'Zubenelgenubi',
+        description: 'Balanced, neutral male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Balanced', 'Neutral', 'Professional'],
+        bestFor: 'Business and corporate content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Rasalgethi', 
+        name: 'Rasalgethi',
+        description: 'Intense, passionate male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Intense', 'Passionate', 'Driven'],
+        bestFor: 'Motivational and passionate speeches',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Sadachbia', 
+        name: 'Sadachbia',
+        description: 'Soft, tender female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Soft', 'Tender', 'Delicate'],
+        bestFor: 'Intimate and personal narratives',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Sadaltager', 
+        name: 'Sadaltager',
+        description: 'Spirited, dynamic male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Spirited', 'Dynamic', 'Vibrant'],
+        bestFor: 'Action-packed and fast-paced stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Sulafat', 
+        name: 'Sulafat',
+        description: 'Rich, full male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Rich', 'Full', 'Resonant'],
+        bestFor: 'Classical literature and adaptations',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Vindemiatrix', 
+        name: 'Vindemiatrix',
+        description: 'Ethereal, mystical female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Ethereal', 'Mystical', 'Otherworldly'],
+        bestFor: 'Paranormal and magical realism',
+        provider: 'gemini'
       }
     ];
   }

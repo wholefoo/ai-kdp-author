@@ -69,15 +69,16 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **TTS Services**: OpenAI TTS (6 voices) and Google Cloud Text-to-Speech/Gemini TTS (30 voices).
 
 ## Recent Changes (December 2025)
-- **Multi-TTS Provider Support (Approach 1 Implementation)**
-  - Added dual TTS provider support: OpenAI and Gemini TTS
-  - Database: Added `ttsProvider` field to audiobooks table to track which provider is used
+- **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING**
+  - Added dual TTS provider support: OpenAI and Gemini TTS (36 total voices available)
+  - Database: Added `ttsProvider` field to audiobooks table to track which provider is used (via direct SQL: `ALTER TABLE audiobooks ADD COLUMN IF NOT EXISTS tts_provider VARCHAR(50) DEFAULT 'openai'`)
   - New Service: `server/services/geminiTts.ts` - Handles all Gemini TTS generation (30 voices, multiple models)
   - Updated Schema: `shared/schema.ts` - Added `ttsProvider` column, extended voice and model type definitions
-  - Updated AudiobookService: Added provider detection, routes to appropriate TTS service
+  - Updated AudiobookService: Added provider detection, routes to appropriate TTS service, and FULL voice list in `getAvailableVoices()`
   - Gemini Models Supported: `gemini-2.5-flash-tts` (faster), `gemini-2.5-pro-tts` (higher quality)
   - Configuration: Uses `GOOGLE_CLOUD_TTS_API_KEY` environment variable (secret key)
   - Fallback Logic: Defaults to OpenAI if Gemini is unavailable, graceful error handling
+  - UI: All 36 voices now visible in voice selection dropdown (6 OpenAI + 30 Gemini voices with descriptions and recommended flags)
 
 - **Novel Generation Pipeline Fix**: Fixed critical issue where novel generation was stopping after outline completion
   - Issue: Outline generated successfully but chapter generation was never triggered
