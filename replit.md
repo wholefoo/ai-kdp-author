@@ -38,7 +38,7 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **AI Integration**: OpenAI GPT-5 for all core generation and analysis tasks.
 - **Character Development**: AI-powered Interview Mode, Emotional Journey Mapping, Character Growth Suggestions.
 - **Manuscript Analysis**: Advanced Grammar & Style Checker, Manuscript Style and Tone Consistency Checker, Comprehensive Manuscript Quality Analyzer.
-- **Audiobook Generation**: Uses OpenAI TTS for text-to-speech conversion with multiple voices and HD quality.
+- **Audiobook Generation**: Dual TTS support - OpenAI (6 voices: alloy, echo, fable, onyx, nova, shimmer) and Gemini (30 voices: Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe, Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Laomedeia, Achernar, Alnilam, Schedar, Gacrux, Pulcherrima, Achird, Zubenelgenubi, Rasalgethi, Sadachbia, Sadaltager, Sulafat, Vindemiatrix).
 - **Customization**: Adjustable word count (30K-120K), chapter count (10-50), chapter length (1.5K-5K words).
 - **Export & Preview**: DOCX (native JS library), PDF, Markdown, TXT with customizable formatting.
 - **Development Workflow**: Monorepo structure with end-to-end TypeScript.
@@ -57,7 +57,7 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 
 ### Key Libraries
 - **Frontend**: React, TanStack React Query, Radix UI, Tailwind CSS, Wouter, React Hook Form, Zod, React-Markdown.
-- **Backend**: Express.js, Drizzle ORM, OpenAI SDK.
+- **Backend**: Express.js, Drizzle ORM, OpenAI SDK, axios.
 - **Document Generation**: `docx` library.
 - **Charting**: Recharts.
 
@@ -66,9 +66,19 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **Authentication**: Replit OpenID Connect.
 - **Payment Processing**: Stripe.
 - **Email Service**: Resend for transactional emails (welcome, subscription confirmation, novel/audiobook completion, upgrade prompts).
-- **TTS Services**: OpenAI TTS exclusively.
+- **TTS Services**: OpenAI TTS (6 voices) and Google Cloud Text-to-Speech/Gemini TTS (30 voices).
 
 ## Recent Changes (December 2025)
+- **Multi-TTS Provider Support (Approach 1 Implementation)**
+  - Added dual TTS provider support: OpenAI and Gemini TTS
+  - Database: Added `ttsProvider` field to audiobooks table to track which provider is used
+  - New Service: `server/services/geminiTts.ts` - Handles all Gemini TTS generation (30 voices, multiple models)
+  - Updated Schema: `shared/schema.ts` - Added `ttsProvider` column, extended voice and model type definitions
+  - Updated AudiobookService: Added provider detection, routes to appropriate TTS service
+  - Gemini Models Supported: `gemini-2.5-flash-tts` (faster), `gemini-2.5-pro-tts` (higher quality)
+  - Configuration: Uses `GOOGLE_CLOUD_TTS_API_KEY` environment variable (secret key)
+  - Fallback Logic: Defaults to OpenAI if Gemini is unavailable, graceful error handling
+
 - **Novel Generation Pipeline Fix**: Fixed critical issue where novel generation was stopping after outline completion
   - Issue: Outline generated successfully but chapter generation was never triggered
   - Solution: Implemented automatic chapter generation in the outline endpoint (server/routes.ts line 1054-1193)
@@ -76,17 +86,22 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
   - Chapters generate sequentially with real-time progress updates (overall %, individual steps, chapter counter)
   - Full pipeline: outline → chapters → compilation → completion with proper error handling
   - Frontend polling (2-second intervals) captures progress and displays to user during generation
+
 - **React Rendering Error Fix**: Fixed "Objects are not valid as a React child" error in library.tsx
   - Added type guards for novel.chapters (Array.isArray checks) to prevent rendering objects
   - Added typeof checks for progress properties (number, string validation)
   - Now safely handles all data types returned from API
+
 - **Marketing & Promotion Module**: Full-featured AI-powered marketing toolkit for book launches
   - Database: `marketingCampaigns` table stores campaign data per novel
   - Service: `marketingService.ts` generates all marketing content using GPT-4o
   - Features: Amazon descriptions/keywords/categories, social media posts (Twitter/Facebook/Instagram/LinkedIn), email campaigns, press releases, author bios, book blurbs, elevator pitches, quotable excerpts, chapter teasers, launch timelines, pricing recommendations
   - UI: `PromotionHub` component integrated into Publish Hub as "Promote" tab
+
 - **Audio Normalization Framework**: Added infrastructure for professional audio normalization (loudnorm filter with I=-16 LUFS, TP=-1.5dB, LRA=11) in server/services/audiobookService.ts methods `normalizeAudio()` and `applyLoudnormFilter()`
+
 - **Audio Normalization Status**: Currently DISABLED temporarily for stability. To re-enable: uncomment calls in `generateOpenAIAudio()` and `generateVoicePreview()` methods. Has 5-second timeout and graceful fallback to original audio on any failure.
+
 - **Partial Download Fix**: Partial audiobook download feature now working. Users can download completed chapters at any time during generation with status tracking (failed, partial_completed, generating).
 
 ## Recent Deployment Fixes (October 2025)
@@ -94,3 +109,14 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **Custom Deployment Script**: `deploy.sh` handles build process with npm legacy-peer-deps and proper dependency management.
 - **Build Tools**: vite and esbuild moved to dependencies (not devDependencies) to ensure deployment compatibility.
 - **Disk Management**: Enhanced .gitignore to prevent git bloat from large files and build artifacts.
+
+## TTS Provider Comparison
+
+| Feature | OpenAI | Gemini |
+|---------|--------|--------|
+| Available Voices | 6 | 30 |
+| Model Options | tts-1, tts-1-hd | gemini-2.5-flash-tts, gemini-2.5-pro-tts |
+| Language Support | 50+ | 70+ locales, 24 languages |
+| Speed Control | Yes (0.25-4.0) | Yes (0.25-4.0) |
+| Default Provider | Yes | Optional (requires API key) |
+| Use Case | Quick generation, consistent quality | Advanced voice variety, multi-language support |

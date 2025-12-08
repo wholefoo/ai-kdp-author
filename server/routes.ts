@@ -3687,10 +3687,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `${novel.title} (Chapters ${selectedChapterIndices.map(i => i + 1).join(', ')})` 
         : novel.title;
         
+      // Determine TTS provider from voice choice
+      const ttsProvider = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'].includes(voice) ? 'gemini' : 'openai';
+
       const audiobook = await storage.createAudiobook({
         novelId,
         userId,
         title: audiobookTitle,
+        ttsProvider,
         voice: voice as any,
         model: model as any,
         speed,
@@ -3712,11 +3716,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             novel.title,
             audiobookChapters,
             {
+              ttsProvider,
               voice: voice as any,
               model: model as any,
               speed: speed / 100, // Convert percentage to decimal
               format: format as any,
-              // Provider will be auto-determined by AudiobookService based on voice
               backgroundMusic: req.body.backgroundMusic ? {
                 enabled: Boolean(req.body.backgroundMusic.enabled),
                 musicType: typeof req.body.backgroundMusic.musicType === 'string' ? req.body.backgroundMusic.musicType : 'ambient',
@@ -3875,6 +3879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const audioBuffer = await audiobookService.generateVoicePreview(
         sampleText,
         {
+          ttsProvider: 'openai',
           voice: voice as any,
           model: 'tts-1',
           speed: speed,
@@ -4041,6 +4046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             novel.title,
             audiobookChapters,
             {
+              ttsProvider: audiobook.ttsProvider as any || 'openai',
               voice: audiobook.voice as any,
               model: audiobook.model as any,
               speed: (audiobook.speed || 100) / 100,

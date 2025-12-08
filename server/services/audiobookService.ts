@@ -1,13 +1,18 @@
 import { openai } from './openai';
+import { GeminiTtsService, GeminiVoice } from './geminiTts';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import { ObjectStorageService } from '../objectStorage';
 import { isWrittenNumberChapterHeading } from '../utils/numberParser';
 
+export type TtsProvider = 'openai' | 'gemini';
+export type TtsVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' | GeminiVoice;
+
 export interface AudiobookOptions {
-  voice: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
-  model: 'tts-1' | 'tts-1-hd';
+  ttsProvider: TtsProvider; // openai or gemini
+  voice: TtsVoice;
+  model: 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts';
   speed: number; // 0.25 to 4.0
   format: 'mp3' | 'opus' | 'aac' | 'flac';
   backgroundMusic?: {
@@ -39,11 +44,19 @@ export class AudiobookService {
   private baseAudioDir = './temp/audiobooks';
   private musicDir = './temp/music';
   private objectStorage: ObjectStorageService;
+  private geminiTts: GeminiTtsService | null;
 
   constructor() {
     this.ensureAudioDirectory();
     this.ensureMusicDirectory();
     this.objectStorage = new ObjectStorageService();
+    this.geminiTts = null;
+    try {
+      this.geminiTts = new GeminiTtsService();
+      console.log('✅ Gemini TTS service initialized');
+    } catch (error) {
+      console.warn('⚠️ Gemini TTS not available:', error instanceof Error ? error.message : 'Unknown error');
+    }
   }
 
   private async ensureAudioDirectory() {
@@ -216,9 +229,12 @@ export class AudiobookService {
   }
 
   /**
-   * Generate audio for a single chapter using OpenAI TTS
+   * Generate audio for a single chapter using selected TTS provider
    */
   private async generateChapterAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
+    if (options.ttsProvider === 'gemini') {
+      return this.generateGeminiAudio(text, options);
+    }
     return this.generateOpenAIAudio(text, options);
   }
 
@@ -241,8 +257,8 @@ export class AudiobookService {
         console.log(`🎵 Processing OpenAI chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
         
         const response = await openai.audio.speech.create({
-          model: options.model,
-          voice: options.voice,
+          model: options.model as 'tts-1' | 'tts-1-hd',
+          voice: options.voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
           input: chunk,
           response_format: options.format as any,
           speed: options.speed,
@@ -257,13 +273,37 @@ export class AudiobookService {
       const finalBuffer = Buffer.concat(audioBuffers);
       console.log(`✅ OpenAI TTS completed with ${chunks.length} chunks (${finalBuffer.length} bytes total)`);
       
-      // Audio normalization temporarily disabled for stability
-      // Re-enable when audio normalization is fully tested
       return finalBuffer;
       
     } catch (error: any) {
       console.error('❌ OpenAI TTS API error:', error);
       throw new Error(`Failed to generate audio: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generate audio using Gemini TTS
+   */
+  private async generateGeminiAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
+    console.log(`🔧 Starting Gemini TTS generation. Text length: ${text.length} characters`);
+    
+    if (!this.geminiTts) {
+      throw new Error('Gemini TTS service not available. Please set GOOGLE_CLOUD_TTS_API_KEY');
+    }
+
+    try {
+      const audioBuffer = await this.geminiTts.generateAudio(text, {
+        voice: options.voice as GeminiVoice,
+        model: options.model as 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts',
+        speed: options.speed,
+      });
+
+      console.log(`✅ Gemini TTS completed (${audioBuffer.length} bytes)`);
+      return audioBuffer;
+
+    } catch (error: any) {
+      console.error('❌ Gemini TTS API error:', error);
+      throw new Error(`Failed to generate audio with Gemini: ${error.message}`);
     }
   }
 

@@ -383,6 +383,7 @@ export class MemStorage implements IStorage {
       id,
       novelId: insertAudiobook.novelId,
       title: insertAudiobook.title,
+      ttsProvider: insertAudiobook.ttsProvider || 'openai',
       voice: insertAudiobook.voice || 'alloy',
       model: insertAudiobook.model || 'tts-1',
       speed: insertAudiobook.speed || 100,
