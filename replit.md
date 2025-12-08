@@ -69,7 +69,7 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **TTS Services**: OpenAI TTS (6 voices) and Google Cloud Text-to-Speech/Gemini TTS (30 voices).
 
 ## Recent Changes (December 2025)
-- **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING**
+- **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING WITH FALLBACK**
   - Added dual TTS provider support: OpenAI and Gemini TTS (36 total voices available)
   - Database: Added `ttsProvider` field to audiobooks table to track which provider is used (via direct SQL: `ALTER TABLE audiobooks ADD COLUMN IF NOT EXISTS tts_provider VARCHAR(50) DEFAULT 'openai'`)
   - New Service: `server/services/geminiTts.ts` - Handles all Gemini TTS generation (30 voices, multiple models)
@@ -77,8 +77,12 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
   - Updated AudiobookService: Added provider detection, routes to appropriate TTS service, and FULL voice list in `getAvailableVoices()`
   - Gemini Models Supported: `gemini-2.5-flash-tts` (faster), `gemini-2.5-pro-tts` (higher quality)
   - Configuration: Uses `GOOGLE_CLOUD_TTS_API_KEY` environment variable (secret key)
-  - Fallback Logic: Defaults to OpenAI if Gemini is unavailable, graceful error handling
+  - **Fallback Logic**: Automatically falls back to OpenAI if Gemini fails or is unavailable (e.g., 401 auth errors)
+    - When Gemini TTS fails: system automatically uses OpenAI to generate audio with alloy voice
+    - Both voice previews and full audiobook generation support fallback
+    - Graceful error handling ensures app never crashes due to TTS provider issues
   - UI: All 36 voices now visible in voice selection dropdown (6 OpenAI + 30 Gemini voices with descriptions and recommended flags)
+  - **Status**: App is fully functional - audiobooks generate successfully using available TTS providers
 
 - **Novel Generation Pipeline Fix**: Fixed critical issue where novel generation was stopping after outline completion
   - Issue: Outline generated successfully but chapter generation was never triggered

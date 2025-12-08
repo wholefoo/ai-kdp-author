@@ -288,7 +288,8 @@ export class AudiobookService {
     console.log(`🔧 Starting Gemini TTS generation. Text length: ${text.length} characters`);
     
     if (!this.geminiTts) {
-      throw new Error('Gemini TTS service not available. Please set GOOGLE_CLOUD_TTS_API_KEY');
+      console.warn('⚠️ Gemini TTS service not available. Falling back to OpenAI...');
+      return this.generateOpenAIAudio(text, options);
     }
 
     try {
@@ -302,8 +303,15 @@ export class AudiobookService {
       return audioBuffer;
 
     } catch (error: any) {
-      console.error('❌ Gemini TTS API error:', error);
-      throw new Error(`Failed to generate audio with Gemini: ${error.message}`);
+      console.error('❌ Gemini TTS API error:', error.message);
+      console.warn('⚠️ Gemini TTS failed. Falling back to OpenAI for audio generation...');
+      
+      // Fallback to OpenAI when Gemini fails (e.g., authentication errors)
+      try {
+        return await this.generateOpenAIAudio(text, options);
+      } catch (fallbackError: any) {
+        throw new Error(`Both Gemini and OpenAI TTS failed. Gemini: ${error.message}, OpenAI: ${fallbackError.message}`);
+      }
     }
   }
 
@@ -1134,16 +1142,32 @@ export class AudiobookService {
       // Route to correct TTS provider
       if (options.ttsProvider === 'gemini') {
         console.log(`🔀 Routing to Gemini TTS for preview`);
-        const { GeminiTtsService } = await import('./geminiTts');
-        const geminiService = new GeminiTtsService();
-        const audioBuffer = await geminiService.generateAudio(limitedText, {
-          voice: options.voice as any,
-          model: (options.model === 'gemini-2.5-flash-tts' || options.model === 'gemini-2.5-pro-tts' ? options.model : 'gemini-2.5-flash-tts') as any,
-          speed: normalizedSpeed,
-          language: 'en'
-        });
-        console.log(`✅ Voice preview generated successfully with Gemini (${audioBuffer.length} bytes)`);
-        return audioBuffer;
+        try {
+          const { GeminiTtsService } = await import('./geminiTts');
+          const geminiService = new GeminiTtsService();
+          const audioBuffer = await geminiService.generateAudio(limitedText, {
+            voice: options.voice as any,
+            model: (options.model === 'gemini-2.5-flash-tts' || options.model === 'gemini-2.5-pro-tts' ? options.model : 'gemini-2.5-flash-tts') as any,
+            speed: normalizedSpeed,
+            language: 'en'
+          });
+          console.log(`✅ Voice preview generated successfully with Gemini (${audioBuffer.length} bytes)`);
+          return audioBuffer;
+        } catch (geminiError: any) {
+          console.warn(`⚠️ Gemini preview failed: ${geminiError.message}. Falling back to OpenAI...`);
+          // Fallback to OpenAI
+          const response = await openai.audio.speech.create({
+            model: 'tts-1',
+            voice: 'alloy' as any,
+            input: limitedText,
+            response_format: options.format as any,
+            speed: normalizedSpeed,
+          });
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          console.log(`✅ Voice preview fallback to OpenAI (${buffer.length} bytes)`);
+          return buffer;
+        }
       } else {
         // Use OpenAI for preview
         console.log(`🔀 Routing to OpenAI TTS for preview`);
