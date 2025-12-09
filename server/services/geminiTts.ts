@@ -18,7 +18,6 @@ export interface GeminiTtsOptions {
 
 export class GeminiTtsService {
   private apiKey: string;
-  private apiEndpoint = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
   constructor() {
     this.apiKey = process.env.GOOGLE_CLOUD_TTS_API_KEY || '';
@@ -28,7 +27,7 @@ export class GeminiTtsService {
   }
 
   /**
-   * Generate audio from text using Gemini TTS API
+   * Generate audio from text using Google Cloud Text-to-Speech API with Gemini voices
    */
   async generateAudio(text: string, options: GeminiTtsOptions): Promise<Buffer> {
     console.log(`🎙️ Generating audio with Gemini TTS using voice: ${options.voice}`);
@@ -37,7 +36,7 @@ export class GeminiTtsService {
       // Google Cloud TTS API has a 5000 character limit per request
       // Use 4500 to leave safe margin
       const chunks = this.splitTextIntoChunks(text, 4500);
-      console.log(`📝 Split text into ${chunks.length} chunks for Google Cloud TTS processing`);
+      console.log(`📝 Split text into ${chunks.length} chunks for Gemini TTS processing`);
       
       const audioBuffers: Buffer[] = [];
       
@@ -61,12 +60,16 @@ export class GeminiTtsService {
   }
 
   /**
-   * Synthesize a single chunk of text
+   * Synthesize a single chunk of text using Google Cloud Text-to-Speech API
+   * Note: Using API key authentication (may require service account for production)
    */
   private async synthesizeChunk(text: string, options: GeminiTtsOptions): Promise<Buffer> {
     try {
+      // Use Google Cloud Text-to-Speech API with simple API key authentication
+      const endpoint = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${this.apiKey}`;
+      
       const response = await axios.post(
-        this.apiEndpoint,
+        endpoint,
         {
           input: {
             text: text
@@ -77,13 +80,12 @@ export class GeminiTtsService {
           },
           audioConfig: {
             audioEncoding: 'MP3',
-            speakingRate: options.speed,
+            speakingRate: Math.max(0.25, Math.min(4.0, options.speed)),
             pitch: 0.0
           }
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           },
           timeout: 30000
@@ -99,6 +101,9 @@ export class GeminiTtsService {
       throw new Error('No audio content in response');
     } catch (error: any) {
       console.error('Error synthesizing chunk:', error.message);
+      if (error.response?.status === 401) {
+        console.error('❌ Authentication failed - Gemini TTS API key may be invalid or for wrong service');
+      }
       throw error;
     }
   }

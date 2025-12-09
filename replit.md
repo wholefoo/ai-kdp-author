@@ -68,6 +68,20 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **Email Service**: Resend for transactional emails (welcome, subscription confirmation, novel/audiobook completion, upgrade prompts).
 - **TTS Services**: OpenAI TTS (6 voices) and Google Cloud Text-to-Speech/Gemini TTS (30 voices).
 
+## Current Issues & Limitations
+
+**Gemini TTS Authentication Issue (BLOCKING)**
+- Status: Gemini TTS (30 voices) failing with 401 authentication errors
+- Root Cause: GOOGLE_CLOUD_TTS_API_KEY secret is invalid or incompatible
+- Workaround: System automatically falls back to OpenAI TTS with alloy voice
+- Impact: All 30 Gemini voices display in UI and can be selected, but generate audio with OpenAI fallback
+- Solution: User must provide a valid Google Cloud Text-to-Speech API key with:
+  - API Key type: Service Account Key (JSON) or Simple API Key
+  - Enabled services: Google Cloud Text-to-Speech API
+  - Proper permissions for tts.googleapis.com
+- Recommendation: Use only OpenAI voices (6 available) for now until Gemini TTS auth is resolved
+- Alternative: Remove Gemini TTS entirely and use OpenAI-only for simplicity
+
 ## Recent Changes (December 2025)
 - **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING WITH FALLBACK**
   - Added dual TTS provider support: OpenAI and Gemini TTS (36 total voices available)
