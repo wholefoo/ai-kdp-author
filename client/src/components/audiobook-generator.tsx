@@ -22,9 +22,13 @@ interface AudiobookGeneratorProps {
 
 interface Voice {
   voice: string;
+  name: string;
   description: string;
   gender: string;
   recommended: boolean;
+  characteristics: string[];
+  bestFor: string;
+  provider: 'openai' | 'gemini';
 }
 
 interface Audiobook {

@@ -19,6 +19,7 @@ interface Voice {
   recommended: boolean;
   characteristics: string[];
   bestFor: string;
+  provider: 'openai' | 'gemini';
 }
 
 interface SampleText {
@@ -175,9 +176,14 @@ export function VoicePreviewSelector({
                             </Badge>
                           )}
                         </Label>
-                        <Badge variant="outline" className="ml-2 text-xs">
-                          {voice.gender}
-                        </Badge>
+                        <div className="flex gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {voice.gender}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {voice.provider === 'openai' ? '🎤 OpenAI' : '✨ Gemini'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                     <Button
