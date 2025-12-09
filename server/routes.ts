@@ -3688,7 +3688,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : novel.title;
         
       // Determine TTS provider from voice choice
-      const ttsProvider = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'].includes(voice) ? 'gemini' : 'openai';
+      const geminiVoiceList = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'];
+      const ttsProvider = geminiVoiceList.includes(voice) ? 'gemini' : 'openai';
+      // Auto-select correct model based on provider
+      const selectedModel = ttsProvider === 'gemini' ? 'gemini-2.5-flash-tts' : model;
 
       const audiobook = await storage.createAudiobook({
         novelId,
@@ -3696,7 +3699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: audiobookTitle,
         ttsProvider,
         voice: voice as any,
-        model: model as any,
+        model: selectedModel as any,
         speed,
         format: format as any,
         selectedChapters: selectedChapterIndices,
@@ -3718,7 +3721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {
               ttsProvider,
               voice: voice as any,
-              model: model as any,
+              model: selectedModel as any,
               speed: speed / 100, // Convert percentage to decimal
               format: format as any,
               backgroundMusic: req.body.backgroundMusic ? {
