@@ -468,7 +468,7 @@ export class AudiobookService {
   }
 
   /**
-   * Check if content already has a chapter heading
+   * Check if content already has a chapter heading and optionally remove it
    */
   private hasChapterHeading(content: string): boolean {
     const trimmedContent = content.trim();
@@ -488,7 +488,31 @@ export class AudiobookService {
   }
 
   /**
+   * Remove chapter heading from content if it exists at the start
+   * This prevents duplicate chapter numbers in the audio
+   */
+  private removeChapterHeading(content: string): string {
+    const trimmedContent = content.trim();
+    const lines = trimmedContent.split('\n');
+    const firstLine = lines[0].trim();
+    
+    const chapterPatterns = [
+      /^chapter\s+\d+/i,
+      /^chapter\s+[ivxlcdm]+/i,
+      /^chapter\s+(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)/i
+    ];
+    
+    if (isWrittenNumberChapterHeading(firstLine) || chapterPatterns.some(pattern => pattern.test(firstLine))) {
+      // Remove the first line (the chapter heading)
+      return lines.slice(1).join('\n').trim();
+    }
+    
+    return content;
+  }
+
+  /**
    * Prepare chapter text for audio generation
+   * CRITICAL: Only use the exact content from DOCX, no added chapter numbers if heading already exists
    */
   private prepareChapterText(chapter: AudiobookChapter): string {
     let content: string;
@@ -511,13 +535,17 @@ export class AudiobookService {
       .replace(/\s+/g, ' ')
       .trim();
 
+    // CRITICAL FIX: Check if content already has a chapter heading
     const hasExistingHeading = this.hasChapterHeading(content);
     let text = '';
     
     if (hasExistingHeading) {
+      // Use content exactly as-is from DOCX (including existing heading)
+      // Do NOT add another chapter announcement to avoid duplicates
       text = content;
-      console.log(`✅ Chapter ${chapter.chapterNumber} content already includes chapter heading`);
+      console.log(`✅ Chapter ${chapter.chapterNumber} content already includes chapter heading - using as-is from DOCX`);
     } else {
+      // Only add chapter announcement if the DOCX content doesn't already have one
       let chapterAnnouncement = '';
       if (chapter.title && chapter.title.toLowerCase().includes('chapter')) {
         chapterAnnouncement = chapter.title;

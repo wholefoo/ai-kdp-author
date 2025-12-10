@@ -82,6 +82,12 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - Recommendation: Use only OpenAI voices (6 available) for now until Gemini TTS auth is resolved
 - Alternative: Remove Gemini TTS entirely and use OpenAI-only for simplicity
 
+**FIXED: Audiobook Content Accuracy (December 10, 2025)**
+- Issue: Audiobook generation was duplicating chapter headings when DOCX content already included them
+- Impact: Opening/closing audio files (and all chapters) could have duplicate "Chapter 1" labels
+- Solution: Enhanced heading detection in `prepareChapterText()` method now detects existing chapter headings and uses content exactly as-is from DOCX without adding duplicate announcements
+- Result: Audio files now match DOCX content precisely - no added chapter numbers to KDP submissions
+
 ## Recent Changes (December 2025)
 - **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING WITH FALLBACK**
   - Added dual TTS provider support: OpenAI and Gemini TTS (36 total voices available)
