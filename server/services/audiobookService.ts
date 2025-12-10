@@ -545,17 +545,27 @@ export class AudiobookService {
       text = content;
       console.log(`✅ Chapter ${chapter.chapterNumber} content already includes chapter heading - using as-is from DOCX`);
     } else {
-      // Only add chapter announcement if the DOCX content doesn't already have one
-      let chapterAnnouncement = '';
-      if (chapter.title && chapter.title.toLowerCase().includes('chapter')) {
-        chapterAnnouncement = chapter.title;
-      } else if (chapter.title && chapter.title.trim() !== '') {
-        chapterAnnouncement = `Chapter ${chapter.chapterNumber}: ${chapter.title}`;
+      // Check if the title is just the auto-assigned generic "Chapter X" (from DOCX import)
+      // If so, don't add it as an announcement - just use the content as-is
+      const isGenericTitle = chapter.title && /^chapter\s+\d+$/i.test(chapter.title.trim());
+      
+      if (isGenericTitle) {
+        // Auto-assigned generic title - just use content without adding announcement
+        text = content;
+        console.log(`✅ Chapter ${chapter.chapterNumber} has auto-assigned generic title - using content as-is from DOCX (no announcement added)`);
       } else {
-        chapterAnnouncement = `Chapter ${chapter.chapterNumber}`;
+        // Real chapter title provided - add announcement
+        let chapterAnnouncement = '';
+        if (chapter.title && chapter.title.toLowerCase().includes('chapter')) {
+          chapterAnnouncement = chapter.title;
+        } else if (chapter.title && chapter.title.trim() !== '') {
+          chapterAnnouncement = `Chapter ${chapter.chapterNumber}: ${chapter.title}`;
+        } else {
+          chapterAnnouncement = `Chapter ${chapter.chapterNumber}`;
+        }
+        text = `${chapterAnnouncement}\n\n${content}`;
+        console.log(`📢 Added chapter announcement for Chapter ${chapter.chapterNumber}`);
       }
-      text = `${chapterAnnouncement}\n\n${content}`;
-      console.log(`📢 Added chapter announcement for Chapter ${chapter.chapterNumber}`);
     }
     
     console.log(`📊 Prepared text length: ${text.length} characters`);

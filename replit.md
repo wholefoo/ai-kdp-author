@@ -83,10 +83,16 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - Alternative: Remove Gemini TTS entirely and use OpenAI-only for simplicity
 
 **FIXED: Audiobook Content Accuracy (December 10, 2025)**
-- Issue: Audiobook generation was duplicating chapter headings when DOCX content already included them
-- Impact: Opening/closing audio files (and all chapters) could have duplicate "Chapter 1" labels
-- Solution: Enhanced heading detection in `prepareChapterText()` method now detects existing chapter headings and uses content exactly as-is from DOCX without adding duplicate announcements
-- Result: Audio files now match DOCX content precisely - no added chapter numbers to KDP submissions
+- Issue: Audiobook generation was incorrectly adding "Chapter 1" announcements to opening/closing files
+- Root Cause: DOCX upload assigns generic "Chapter X" titles to all content, then audiobook generation was repeating those as announcements
+- Solution: 
+  1. Detects when a chapter has an existing chapter heading in the DOCX content - if found, uses content as-is
+  2. Detects when a chapter has only the auto-assigned generic title "Chapter X" from DOCX import - if found, uses content as-is without adding announcement
+  3. Only adds chapter announcements for chapters with real/meaningful titles
+- Result: 
+  - Opening/closing DOCX files now generate audio with ONLY their exact content (no added "Chapter 1")
+  - Regular chapters with meaningful titles still get proper announcements
+  - Full KDP compliance - no duplicate chapter numbers in submissions
 
 ## Recent Changes (December 2025)
 - **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING WITH FALLBACK**
