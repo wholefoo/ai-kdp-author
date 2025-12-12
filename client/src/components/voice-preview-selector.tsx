@@ -19,7 +19,7 @@ interface Voice {
   recommended: boolean;
   characteristics: string[];
   bestFor: string;
-  provider: 'openai' | 'gemini';
+  provider: 'deepgram' | 'openai' | 'gemini';
 }
 
 interface SampleText {

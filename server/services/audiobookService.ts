@@ -1,18 +1,19 @@
 import { openai } from './openai';
 import { GeminiTtsService, GeminiVoice } from './geminiTts';
+import { DeepgramTtsService, DeepgramVoice } from './deepgramTts';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import { ObjectStorageService } from '../objectStorage';
 import { isWrittenNumberChapterHeading } from '../utils/numberParser';
 
-export type TtsProvider = 'openai' | 'gemini';
-export type TtsVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' | GeminiVoice;
+export type TtsProvider = 'deepgram' | 'openai' | 'gemini';
+export type TtsVoice = DeepgramVoice | 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' | GeminiVoice;
 
 export interface AudiobookOptions {
-  ttsProvider: TtsProvider; // openai or gemini
+  ttsProvider: TtsProvider; // deepgram (primary), openai, or gemini
   voice: TtsVoice;
-  model: 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts';
+  model: 'aura-2' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts';
   speed: number; // 0.25 to 4.0
   format: 'mp3' | 'opus' | 'aac' | 'flac';
   backgroundMusic?: {
@@ -44,12 +45,29 @@ export class AudiobookService {
   private baseAudioDir = './temp/audiobooks';
   private musicDir = './temp/music';
   private objectStorage: ObjectStorageService;
+  private deepgramTts: DeepgramTtsService | null;
   private geminiTts: GeminiTtsService | null;
 
   constructor() {
     this.ensureAudioDirectory();
     this.ensureMusicDirectory();
     this.objectStorage = new ObjectStorageService();
+    
+    // Initialize Deepgram TTS (primary provider)
+    this.deepgramTts = null;
+    try {
+      this.deepgramTts = new DeepgramTtsService();
+      if (this.deepgramTts.isAvailable()) {
+        console.log('✅ Deepgram TTS service initialized (primary)');
+      } else {
+        console.warn('⚠️ Deepgram TTS not available - DEEPGRAM_API_KEY not set');
+        this.deepgramTts = null;
+      }
+    } catch (error) {
+      console.warn('⚠️ Deepgram TTS not available:', error instanceof Error ? error.message : 'Unknown error');
+    }
+    
+    // Initialize Gemini TTS (fallback)
     this.geminiTts = null;
     try {
       this.geminiTts = new GeminiTtsService();
@@ -234,12 +252,50 @@ export class AudiobookService {
 
   /**
    * Generate audio for a single chapter using selected TTS provider
+   * Provider priority: deepgram (primary) > openai > gemini
    */
   private async generateChapterAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
+    if (options.ttsProvider === 'deepgram') {
+      return this.generateDeepgramAudio(text, options);
+    }
     if (options.ttsProvider === 'gemini') {
       return this.generateGeminiAudio(text, options);
     }
     return this.generateOpenAIAudio(text, options);
+  }
+
+  /**
+   * Generate audio using Deepgram Aura TTS (Primary Provider)
+   */
+  private async generateDeepgramAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
+    console.log(`🔧 Starting Deepgram TTS generation. Text length: ${text.length} characters`);
+    
+    if (!this.deepgramTts) {
+      console.warn('⚠️ Deepgram TTS service not available. Falling back to OpenAI...');
+      return this.generateOpenAIAudio(text, options);
+    }
+
+    try {
+      const audioBuffer = await this.deepgramTts.generateAudio(text, {
+        voice: options.voice as DeepgramVoice,
+        speed: options.speed,
+        encoding: options.format === 'mp3' ? 'mp3' : options.format === 'aac' ? 'aac' : options.format === 'opus' ? 'opus' : 'mp3',
+      });
+
+      console.log(`✅ Deepgram TTS completed (${audioBuffer.length} bytes)`);
+      return audioBuffer;
+
+    } catch (error: any) {
+      console.error('❌ Deepgram TTS API error:', error.message);
+      console.warn('⚠️ Deepgram TTS failed. Falling back to OpenAI for audio generation...');
+      
+      // Fallback to OpenAI when Deepgram fails
+      try {
+        return await this.generateOpenAIAudio(text, options);
+      } catch (fallbackError: any) {
+        throw new Error(`Both Deepgram and OpenAI TTS failed. Deepgram: ${error.message}, OpenAI: ${fallbackError.message}`);
+      }
+    }
   }
 
   /**
@@ -949,10 +1005,58 @@ export class AudiobookService {
     recommended: boolean,
     characteristics: string[],
     bestFor: string,
-    provider: 'openai' | 'gemini'
+    provider: 'deepgram' | 'openai' | 'gemini'
   }> {
     return [
-      // OpenAI voices
+      // DEEPGRAM VOICES (PRIMARY - Featured first)
+      { voice: 'aura-2-athena-en', name: 'Athena', description: 'Calm, smooth, professional - Perfect for storytelling', gender: 'female', recommended: true, characteristics: ['Calm', 'Smooth', 'Professional'], bestFor: 'Storytelling and audiobooks', provider: 'deepgram' },
+      { voice: 'aura-2-orpheus-en', name: 'Orpheus', description: 'Professional, clear, confident, trustworthy', gender: 'male', recommended: true, characteristics: ['Professional', 'Clear', 'Confident'], bestFor: 'Customer service, storytelling', provider: 'deepgram' },
+      { voice: 'aura-2-cora-en', name: 'Cora', description: 'Smooth, melodic, caring - Great for narratives', gender: 'female', recommended: true, characteristics: ['Smooth', 'Melodic', 'Caring'], bestFor: 'Storytelling', provider: 'deepgram' },
+      { voice: 'aura-2-draco-en', name: 'Draco', description: 'Warm, approachable, trustworthy - British accent', gender: 'male', recommended: true, characteristics: ['Warm', 'Approachable', 'Baritone'], bestFor: 'Storytelling', provider: 'deepgram' },
+      { voice: 'aura-2-pluto-en', name: 'Pluto', description: 'Smooth, calm, empathetic - Deep baritone', gender: 'male', recommended: true, characteristics: ['Smooth', 'Calm', 'Empathetic'], bestFor: 'Interview, storytelling', provider: 'deepgram' },
+      { voice: 'aura-2-zeus-en', name: 'Zeus', description: 'Deep, trustworthy, smooth', gender: 'male', recommended: true, characteristics: ['Deep', 'Trustworthy', 'Smooth'], bestFor: 'IVR and formal content', provider: 'deepgram' },
+      { voice: 'aura-2-thalia-en', name: 'Thalia', description: 'Clear, confident, energetic, enthusiastic', gender: 'female', recommended: false, characteristics: ['Clear', 'Confident', 'Energetic'], bestFor: 'Casual chat, customer service', provider: 'deepgram' },
+      { voice: 'aura-2-andromeda-en', name: 'Andromeda', description: 'Casual, expressive, comfortable', gender: 'female', recommended: false, characteristics: ['Casual', 'Expressive', 'Comfortable'], bestFor: 'Customer service, IVR', provider: 'deepgram' },
+      { voice: 'aura-2-helena-en', name: 'Helena', description: 'Caring, natural, positive, friendly', gender: 'female', recommended: false, characteristics: ['Caring', 'Natural', 'Friendly'], bestFor: 'IVR, casual chat', provider: 'deepgram' },
+      { voice: 'aura-2-apollo-en', name: 'Apollo', description: 'Confident, comfortable, casual', gender: 'male', recommended: false, characteristics: ['Confident', 'Comfortable', 'Casual'], bestFor: 'Casual chat', provider: 'deepgram' },
+      { voice: 'aura-2-arcas-en', name: 'Arcas', description: 'Natural, smooth, clear, comfortable', gender: 'male', recommended: false, characteristics: ['Natural', 'Smooth', 'Clear'], bestFor: 'Customer service, casual chat', provider: 'deepgram' },
+      { voice: 'aura-2-aries-en', name: 'Aries', description: 'Warm, energetic, caring', gender: 'male', recommended: false, characteristics: ['Warm', 'Energetic', 'Caring'], bestFor: 'Casual chat', provider: 'deepgram' },
+      { voice: 'aura-2-amalthea-en', name: 'Amalthea', description: 'Engaging, natural, cheerful - Filipino accent', gender: 'female', recommended: false, characteristics: ['Engaging', 'Natural', 'Cheerful'], bestFor: 'Casual chat', provider: 'deepgram' },
+      { voice: 'aura-2-asteria-en', name: 'Asteria', description: 'Clear, confident, knowledgeable', gender: 'female', recommended: false, characteristics: ['Clear', 'Confident', 'Knowledgeable'], bestFor: 'Advertising', provider: 'deepgram' },
+      { voice: 'aura-2-atlas-en', name: 'Atlas', description: 'Enthusiastic, confident, approachable', gender: 'male', recommended: false, characteristics: ['Enthusiastic', 'Confident', 'Approachable'], bestFor: 'Advertising', provider: 'deepgram' },
+      { voice: 'aura-2-aurora-en', name: 'Aurora', description: 'Cheerful, expressive, energetic', gender: 'female', recommended: false, characteristics: ['Cheerful', 'Expressive', 'Energetic'], bestFor: 'Interview', provider: 'deepgram' },
+      { voice: 'aura-2-callista-en', name: 'Callista', description: 'Clear, energetic, professional', gender: 'female', recommended: false, characteristics: ['Clear', 'Energetic', 'Professional'], bestFor: 'IVR', provider: 'deepgram' },
+      { voice: 'aura-2-cordelia-en', name: 'Cordelia', description: 'Approachable, warm, polite', gender: 'female', recommended: false, characteristics: ['Approachable', 'Warm', 'Polite'], bestFor: 'Storytelling', provider: 'deepgram' },
+      { voice: 'aura-2-delia-en', name: 'Delia', description: 'Casual, friendly, cheerful', gender: 'female', recommended: false, characteristics: ['Casual', 'Friendly', 'Cheerful'], bestFor: 'Interview', provider: 'deepgram' },
+      { voice: 'aura-2-electra-en', name: 'Electra', description: 'Professional, engaging, knowledgeable', gender: 'female', recommended: false, characteristics: ['Professional', 'Engaging', 'Knowledgeable'], bestFor: 'IVR, advertising', provider: 'deepgram' },
+      { voice: 'aura-2-harmonia-en', name: 'Harmonia', description: 'Empathetic, clear, calm', gender: 'female', recommended: false, characteristics: ['Empathetic', 'Clear', 'Calm'], bestFor: 'Customer service', provider: 'deepgram' },
+      { voice: 'aura-2-hera-en', name: 'Hera', description: 'Smooth, warm, professional', gender: 'female', recommended: false, characteristics: ['Smooth', 'Warm', 'Professional'], bestFor: 'Informative', provider: 'deepgram' },
+      { voice: 'aura-2-hermes-en', name: 'Hermes', description: 'Expressive, engaging, professional', gender: 'male', recommended: false, characteristics: ['Expressive', 'Engaging', 'Professional'], bestFor: 'Informative', provider: 'deepgram' },
+      { voice: 'aura-2-hyperion-en', name: 'Hyperion', description: 'Caring, warm, empathetic - Australian', gender: 'male', recommended: false, characteristics: ['Caring', 'Warm', 'Empathetic'], bestFor: 'Interview', provider: 'deepgram' },
+      { voice: 'aura-2-iris-en', name: 'Iris', description: 'Cheerful, positive, approachable', gender: 'female', recommended: false, characteristics: ['Cheerful', 'Positive', 'Approachable'], bestFor: 'IVR, advertising', provider: 'deepgram' },
+      { voice: 'aura-2-janus-en', name: 'Janus', description: 'Southern, smooth, trustworthy', gender: 'female', recommended: false, characteristics: ['Southern', 'Smooth', 'Trustworthy'], bestFor: 'Storytelling', provider: 'deepgram' },
+      { voice: 'aura-2-juno-en', name: 'Juno', description: 'Natural, engaging, melodic', gender: 'female', recommended: false, characteristics: ['Natural', 'Engaging', 'Melodic'], bestFor: 'Interview', provider: 'deepgram' },
+      { voice: 'aura-2-jupiter-en', name: 'Jupiter', description: 'Expressive, knowledgeable, baritone', gender: 'male', recommended: false, characteristics: ['Expressive', 'Knowledgeable', 'Baritone'], bestFor: 'Informative', provider: 'deepgram' },
+      { voice: 'aura-2-luna-en', name: 'Luna', description: 'Friendly, natural, engaging', gender: 'female', recommended: false, characteristics: ['Friendly', 'Natural', 'Engaging'], bestFor: 'IVR', provider: 'deepgram' },
+      { voice: 'aura-2-mars-en', name: 'Mars', description: 'Smooth, patient, trustworthy', gender: 'male', recommended: false, characteristics: ['Smooth', 'Patient', 'Trustworthy'], bestFor: 'Customer service', provider: 'deepgram' },
+      { voice: 'aura-2-minerva-en', name: 'Minerva', description: 'Positive, friendly, natural', gender: 'female', recommended: false, characteristics: ['Positive', 'Friendly', 'Natural'], bestFor: 'Storytelling', provider: 'deepgram' },
+      { voice: 'aura-2-neptune-en', name: 'Neptune', description: 'Professional, patient, polite', gender: 'male', recommended: false, characteristics: ['Professional', 'Patient', 'Polite'], bestFor: 'Customer service', provider: 'deepgram' },
+      { voice: 'aura-2-odysseus-en', name: 'Odysseus', description: 'Calm, smooth, comfortable', gender: 'male', recommended: false, characteristics: ['Calm', 'Smooth', 'Comfortable'], bestFor: 'Advertising', provider: 'deepgram' },
+      { voice: 'aura-2-ophelia-en', name: 'Ophelia', description: 'Expressive, enthusiastic, cheerful', gender: 'female', recommended: false, characteristics: ['Expressive', 'Enthusiastic', 'Cheerful'], bestFor: 'Interview', provider: 'deepgram' },
+      { voice: 'aura-2-orion-en', name: 'Orion', description: 'Approachable, comfortable, calm', gender: 'male', recommended: false, characteristics: ['Approachable', 'Comfortable', 'Calm'], bestFor: 'Informative', provider: 'deepgram' },
+      { voice: 'aura-2-pandora-en', name: 'Pandora', description: 'Smooth, calm, melodic - British', gender: 'female', recommended: false, characteristics: ['Smooth', 'Calm', 'Melodic'], bestFor: 'IVR, informative', provider: 'deepgram' },
+      { voice: 'aura-2-phoebe-en', name: 'Phoebe', description: 'Energetic, warm, casual', gender: 'female', recommended: false, characteristics: ['Energetic', 'Warm', 'Casual'], bestFor: 'Customer service', provider: 'deepgram' },
+      { voice: 'aura-2-saturn-en', name: 'Saturn', description: 'Knowledgeable, confident, baritone', gender: 'male', recommended: false, characteristics: ['Knowledgeable', 'Confident', 'Baritone'], bestFor: 'Customer service', provider: 'deepgram' },
+      { voice: 'aura-2-selene-en', name: 'Selene', description: 'Expressive, engaging, energetic', gender: 'female', recommended: false, characteristics: ['Expressive', 'Engaging', 'Energetic'], bestFor: 'Informative', provider: 'deepgram' },
+      { voice: 'aura-2-theia-en', name: 'Theia', description: 'Expressive, polite, sincere - Australian', gender: 'female', recommended: false, characteristics: ['Expressive', 'Polite', 'Sincere'], bestFor: 'Informative', provider: 'deepgram' },
+      { voice: 'aura-2-vesta-en', name: 'Vesta', description: 'Natural, expressive, patient', gender: 'female', recommended: false, characteristics: ['Natural', 'Expressive', 'Patient'], bestFor: 'Customer service, storytelling', provider: 'deepgram' },
+      // DEEPGRAM Spanish Voices
+      { voice: 'aura-2-celeste-es', name: 'Celeste (Spanish)', description: 'Clear, energetic, positive - Colombian', gender: 'female', recommended: false, characteristics: ['Clear', 'Energetic', 'Positive'], bestFor: 'Spanish casual chat', provider: 'deepgram' },
+      { voice: 'aura-2-estrella-es', name: 'Estrella (Spanish)', description: 'Approachable, natural, calm - Mexican', gender: 'female', recommended: false, characteristics: ['Approachable', 'Natural', 'Calm'], bestFor: 'Spanish casual chat', provider: 'deepgram' },
+      { voice: 'aura-2-nestor-es', name: 'Nestor (Spanish)', description: 'Calm, professional - Peninsular', gender: 'male', recommended: false, characteristics: ['Calm', 'Professional', 'Approachable'], bestFor: 'Spanish customer service', provider: 'deepgram' },
+      { voice: 'aura-2-javier-es', name: 'Javier (Spanish)', description: 'Approachable, professional - Mexican', gender: 'male', recommended: false, characteristics: ['Approachable', 'Professional', 'Friendly'], bestFor: 'Spanish storytelling', provider: 'deepgram' },
+      
+      // OpenAI voices (fallback)
       { 
         voice: 'alloy', 
         name: 'Alloy',
@@ -1336,7 +1440,38 @@ export class AudiobookService {
       
       console.log(`🎤 Voice preview request - Original speed: ${options.speed}, Normalized: ${normalizedSpeed}`);
       
-      // Route to correct TTS provider
+      // Route to correct TTS provider - Deepgram is primary
+      if (options.ttsProvider === 'deepgram') {
+        console.log(`🔀 Routing to Deepgram TTS for preview`);
+        try {
+          const { DeepgramTtsService } = await import('./deepgramTts');
+          const deepgramService = new DeepgramTtsService();
+          if (deepgramService.isAvailable()) {
+            const audioBuffer = await deepgramService.generateAudio(limitedText, {
+              voice: options.voice as any,
+              speed: normalizedSpeed,
+              encoding: 'mp3'
+            });
+            console.log(`✅ Voice preview generated successfully with Deepgram (${audioBuffer.length} bytes)`);
+            return audioBuffer;
+          } else {
+            console.warn(`⚠️ Deepgram not available. Falling back to OpenAI...`);
+          }
+        } catch (deepgramError: any) {
+          console.warn(`⚠️ Deepgram preview failed: ${deepgramError.message}. Falling back to OpenAI...`);
+        }
+        // Fallback to OpenAI
+        const response = await openai.audio.speech.create({
+          model: 'tts-1',
+          voice: 'alloy' as any,
+          input: limitedText,
+          response_format: 'mp3',
+          speed: normalizedSpeed
+        });
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+      
       if (options.ttsProvider === 'gemini') {
         console.log(`🔀 Routing to Gemini TTS for preview`);
         try {

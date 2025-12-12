@@ -243,9 +243,9 @@ export const audiobooks = pgTable("audiobooks", {
   novelId: varchar("novel_id").notNull(),
   userId: varchar("user_id"),
   title: text("title").notNull(),
-  ttsProvider: varchar("tts_provider").notNull().default("openai"), // openai, gemini
-  voice: varchar("voice").notNull().default("alloy"), // OpenAI: alloy, echo, fable, onyx, nova, shimmer | Gemini: Zephyr, Puck, Charon, etc.
-  model: varchar("model").notNull().default("tts-1"), // OpenAI: tts-1, tts-1-hd | Gemini: gemini-2.5-flash-tts, gemini-2.5-pro-tts
+  ttsProvider: varchar("tts_provider").notNull().default("deepgram"), // deepgram (primary), openai, gemini
+  voice: varchar("voice").notNull().default("aura-2-athena-en"), // Deepgram: aura-2-* voices | OpenAI: alloy, echo, fable, onyx, nova, shimmer | Gemini: Zephyr, Puck, Charon, etc.
+  model: varchar("model").notNull().default("aura-2"), // Deepgram: aura-2 | OpenAI: tts-1, tts-1-hd | Gemini: gemini-2.5-flash-tts, gemini-2.5-pro-tts
   speed: integer("speed").default(100), // 25-400 (stored as percentage)
   format: varchar("format").default("mp3"), // mp3, opus, aac, flac
   status: text("status").notNull().default("pending"), // pending, generating, completed, failed, partial_completed

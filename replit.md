@@ -38,7 +38,7 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **AI Integration**: OpenAI GPT-5 for all core generation and analysis tasks.
 - **Character Development**: AI-powered Interview Mode, Emotional Journey Mapping, Character Growth Suggestions.
 - **Manuscript Analysis**: Advanced Grammar & Style Checker, Manuscript Style and Tone Consistency Checker, Comprehensive Manuscript Quality Analyzer.
-- **Audiobook Generation**: Dual TTS support - OpenAI (6 voices: alloy, echo, fable, onyx, nova, shimmer) and Gemini (30 voices: Zephyr, Puck, Charon, Kore, Fenrir, Leda, Orus, Aoede, Callirrhoe, Autonoe, Enceladus, Iapetus, Umbriel, Algieba, Despina, Erinome, Algenib, Laomedeia, Achernar, Alnilam, Schedar, Gacrux, Pulcherrima, Achird, Zubenelgenubi, Rasalgethi, Sadachbia, Sadaltager, Sulafat, Vindemiatrix).
+- **Audiobook Generation**: Triple TTS support - Deepgram Aura-2 (PRIMARY, 45+ voices with sub-200ms latency), OpenAI (6 voices: alloy, echo, fable, onyx, nova, shimmer), and Gemini (30 voices as fallback).
 - **Customization**: Adjustable word count (30K-120K), chapter count (10-50), chapter length (1.5K-5K words).
 - **Export & Preview**: DOCX (native JS library), PDF, Markdown, TXT with customizable formatting.
 - **Development Workflow**: Monorepo structure with end-to-end TypeScript.
@@ -66,7 +66,7 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 - **Authentication**: Replit OpenID Connect.
 - **Payment Processing**: Stripe.
 - **Email Service**: Resend for transactional emails (welcome, subscription confirmation, novel/audiobook completion, upgrade prompts).
-- **TTS Services**: OpenAI TTS (6 voices) and Google Cloud Text-to-Speech/Gemini TTS (30 voices).
+- **TTS Services**: Deepgram Aura-2 (45+ voices, PRIMARY), OpenAI TTS (6 voices, fallback), Google Cloud Text-to-Speech/Gemini TTS (30 voices, fallback).
 
 ## Current Issues & Limitations
 
@@ -154,11 +154,20 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 
 ## TTS Provider Comparison
 
-| Feature | OpenAI | Gemini |
-|---------|--------|--------|
-| Available Voices | 6 | 30 |
-| Model Options | tts-1, tts-1-hd | gemini-2.5-flash-tts, gemini-2.5-pro-tts |
-| Language Support | 50+ | 70+ locales, 24 languages |
-| Speed Control | Yes (0.25-4.0) | Yes (0.25-4.0) |
-| Default Provider | Yes | Optional (requires API key) |
-| Use Case | Quick generation, consistent quality | Advanced voice variety, multi-language support |
+| Feature | Deepgram (PRIMARY) | OpenAI | Gemini |
+|---------|-------------------|--------|--------|
+| Available Voices | 45+ | 6 | 30 |
+| Model Options | aura-2 | tts-1, tts-1-hd | gemini-2.5-flash-tts, gemini-2.5-pro-tts |
+| Language Support | English, Spanish | 50+ | 70+ locales, 24 languages |
+| Speed Control | Yes (0.25-2.0) | Yes (0.25-4.0) | Yes (0.25-4.0) |
+| Latency | Sub-200ms (fastest) | ~500ms | ~800ms |
+| Default Provider | Yes (requires DEEPGRAM_API_KEY) | Fallback | Fallback |
+| Use Case | Audiobook narration, storytelling | Quick generation | Multi-language support |
+
+## Deepgram Setup (Required for Primary TTS)
+
+To use Deepgram as the primary TTS provider:
+1. Sign up at https://deepgram.com
+2. Create an API key in the Deepgram Console
+3. Add `DEEPGRAM_API_KEY` to Replit secrets
+4. If Deepgram is unavailable, system automatically falls back to OpenAI

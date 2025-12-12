@@ -28,7 +28,7 @@ interface Voice {
   recommended: boolean;
   characteristics: string[];
   bestFor: string;
-  provider: 'openai' | 'gemini';
+  provider: 'deepgram' | 'openai' | 'gemini';
 }
 
 interface Audiobook {
@@ -54,8 +54,8 @@ interface Audiobook {
 export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGeneratorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedVoice, setSelectedVoice] = useState('alloy');
-  const [selectedModel, setSelectedModel] = useState('tts-1');
+  const [selectedVoice, setSelectedVoice] = useState('aura-2-athena-en');
+  const [selectedModel, setSelectedModel] = useState('aura-2');
   const [selectedSpeed, setSelectedSpeed] = useState(100);
   const [selectedFormat, setSelectedFormat] = useState('mp3');
   
