@@ -917,6 +917,21 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                       )}
                     </div>
                   )}
+
+                  {/* Resume button for failed audiobooks with no completed chapters */}
+                  {(audiobook.status === 'failed' || audiobook.status === 'partial_completed') && (!audiobook.progress?.completedChapters || audiobook.progress.completedChapters === 0) && (
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleResumeAudiobook(audiobook.id, audiobook.title)}
+                        data-testid={`button-resume-failed-${audiobook.id}`}
+                      >
+                        <Play className="h-4 w-4 mr-1" />
+                        Retry Generation
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
