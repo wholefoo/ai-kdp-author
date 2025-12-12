@@ -181,7 +181,7 @@ export function VoicePreviewSelector({
                             {voice.gender}
                           </Badge>
                           <Badge variant="outline" className="text-xs capitalize">
-                            {voice.provider === 'openai' ? '🎤 OpenAI' : '✨ Gemini'}
+                            {voice.provider === 'deepgram' ? '🎧 Deepgram' : voice.provider === 'openai' ? '🎤 OpenAI' : '✨ Gemini'}
                           </Badge>
                         </div>
                       </div>
