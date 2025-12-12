@@ -3687,11 +3687,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `${novel.title} (Chapters ${selectedChapterIndices.map(i => i + 1).join(', ')})` 
         : novel.title;
         
-      // Determine TTS provider from voice choice
+      // Determine TTS provider from voice choice - Deepgram is primary
       const geminiVoiceList = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'];
-      const ttsProvider = geminiVoiceList.includes(voice) ? 'gemini' : 'openai';
+      const isDeepgramVoice = voice.startsWith('aura-') || voice.startsWith('aura2-');
+      const isGeminiVoice = geminiVoiceList.includes(voice);
+      const ttsProvider = isDeepgramVoice ? 'deepgram' : isGeminiVoice ? 'gemini' : 'openai';
       // Auto-select correct model based on provider
-      const selectedModel = ttsProvider === 'gemini' ? 'gemini-2.5-flash-tts' : model;
+      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-tts' : model;
 
       const audiobook = await storage.createAudiobook({
         novelId,
