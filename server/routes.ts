@@ -3879,16 +3879,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { AudiobookService } = await import('./services/audiobookService');
       const audiobookService = new AudiobookService();
-      // Determine TTS provider from voice choice
+      // Determine TTS provider from voice choice - Deepgram is primary
       const geminiVoices = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'];
-      const previewProvider = geminiVoices.includes(voice) ? 'gemini' : 'openai';
+      const openaiVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+      const isDeepgramVoice = voice.startsWith('aura-') || voice.startsWith('aura2-');
+      const isGeminiVoice = geminiVoices.includes(voice);
+      const previewProvider = isDeepgramVoice ? 'deepgram' : isGeminiVoice ? 'gemini' : 'openai';
 
       const audioBuffer = await audiobookService.generateVoicePreview(
         sampleText,
         {
           ttsProvider: previewProvider,
           voice: voice as any,
-          model: previewProvider === 'gemini' ? 'gemini-2.5-flash-tts' : 'tts-1',
+          model: previewProvider === 'deepgram' ? 'aura-2' : previewProvider === 'gemini' ? 'gemini-2.5-flash-tts' : 'tts-1',
           speed: speed,
           format: 'mp3'
         }
