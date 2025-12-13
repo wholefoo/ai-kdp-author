@@ -35,7 +35,7 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 
 ### Core Features
 - **Novel Generation**: Multi-step AI-driven process (outline, chapter-by-chapter generation, compilation).
-- **AI Integration**: OpenAI GPT-5 for all core generation and analysis tasks.
+- **AI Integration**: OpenAI GPT-5.2 for all core generation and analysis tasks (upgraded from GPT-5.1).
 - **Character Development**: AI-powered Interview Mode, Emotional Journey Mapping, Character Growth Suggestions.
 - **Manuscript Analysis**: Advanced Grammar & Style Checker, Manuscript Style and Tone Consistency Checker, Comprehensive Manuscript Quality Analyzer.
 - **Audiobook Generation**: Triple TTS support - Deepgram Aura-2 (PRIMARY, 45+ voices with sub-200ms latency), OpenAI (6 voices: alloy, echo, fable, onyx, nova, shimmer), and Gemini (30 voices as fallback).

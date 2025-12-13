@@ -108,7 +108,7 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.8
@@ -163,7 +163,7 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.3
@@ -226,7 +226,7 @@ Respond in JSON format where each character name is a key:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.7
@@ -263,7 +263,7 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         temperature: 0.4
@@ -321,7 +321,7 @@ Format your response as JSON:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: interviewPrompt }],
         response_format: { type: "json_object" },
         temperature: 0.7
@@ -393,7 +393,7 @@ Format as JSON matching the expected structure with baseline, journey phases, em
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: emotionalPrompt }],
         response_format: { type: "json_object" },
         temperature: 0.6
@@ -449,7 +449,7 @@ Format as JSON matching the expected structure.`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: growthPrompt }],
         response_format: { type: "json_object" },
         temperature: 0.7

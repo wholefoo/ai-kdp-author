@@ -176,7 +176,7 @@ Respond in JSON format:
       while (attempts < maxAttempts) {
         try {
           response = await openai.chat.completions.create({
-            model: "gpt-5.1", // Updated to ChatGPT 5.1
+            model: "gpt-5.2", // Updated to ChatGPT 5.2
             messages: [{ role: "user", content: cleanupPrompt }],
             response_format: { type: "json_object" },
             temperature: 0.3,
@@ -339,7 +339,7 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1", // Updated to ChatGPT 5.1
+        model: "gpt-5.2", // Updated to ChatGPT 5.2
         messages: [{ role: "user", content: analysisPrompt }],
         response_format: { type: "json_object" },
         temperature: 0.3

@@ -60,7 +60,7 @@ Return the enhanced chapter with consistent formatting, proper length, and profe
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
         max_completion_tokens: 16000

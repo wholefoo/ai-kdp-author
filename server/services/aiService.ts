@@ -1,12 +1,12 @@
 import OpenAI from "openai";
 
-// AI service with GPT-5.1 primary and GPT-4o emergency fallback
+// AI service with GPT-5.2 primary and GPT-4o emergency fallback
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Model configuration
-const PRIMARY_MODEL = "gpt-5.1"; // OpenAI GPT-5.1 (primary)
+const PRIMARY_MODEL = "gpt-5.2"; // OpenAI GPT-5.2 (primary)
 const FALLBACK_MODEL = "gpt-4o"; // OpenAI GPT-4o (emergency fallback only)
 
 export interface AIRequest {
@@ -50,14 +50,14 @@ export class UnifiedAIService {
     };
 
     // Handle different parameter names for different models
-    if (modelName === "gpt-5.1") {
-      // GPT-5.1 specific configuration - needs substantial tokens for reasoning and content
+    if (modelName === "gpt-5.2") {
+      // GPT-5.2 specific configuration - needs substantial tokens for reasoning and content
       const baseTokens = request.maxTokens || 16000;
-      // GPT-5.1 needs extremely high token limits to avoid truncation on complex tasks
+      // GPT-5.2 needs extremely high token limits to avoid truncation on complex tasks
       // Allocate 4-5x the base tokens for complete responses
       requestData.max_completion_tokens = 128000; // Use the highest reasonable limit (prevents truncation)
-      console.log(`🧠 GPT-5.1 token allocation: ${requestData.max_completion_tokens} tokens (generous limit to prevent truncation)`);
-      // GPT-5.1 supports temperature=1 for consistency
+      console.log(`🧠 GPT-5.2 token allocation: ${requestData.max_completion_tokens} tokens (generous limit to prevent truncation)`);
+      // GPT-5.2 supports temperature=1 for consistency
       requestData.temperature = 1;
     } else {
       // GPT-4o and other models
@@ -170,7 +170,7 @@ export class UnifiedAIService {
         maxTokens: 50 // GPT-5 needs tokens for reasoning + content
       };
       
-      const response = await this.callOpenAI(testRequest, 'gpt-5.1');
+      const response = await this.callOpenAI(testRequest, 'gpt-5.2');
       console.log(`🧪 GPT-5 test response:`, response.content);
       return true;
     } catch (error) {
