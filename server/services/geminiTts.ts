@@ -13,10 +13,14 @@ export interface GeminiTtsOptions {
   model: 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
   speed: number;
   language?: string;
+  styleHint?: string;
+  maxCharsPerChunk?: number;
+  pauseMsBetweenChunks?: number;
 }
 
 const PCM_SAMPLE_RATE = 24000;
 const PCM_CHANNELS = 1;
+const PCM_BYTES_PER_SAMPLE = 2;
 
 function pcmToMp3Buffer(pcmBuffer: Buffer, { bitrateKbps = 192 } = {}): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -55,6 +59,91 @@ function pcmToMp3Buffer(pcmBuffer: Buffer, { bitrateKbps = 192 } = {}): Promise<
   });
 }
 
+function makeSilencePcm(ms: number): Buffer {
+  const samples = Math.max(0, Math.floor((PCM_SAMPLE_RATE * ms) / 1000));
+  const bytes = samples * PCM_CHANNELS * PCM_BYTES_PER_SAMPLE;
+  return Buffer.alloc(bytes, 0);
+}
+
+function splitIntoNarrationChunks(text: string, {
+  maxChars = 1400,
+  minChunkChars = 300,
+} = {}): string[] {
+  const normalized = String(text)
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  if (!normalized) return [];
+
+  const parts = normalized.split(/(?<=[.!?]["')\]]?)\s+(?=[A-Z0-9""(\[])/g);
+
+  const chunks: string[] = [];
+  let current = "";
+
+  const pushCurrent = () => {
+    const c = current.trim();
+    if (c) chunks.push(c);
+    current = "";
+  };
+
+  for (const p of parts) {
+    const piece = p.trim();
+    if (!piece) continue;
+
+    if (!current) {
+      current = piece;
+      continue;
+    }
+
+    if ((current.length + 1 + piece.length) <= maxChars) {
+      current += " " + piece;
+      continue;
+    }
+
+    if (current.length >= minChunkChars) {
+      pushCurrent();
+      current = piece;
+      continue;
+    }
+
+    pushCurrent();
+    current = piece;
+  }
+
+  pushCurrent();
+
+  const hardSplit: string[] = [];
+  for (const c of chunks) {
+    if (c.length <= maxChars) {
+      hardSplit.push(c);
+      continue;
+    }
+    let i = 0;
+    while (i < c.length) {
+      hardSplit.push(c.slice(i, i + maxChars).trim());
+      i += maxChars;
+    }
+  }
+
+  const merged: string[] = [];
+  for (const c of hardSplit) {
+    if (!merged.length) {
+      merged.push(c);
+      continue;
+    }
+    const prev = merged[merged.length - 1];
+    if (c.length < Math.floor(minChunkChars / 2) && (prev.length + 1 + c.length) <= maxChars) {
+      merged[merged.length - 1] = (prev + " " + c).trim();
+    } else {
+      merged.push(c);
+    }
+  }
+
+  return merged;
+}
+
 export class GeminiTtsService {
   private client: GoogleGenAI;
 
@@ -67,38 +156,59 @@ export class GeminiTtsService {
   }
 
   async generateAudio(text: string, options: GeminiTtsOptions): Promise<Buffer> {
+    const maxCharsPerChunk = options.maxCharsPerChunk || 1400;
+    const pauseMsBetweenChunks = options.pauseMsBetweenChunks ?? 120;
+    
     console.log(`🎙️ Generating audio with Gemini TTS using voice: ${options.voice}`);
     
     try {
-      const chunks = this.splitTextIntoChunks(text, 4500);
+      const chunks = splitIntoNarrationChunks(text, {
+        maxChars: maxCharsPerChunk,
+        minChunkChars: 300,
+      });
+      
       console.log(`📝 Split text into ${chunks.length} chunks for Gemini TTS processing`);
       
-      const audioBuffers: Buffer[] = [];
+      if (!chunks.length) return Buffer.alloc(0);
+
+      const silence = pauseMsBetweenChunks > 0 ? makeSilencePcm(pauseMsBetweenChunks) : null;
+      const pcmParts: Buffer[] = [];
       
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        console.log(`🎵 Processing Gemini chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
+      for (let idx = 0; idx < chunks.length; idx++) {
+        console.log(`🎵 Processing Gemini chunk ${idx + 1}/${chunks.length} (${chunks[idx].length} chars)`);
         
-        const audioBuffer = await this.synthesizeChunk(chunk, options);
-        audioBuffers.push(audioBuffer);
-        console.log(`✅ Gemini chunk ${i + 1} completed (${audioBuffer.length} bytes)`);
+        const pcm = await this.synthesizeChunkToPcm(chunks[idx], options);
+        pcmParts.push(pcm);
+        
+        if (silence && idx < chunks.length - 1) {
+          pcmParts.push(silence);
+        }
+        
+        console.log(`✅ Gemini chunk ${idx + 1} completed (${pcm.length} bytes PCM)`);
       }
       
-      const finalBuffer = Buffer.concat(audioBuffers);
-      console.log(`✅ Gemini TTS completed with ${chunks.length} chunks (${finalBuffer.length} bytes total)`);
+      const fullPcm = Buffer.concat(pcmParts);
+      console.log(`🔄 Converting ${fullPcm.length} bytes PCM to MP3...`);
       
-      return finalBuffer;
+      const mp3Buffer = await pcmToMp3Buffer(fullPcm, { bitrateKbps: 192 });
+      console.log(`✅ Gemini TTS completed (${mp3Buffer.length} bytes MP3)`);
+      
+      return mp3Buffer;
     } catch (error: any) {
       console.error('❌ Gemini TTS API error:', error.message);
       throw new Error(`Failed to generate audio with Gemini: ${error.message}`);
     }
   }
 
-  private async synthesizeChunk(text: string, options: GeminiTtsOptions): Promise<Buffer> {
+  private async synthesizeChunkToPcm(textChunk: string, options: GeminiTtsOptions): Promise<Buffer> {
     try {
+      const prompt = options.styleHint?.trim()
+        ? `${options.styleHint.trim()}\n\n${textChunk.trim()}`
+        : textChunk.trim();
+
       const response = await this.client.models.generateContent({
         model: options.model,
-        contents: [{ parts: [{ text }] }],
+        contents: [{ parts: [{ text: prompt }] }],
         config: {
           responseModalities: ['AUDIO'],
           speechConfig: {
@@ -113,13 +223,10 @@ export class GeminiTtsService {
 
       const b64 = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!b64) {
-        throw new Error('No audio content in Gemini response');
+        throw new Error('No audio returned from Gemini for chunk');
       }
 
-      const pcmBuffer = Buffer.from(b64, 'base64');
-      const mp3Buffer = await pcmToMp3Buffer(pcmBuffer, { bitrateKbps: 192 });
-      
-      return mp3Buffer;
+      return Buffer.from(b64, 'base64');
     } catch (error: any) {
       console.error('Error synthesizing chunk with Gemini:', error.message);
       if (error.message?.includes('401') || error.message?.includes('UNAUTHENTICATED')) {
@@ -127,24 +234,6 @@ export class GeminiTtsService {
       }
       throw error;
     }
-  }
-
-  private splitTextIntoChunks(text: string, maxChunkSize: number): string[] {
-    const chunks: string[] = [];
-    const sentences = text.split(/(?<=[.!?])\s+/);
-    let currentChunk = '';
-
-    for (const sentence of sentences) {
-      if ((currentChunk + sentence).length <= maxChunkSize) {
-        currentChunk += (currentChunk ? ' ' : '') + sentence;
-      } else {
-        if (currentChunk) chunks.push(currentChunk);
-        currentChunk = sentence;
-      }
-    }
-
-    if (currentChunk) chunks.push(currentChunk);
-    return chunks;
   }
 
   static getAvailableVoices(): GeminiVoice[] {
