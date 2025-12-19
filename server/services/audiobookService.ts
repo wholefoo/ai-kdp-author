@@ -11,7 +11,7 @@ export type TtsProvider = 'deepgram' | 'openai' | 'gemini';
 export type TtsVoice = DeepgramVoice | 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' | GeminiVoice;
 
 export interface AudiobookOptions {
-  ttsProvider: TtsProvider; // deepgram (primary), openai, or gemini
+  ttsProvider: TtsProvider; // gemini (primary), deepgram, or openai
   voice: TtsVoice;
   model: 'aura-2' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
   speed: number; // 0.25 to 4.0
@@ -53,27 +53,27 @@ export class AudiobookService {
     this.ensureMusicDirectory();
     this.objectStorage = new ObjectStorageService();
     
-    // Initialize Deepgram TTS (primary provider)
+    // Initialize Gemini TTS (PRIMARY provider - 30 voices with advanced caching)
+    this.geminiTts = null;
+    try {
+      this.geminiTts = new GeminiTtsService();
+      console.log('✅ Gemini TTS service initialized (PRIMARY)');
+    } catch (error) {
+      console.warn('⚠️ Gemini TTS not available:', error instanceof Error ? error.message : 'Unknown error');
+    }
+    
+    // Initialize Deepgram TTS (fallback)
     this.deepgramTts = null;
     try {
       this.deepgramTts = new DeepgramTtsService();
       if (this.deepgramTts.isAvailable()) {
-        console.log('✅ Deepgram TTS service initialized (primary)');
+        console.log('✅ Deepgram TTS service initialized (fallback)');
       } else {
         console.warn('⚠️ Deepgram TTS not available - DEEPGRAM_API_KEY not set');
         this.deepgramTts = null;
       }
     } catch (error) {
       console.warn('⚠️ Deepgram TTS not available:', error instanceof Error ? error.message : 'Unknown error');
-    }
-    
-    // Initialize Gemini TTS (fallback)
-    this.geminiTts = null;
-    try {
-      this.geminiTts = new GeminiTtsService();
-      console.log('✅ Gemini TTS service initialized');
-    } catch (error) {
-      console.warn('⚠️ Gemini TTS not available:', error instanceof Error ? error.message : 'Unknown error');
     }
   }
 
@@ -252,20 +252,20 @@ export class AudiobookService {
 
   /**
    * Generate audio for a single chapter using selected TTS provider
-   * Provider priority: deepgram (primary) > openai > gemini
+   * Provider priority: gemini (primary) > deepgram > openai
    */
   private async generateChapterAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
-    if (options.ttsProvider === 'deepgram') {
-      return this.generateDeepgramAudio(text, options);
-    }
     if (options.ttsProvider === 'gemini') {
       return this.generateGeminiAudio(text, options);
+    }
+    if (options.ttsProvider === 'deepgram') {
+      return this.generateDeepgramAudio(text, options);
     }
     return this.generateOpenAIAudio(text, options);
   }
 
   /**
-   * Generate audio using Deepgram Aura TTS (Primary Provider)
+   * Generate audio using Deepgram Aura TTS (Fallback Provider)
    */
   private async generateDeepgramAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
     console.log(`🔧 Starting Deepgram TTS generation. Text length: ${text.length} characters`);
@@ -342,14 +342,14 @@ export class AudiobookService {
   }
 
   /**
-   * Generate audio using Gemini TTS
+   * Generate audio using Gemini TTS (PRIMARY Provider)
    */
   private async generateGeminiAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
-    console.log(`🔧 Starting Gemini TTS generation. Text length: ${text.length} characters`);
+    console.log(`🔧 Starting Gemini TTS generation (PRIMARY). Text length: ${text.length} characters`);
     
     if (!this.geminiTts) {
-      console.warn('⚠️ Gemini TTS service not available. Falling back to OpenAI...');
-      return this.generateOpenAIAudio(text, options);
+      console.warn('⚠️ Gemini TTS service not available. Falling back to Deepgram...');
+      return this.generateDeepgramAudio(text, options);
     }
 
     try {
@@ -364,13 +364,19 @@ export class AudiobookService {
 
     } catch (error: any) {
       console.error('❌ Gemini TTS API error:', error.message);
-      console.warn('⚠️ Gemini TTS failed. Falling back to OpenAI for audio generation...');
+      console.warn('⚠️ Gemini TTS failed. Falling back to Deepgram for audio generation...');
       
-      // Fallback to OpenAI when Gemini fails (e.g., authentication errors)
+      // Fallback to Deepgram when Gemini fails
       try {
-        return await this.generateOpenAIAudio(text, options);
+        return await this.generateDeepgramAudio(text, options);
       } catch (fallbackError: any) {
-        throw new Error(`Both Gemini and OpenAI TTS failed. Gemini: ${error.message}, OpenAI: ${fallbackError.message}`);
+        // If Deepgram also fails, try OpenAI as last resort
+        console.warn('⚠️ Deepgram TTS also failed. Trying OpenAI as last resort...');
+        try {
+          return await this.generateOpenAIAudio(text, options);
+        } catch (openaiError: any) {
+          throw new Error(`All TTS providers failed. Gemini: ${error.message}, Deepgram: ${fallbackError.message}, OpenAI: ${openaiError.message}`);
+        }
       }
     }
   }
@@ -1008,8 +1014,310 @@ export class AudiobookService {
     provider: 'deepgram' | 'openai' | 'gemini'
   }> {
     return [
-      // DEEPGRAM VOICES (PRIMARY - Featured first)
-      { voice: 'aura-2-athena-en', name: 'Athena', description: 'Calm, smooth, professional - Perfect for storytelling', gender: 'female', recommended: true, characteristics: ['Calm', 'Smooth', 'Professional'], bestFor: 'Storytelling and audiobooks', provider: 'deepgram' },
+      // GEMINI VOICES (PRIMARY - Featured first with advanced caching)
+      { 
+        voice: 'Zephyr', 
+        name: 'Zephyr',
+        description: 'Dynamic, energetic voice - Perfect for audiobooks', 
+        gender: 'neutral', 
+        recommended: true,
+        characteristics: ['Energetic', 'Clear', 'Modern'],
+        bestFor: 'Contemporary fiction and tech content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Charon', 
+        name: 'Charon',
+        description: 'Deep, mysterious voice - Great for thrillers', 
+        gender: 'male', 
+        recommended: true,
+        characteristics: ['Deep', 'Mysterious', 'Commanding'],
+        bestFor: 'Dark fiction and thrillers',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Kore', 
+        name: 'Kore',
+        description: 'Warm, inviting female voice - Best for romance', 
+        gender: 'female', 
+        recommended: true,
+        characteristics: ['Warm', 'Friendly', 'Inviting'],
+        bestFor: 'Romance and character-driven stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Fenrir', 
+        name: 'Fenrir',
+        description: 'Strong, powerful voice - Epic fantasy narration', 
+        gender: 'male', 
+        recommended: true,
+        characteristics: ['Strong', 'Powerful', 'Bold'],
+        bestFor: 'Fantasy and adventure epics',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Aoede', 
+        name: 'Aoede',
+        description: 'Lyrical, soulful female voice - Emotional depth', 
+        gender: 'female', 
+        recommended: true,
+        characteristics: ['Lyrical', 'Soulful', 'Expressive'],
+        bestFor: 'Poetry and emotional narratives',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Puck', 
+        name: 'Puck',
+        description: 'Playful, youthful voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Playful', 'Young', 'Charming'],
+        bestFor: 'Comedy and light-hearted stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Leda', 
+        name: 'Leda',
+        description: 'Elegant, refined female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Elegant', 'Refined', 'Sophisticated'],
+        bestFor: 'Literary fiction and classics',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Orus', 
+        name: 'Orus',
+        description: 'Authoritative, commanding voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Authoritative', 'Commanding', 'Professional'],
+        bestFor: 'Documentary and educational content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Callirrhoe', 
+        name: 'Callirrhoe',
+        description: 'Sweet, gentle female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Sweet', 'Gentle', 'Tender'],
+        bestFor: 'Young adult romance',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Autonoe', 
+        name: 'Autonoe',
+        description: 'Clear, articulate female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Clear', 'Articulate', 'Precise'],
+        bestFor: 'Technical and instructional content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Enceladus', 
+        name: 'Enceladus',
+        description: 'Icy, cool male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Cool', 'Measured', 'Intriguing'],
+        bestFor: 'Sci-fi and speculative fiction',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Iapetus', 
+        name: 'Iapetus',
+        description: 'Ancient, wise male voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Wise', 'Ancient', 'Thoughtful'],
+        bestFor: 'Historical fiction and mythology',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Umbriel', 
+        name: 'Umbriel',
+        description: 'Shadowy, enigmatic voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Enigmatic', 'Shadowy', 'Mysterious'],
+        bestFor: 'Mystery and noir fiction',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Algieba', 
+        name: 'Algieba',
+        description: 'Bright, stellar voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Bright', 'Clear', 'Stellar'],
+        bestFor: 'Inspirational content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Despina', 
+        name: 'Despina',
+        description: 'Swift, nimble female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Swift', 'Nimble', 'Lively'],
+        bestFor: 'Action and adventure stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Erinome', 
+        name: 'Erinome',
+        description: 'Fierce, passionate female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Fierce', 'Passionate', 'Intense'],
+        bestFor: 'Drama and intense narratives',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Algenib', 
+        name: 'Algenib',
+        description: 'Distant, ethereal voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Ethereal', 'Distant', 'Dreamy'],
+        bestFor: 'Fantasy and dream sequences',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Laomedeia', 
+        name: 'Laomedeia',
+        description: 'Noble, regal female voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Noble', 'Regal', 'Dignified'],
+        bestFor: 'Royal and historical drama',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Achernar', 
+        name: 'Achernar',
+        description: 'End-of-river calm voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Calm', 'Flowing', 'Peaceful'],
+        bestFor: 'Meditation and calm narratives',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Alnilam', 
+        name: 'Alnilam',
+        description: 'Central, balanced voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Balanced', 'Central', 'Grounded'],
+        bestFor: 'General fiction and non-fiction',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Schedar', 
+        name: 'Schedar',
+        description: 'Breast of the queen - Nurturing voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Nurturing', 'Warm', 'Maternal'],
+        bestFor: 'Family and heartwarming stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Gacrux', 
+        name: 'Gacrux',
+        description: 'Southern cross - Guiding voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Guiding', 'Steady', 'Reliable'],
+        bestFor: 'Self-help and instructional content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Pulcherrima', 
+        name: 'Pulcherrima',
+        description: 'Most beautiful - Graceful voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Graceful', 'Beautiful', 'Elegant'],
+        bestFor: 'Romance and beauty content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Achird', 
+        name: 'Achird',
+        description: 'Girdled - Protective voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Protective', 'Strong', 'Supportive'],
+        bestFor: 'Adventure and hero narratives',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Zubenelgenubi', 
+        name: 'Zubenelgenubi',
+        description: 'Southern claw - Precise voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Precise', 'Sharp', 'Analytical'],
+        bestFor: 'Legal and procedural content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Rasalgethi', 
+        name: 'Rasalgethi',
+        description: 'Head of the kneeler - Humble voice', 
+        gender: 'male', 
+        recommended: false,
+        characteristics: ['Humble', 'Sincere', 'Grounded'],
+        bestFor: 'Memoir and personal stories',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Sadachbia', 
+        name: 'Sadachbia',
+        description: 'Lucky star - Optimistic voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Optimistic', 'Lucky', 'Bright'],
+        bestFor: 'Uplifting and positive content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Sadaltager', 
+        name: 'Sadaltager',
+        description: 'Luck of the merchant - Business voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Professional', 'Business', 'Clear'],
+        bestFor: 'Business and entrepreneurship content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Sulafat', 
+        name: 'Sulafat',
+        description: 'Tortoise - Steady, patient voice', 
+        gender: 'neutral', 
+        recommended: false,
+        characteristics: ['Patient', 'Steady', 'Methodical'],
+        bestFor: 'Educational and tutorial content',
+        provider: 'gemini'
+      },
+      { 
+        voice: 'Vindemiatrix', 
+        name: 'Vindemiatrix',
+        description: 'Grape gatherer - Harvest voice', 
+        gender: 'female', 
+        recommended: false,
+        characteristics: ['Warm', 'Earthy', 'Natural'],
+        bestFor: 'Nature and pastoral content',
+        provider: 'gemini'
+      },
+      
+      // DEEPGRAM VOICES (Fallback - 45+ voices)
+      { voice: 'aura-2-athena-en', name: 'Athena', description: 'Calm, smooth, professional - Perfect for storytelling', gender: 'female', recommended: false, characteristics: ['Calm', 'Smooth', 'Professional'], bestFor: 'Storytelling and audiobooks', provider: 'deepgram' },
       { voice: 'aura-2-orpheus-en', name: 'Orpheus', description: 'Professional, clear, confident, trustworthy', gender: 'male', recommended: true, characteristics: ['Professional', 'Clear', 'Confident'], bestFor: 'Customer service, storytelling', provider: 'deepgram' },
       { voice: 'aura-2-cora-en', name: 'Cora', description: 'Smooth, melodic, caring - Great for narratives', gender: 'female', recommended: true, characteristics: ['Smooth', 'Melodic', 'Caring'], bestFor: 'Storytelling', provider: 'deepgram' },
       { voice: 'aura-2-draco-en', name: 'Draco', description: 'Warm, approachable, trustworthy - British accent', gender: 'male', recommended: true, characteristics: ['Warm', 'Approachable', 'Baritone'], bestFor: 'Storytelling', provider: 'deepgram' },
@@ -1116,307 +1424,6 @@ export class AudiobookService {
         characteristics: ['Gentle', 'Soothing', 'Calming'],
         bestFor: 'Romance and literary fiction',
         provider: 'openai'
-      },
-      // Gemini voices
-      { 
-        voice: 'Zephyr', 
-        name: 'Zephyr',
-        description: 'Dynamic, energetic voice', 
-        gender: 'neutral', 
-        recommended: true,
-        characteristics: ['Energetic', 'Clear', 'Modern'],
-        bestFor: 'Contemporary fiction and tech content',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Puck', 
-        name: 'Puck',
-        description: 'Playful, youthful voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Playful', 'Young', 'Charming'],
-        bestFor: 'Comedy and light-hearted stories',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Charon', 
-        name: 'Charon',
-        description: 'Deep, mysterious voice', 
-        gender: 'male', 
-        recommended: true,
-        characteristics: ['Deep', 'Mysterious', 'Commanding'],
-        bestFor: 'Dark fiction and thrillers',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Kore', 
-        name: 'Kore',
-        description: 'Warm, inviting female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Warm', 'Friendly', 'Inviting'],
-        bestFor: 'Romance and character-driven stories',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Fenrir', 
-        name: 'Fenrir',
-        description: 'Strong, powerful voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Strong', 'Powerful', 'Bold'],
-        bestFor: 'Fantasy and adventure epics',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Leda', 
-        name: 'Leda',
-        description: 'Elegant, refined female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Elegant', 'Refined', 'Sophisticated'],
-        bestFor: 'Literary fiction and classics',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Orus', 
-        name: 'Orus',
-        description: 'Authoritative, commanding voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Authoritative', 'Commanding', 'Professional'],
-        bestFor: 'Documentary and educational content',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Aoede', 
-        name: 'Aoede',
-        description: 'Lyrical, soulful female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Lyrical', 'Soulful', 'Expressive'],
-        bestFor: 'Poetry and emotional narratives',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Callirrhoe', 
-        name: 'Callirrhoe',
-        description: 'Sweet, gentle female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Sweet', 'Gentle', 'Tender'],
-        bestFor: 'Young adult romance',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Autonoe', 
-        name: 'Autonoe',
-        description: 'Clear, articulate female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Clear', 'Articulate', 'Precise'],
-        bestFor: 'Technical and instructional content',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Enceladus', 
-        name: 'Enceladus',
-        description: 'Resonant, deep male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Resonant', 'Deep', 'Powerful'],
-        bestFor: 'Epic fantasy and science fiction',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Iapetus', 
-        name: 'Iapetus',
-        description: 'Gruff, distinctive male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Gruff', 'Distinctive', 'Character'],
-        bestFor: 'Western and noir fiction',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Umbriel', 
-        name: 'Umbriel',
-        description: 'Dark, brooding male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Dark', 'Brooding', 'Intense'],
-        bestFor: 'Horror and psychological thrillers',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Algieba', 
-        name: 'Algieba',
-        description: 'Smooth, suave male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Smooth', 'Suave', 'Sophisticated'],
-        bestFor: 'Crime fiction and detective stories',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Despina', 
-        name: 'Despina',
-        description: 'Playful, cheerful female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Playful', 'Cheerful', 'Upbeat'],
-        bestFor: 'Children\'s books and comedies',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Erinome', 
-        name: 'Erinome',
-        description: 'Vibrant, spirited female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Vibrant', 'Spirited', 'Energetic'],
-        bestFor: 'Adventure and action narratives',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Algenib', 
-        name: 'Algenib',
-        description: 'Warm, friendly male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Warm', 'Friendly', 'Approachable'],
-        bestFor: 'Self-help and inspirational books',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Laomedeia', 
-        name: 'Laomedeia',
-        description: 'Soothing, calming female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Soothing', 'Calming', 'Peaceful'],
-        bestFor: 'Meditation and wellness content',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Achernar', 
-        name: 'Achernar',
-        description: 'Bright, cheerful male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Bright', 'Cheerful', 'Uplifting'],
-        bestFor: 'Feel-good and humorous fiction',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Alnilam', 
-        name: 'Alnilam',
-        description: 'Majestic, grand voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Majestic', 'Grand', 'Epic'],
-        bestFor: 'High fantasy and mythology',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Schedar', 
-        name: 'Schedar',
-        description: 'Wise, seasoned male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Wise', 'Seasoned', 'Experienced'],
-        bestFor: 'Historical fiction and sagas',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Gacrux', 
-        name: 'Gacrux',
-        description: 'Dramatic, expressive male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Dramatic', 'Expressive', 'Theatrical'],
-        bestFor: 'Drama and character studies',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Pulcherrima', 
-        name: 'Pulcherrima',
-        description: 'Beautiful, melodious female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Beautiful', 'Melodious', 'Musical'],
-        bestFor: 'Lyrical narratives and poetry',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Achird', 
-        name: 'Achird',
-        description: 'Crisp, clear male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Crisp', 'Clear', 'Precise'],
-        bestFor: 'News and informative content',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Zubenelgenubi', 
-        name: 'Zubenelgenubi',
-        description: 'Balanced, neutral male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Balanced', 'Neutral', 'Professional'],
-        bestFor: 'Business and corporate content',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Rasalgethi', 
-        name: 'Rasalgethi',
-        description: 'Intense, passionate male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Intense', 'Passionate', 'Driven'],
-        bestFor: 'Motivational and passionate speeches',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Sadachbia', 
-        name: 'Sadachbia',
-        description: 'Soft, tender female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Soft', 'Tender', 'Delicate'],
-        bestFor: 'Intimate and personal narratives',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Sadaltager', 
-        name: 'Sadaltager',
-        description: 'Spirited, dynamic male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Spirited', 'Dynamic', 'Vibrant'],
-        bestFor: 'Action-packed and fast-paced stories',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Sulafat', 
-        name: 'Sulafat',
-        description: 'Rich, full male voice', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Rich', 'Full', 'Resonant'],
-        bestFor: 'Classical literature and adaptations',
-        provider: 'gemini'
-      },
-      { 
-        voice: 'Vindemiatrix', 
-        name: 'Vindemiatrix',
-        description: 'Ethereal, mystical female voice', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Ethereal', 'Mystical', 'Otherworldly'],
-        bestFor: 'Paranormal and magical realism',
-        provider: 'gemini'
       }
     ];
   }
@@ -1440,7 +1447,37 @@ export class AudiobookService {
       
       console.log(`🎤 Voice preview request - Original speed: ${options.speed}, Normalized: ${normalizedSpeed}`);
       
-      // Route to correct TTS provider - Deepgram is primary
+      // Route to correct TTS provider - Gemini is PRIMARY
+      if (options.ttsProvider === 'gemini') {
+        console.log(`🔀 Routing to Gemini TTS for preview (PRIMARY)`);
+        try {
+          const { GeminiTtsService } = await import('./geminiTts');
+          const geminiService = new GeminiTtsService();
+          const audioBuffer = await geminiService.generateAudio(limitedText, {
+            voice: options.voice as any,
+            model: (options.model === 'gemini-2.5-flash-preview-tts' || options.model === 'gemini-2.5-pro-preview-tts' ? options.model : 'gemini-2.5-flash-preview-tts') as any,
+            speed: normalizedSpeed,
+            language: 'en'
+          });
+          console.log(`✅ Voice preview generated successfully with Gemini (${audioBuffer.length} bytes)`);
+          return audioBuffer;
+        } catch (geminiError: any) {
+          console.warn(`⚠️ Gemini preview failed: ${geminiError.message}. Falling back to OpenAI...`);
+          // Fallback to OpenAI
+          const response = await openai.audio.speech.create({
+            model: 'tts-1',
+            voice: 'alloy' as any,
+            input: limitedText,
+            response_format: options.format as any,
+            speed: normalizedSpeed,
+          });
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          console.log(`✅ Voice preview fallback to OpenAI (${buffer.length} bytes)`);
+          return buffer;
+        }
+      }
+      
       if (options.ttsProvider === 'deepgram') {
         console.log(`🔀 Routing to Deepgram TTS for preview`);
         try {
@@ -1472,51 +1509,21 @@ export class AudiobookService {
         return Buffer.from(arrayBuffer);
       }
       
-      if (options.ttsProvider === 'gemini') {
-        console.log(`🔀 Routing to Gemini TTS for preview`);
-        try {
-          const { GeminiTtsService } = await import('./geminiTts');
-          const geminiService = new GeminiTtsService();
-          const audioBuffer = await geminiService.generateAudio(limitedText, {
-            voice: options.voice as any,
-            model: (options.model === 'gemini-2.5-flash-preview-tts' || options.model === 'gemini-2.5-pro-preview-tts' ? options.model : 'gemini-2.5-flash-preview-tts') as any,
-            speed: normalizedSpeed,
-            language: 'en'
-          });
-          console.log(`✅ Voice preview generated successfully with Gemini (${audioBuffer.length} bytes)`);
-          return audioBuffer;
-        } catch (geminiError: any) {
-          console.warn(`⚠️ Gemini preview failed: ${geminiError.message}. Falling back to OpenAI...`);
-          // Fallback to OpenAI
-          const response = await openai.audio.speech.create({
-            model: 'tts-1',
-            voice: 'alloy' as any,
-            input: limitedText,
-            response_format: options.format as any,
-            speed: normalizedSpeed,
-          });
-          const arrayBuffer = await response.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          console.log(`✅ Voice preview fallback to OpenAI (${buffer.length} bytes)`);
-          return buffer;
-        }
-      } else {
-        // Use OpenAI for preview
-        console.log(`🔀 Routing to OpenAI TTS for preview`);
-        const response = await openai.audio.speech.create({
-          model: options.model,
-          voice: options.voice as any,
-          input: limitedText,
-          response_format: options.format as any,
-          speed: normalizedSpeed,
-        });
+      // Use OpenAI for preview (fallback)
+      console.log(`🔀 Routing to OpenAI TTS for preview`);
+      const response = await openai.audio.speech.create({
+        model: options.model,
+        voice: options.voice as any,
+        input: limitedText,
+        response_format: options.format as any,
+        speed: normalizedSpeed,
+      });
 
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        
-        console.log(`✅ Voice preview generated successfully with OpenAI (${buffer.length} bytes)`);
-        return buffer;
-      }
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      
+      console.log(`✅ Voice preview generated successfully with OpenAI (${buffer.length} bytes)`);
+      return buffer;
       
     } catch (error: any) {
       console.error('❌ Voice preview generation failed:', error);
