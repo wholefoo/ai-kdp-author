@@ -92,6 +92,17 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
   - Full KDP compliance - no duplicate chapter numbers in submissions
 
 ## Recent Changes (December 2025)
+- **TTS Job Persistence & Resume Capability (December 19, 2025)**
+  - Jobs survive server restarts via persisted `cache/jobs/<jobId>.json` files
+  - If server restarts mid-job, status shows as "interrupted" - users can retry
+  - Per-chunk PCM caching means retries pick up fast from cached chunks
+  - New API endpoints for stateless result retrieval:
+    - `GET /api/tts-jobs` - List all TTS jobs
+    - `GET /api/tts-job/:jobId` - Get specific job status/progress
+    - `GET /api/tts-result/:jobId` - Download completed audio
+  - 7-day TTL for job metadata cleanup
+  - Implementation: `server/services/geminiTts.ts` with `createJob()`, `getJob()`, `getJobResult()` exports
+
 - **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING WITH FALLBACK**
   - Added dual TTS provider support: OpenAI and Gemini TTS (36 total voices available)
   - Database: Added `ttsProvider` field to audiobooks table to track which provider is used (via direct SQL: `ALTER TABLE audiobooks ADD COLUMN IF NOT EXISTS tts_provider VARCHAR(50) DEFAULT 'openai'`)

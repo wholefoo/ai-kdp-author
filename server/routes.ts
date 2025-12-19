@@ -3622,6 +3622,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // TTS Job Status and Recovery Routes (for resume-after-restart capability)
+  app.get("/api/tts-jobs", isAuthenticated, async (req: any, res) => {
+    try {
+      const { getJob, getAllJobs } = await import('./services/geminiTts');
+      const jobs = getAllJobs();
+      res.json({ jobs });
+    } catch (error: any) {
+      console.error("Error fetching TTS jobs:", error);
+      res.status(500).json({ error: "Failed to fetch TTS jobs" });
+    }
+  });
+
+  app.get("/api/tts-job/:jobId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { jobId } = req.params;
+      const { getJob } = await import('./services/geminiTts');
+      
+      const job = getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      res.json({ job });
+    } catch (error: any) {
+      console.error("Error fetching TTS job:", error);
+      res.status(500).json({ error: "Failed to fetch TTS job" });
+    }
+  });
+
+  app.get("/api/tts-result/:jobId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { jobId } = req.params;
+      const { getJob, getJobResult } = await import('./services/geminiTts');
+      
+      const job = getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      if (job.status !== 'done') {
+        return res.status(400).json({ 
+          error: "Job not complete",
+          status: job.status,
+          progress: job.progress 
+        });
+      }
+      
+      const audioBuffer = getJobResult(jobId);
+      if (!audioBuffer) {
+        return res.status(404).json({ error: "Audio file not found" });
+      }
+      
+      const contentType = job.format === 'wav' ? 'audio/wav' : 'audio/mpeg';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="audio.${job.format}"`);
+      res.send(audioBuffer);
+    } catch (error: any) {
+      console.error("Error fetching TTS result:", error);
+      res.status(500).json({ error: "Failed to fetch TTS result" });
+    }
+  });
+
   // Audiobook generation routes
   app.post("/api/audiobook/generate", isAuthenticated, async (req: any, res) => {
     try {

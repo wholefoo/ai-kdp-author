@@ -13,6 +13,27 @@ export type GeminiVoice =
 
 export type OutputFormat = 'mp3' | 'wav';
 
+export type TtsJobStatus = 'queued' | 'running' | 'done' | 'error' | 'interrupted';
+
+export interface TtsJobProgress {
+  total: number;
+  done: number;
+  pct: number;
+  message: string;
+}
+
+export interface TtsJobMeta {
+  jobId: string;
+  status: TtsJobStatus;
+  progress: TtsJobProgress;
+  outPath: string | null;
+  requestKey: string;
+  format: OutputFormat;
+  error: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface GeminiTtsOptions {
   voice: GeminiVoice;
   model: 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
@@ -27,6 +48,7 @@ export interface GeminiTtsOptions {
   pauseMsParagraph?: number;
   pauseMsHeading?: number;
   skipCache?: boolean;
+  jobId?: string;
 }
 
 interface ChunkWithPause {
@@ -41,17 +63,152 @@ const PCM_BYTES_PER_SAMPLE = 2;
 const CACHE_DIR = path.join(process.cwd(), 'cache');
 const PCM_DIR = path.join(CACHE_DIR, 'pcm');
 const OUT_DIR = path.join(CACHE_DIR, 'out');
+const JOB_DIR = path.join(CACHE_DIR, 'jobs');
 
 const CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 const CACHE_MAX_BYTES = 800 * 1024 * 1024;
 const CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
+const JOB_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const inFlightByKey = new Map<string, Promise<Buffer>>();
+const jobs = new Map<string, TtsJobMeta & { sseClients?: Set<any> }>();
+const inFlightByRequestKey = new Map<string, string>();
 
 try {
   fs.mkdirSync(PCM_DIR, { recursive: true });
   fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.mkdirSync(JOB_DIR, { recursive: true });
 } catch {}
+
+function makeJobId(): string {
+  return crypto.randomBytes(12).toString('hex');
+}
+
+function jobMetaPath(jobId: string): string {
+  return path.join(JOB_DIR, `${jobId}.json`);
+}
+
+function atomicWriteJson(filePath: string, obj: object): void {
+  const tmp = filePath + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
+  fs.renameSync(tmp, filePath);
+}
+
+function persistJob(jobId: string): void {
+  const job = jobs.get(jobId);
+  if (!job) return;
+  
+  const meta: TtsJobMeta = {
+    jobId,
+    status: job.status,
+    progress: job.progress,
+    outPath: job.outPath,
+    requestKey: job.requestKey,
+    format: job.format,
+    error: job.error,
+    createdAt: job.createdAt,
+    updatedAt: Date.now(),
+  };
+  atomicWriteJson(jobMetaPath(jobId), meta);
+}
+
+function setJobProgress(jobId: string, patch: Partial<TtsJobProgress>): void {
+  const job = jobs.get(jobId);
+  if (!job) return;
+  job.progress = { ...job.progress, ...patch };
+  persistJob(jobId);
+}
+
+function setJobStatus(jobId: string, status: TtsJobStatus, message?: string): void {
+  const job = jobs.get(jobId);
+  if (!job) return;
+  job.status = status;
+  if (message) job.progress.message = message;
+  persistJob(jobId);
+}
+
+function loadPersistedJobs(): void {
+  try {
+    const files = fs.readdirSync(JOB_DIR).filter(f => f.endsWith('.json'));
+    console.log(`📂 Loading ${files.length} persisted TTS jobs...`);
+    
+    for (const f of files) {
+      try {
+        const meta = JSON.parse(fs.readFileSync(path.join(JOB_DIR, f), 'utf8')) as TtsJobMeta;
+        const outExists = meta?.outPath && fileExists(meta.outPath);
+        
+        const status: TtsJobStatus = 
+          outExists ? 'done'
+          : (meta.status === 'running' || meta.status === 'queued') ? 'interrupted'
+          : meta.status || 'error';
+        
+        const now = Date.now();
+        if (meta.createdAt && (now - meta.createdAt) > JOB_TTL_MS) {
+          try { fs.unlinkSync(path.join(JOB_DIR, f)); } catch {}
+          continue;
+        }
+        
+        jobs.set(meta.jobId, {
+          ...meta,
+          status,
+          progress: meta.progress || { total: 0, done: 0, pct: outExists ? 100 : 0, message: status },
+          error: meta.error || (status === 'interrupted' ? 'Job interrupted by server restart. Please retry.' : null),
+          sseClients: new Set(),
+        });
+        
+        if (status === 'interrupted') {
+          console.log(`⚠️ Job ${meta.jobId.slice(0, 8)}... marked as interrupted`);
+        }
+      } catch {}
+    }
+  } catch {}
+}
+
+loadPersistedJobs();
+
+export function getJob(jobId: string): TtsJobMeta | null {
+  const job = jobs.get(jobId);
+  if (job) return job;
+  
+  const metaPath = jobMetaPath(jobId);
+  if (fileExists(metaPath)) {
+    try {
+      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')) as TtsJobMeta;
+      const outExists = meta?.outPath && fileExists(meta.outPath);
+      if (outExists && meta.status !== 'done') {
+        meta.status = 'done';
+        meta.progress.pct = 100;
+      }
+      return meta;
+    } catch {}
+  }
+  return null;
+}
+
+export function getJobResult(jobId: string): Buffer | null {
+  const job = getJob(jobId);
+  if (!job || !job.outPath) return null;
+  
+  if (fileExists(job.outPath)) {
+    touch(job.outPath);
+    return fs.readFileSync(job.outPath);
+  }
+  return null;
+}
+
+export function getAllJobs(): TtsJobMeta[] {
+  return Array.from(jobs.values()).map(j => ({
+    jobId: j.jobId,
+    status: j.status,
+    progress: j.progress,
+    outPath: j.outPath,
+    requestKey: j.requestKey,
+    format: j.format,
+    error: j.error,
+    createdAt: j.createdAt,
+    updatedAt: j.updatedAt,
+  }));
+}
 
 function sha256(str: string): string {
   return crypto.createHash('sha256').update(str).digest('hex');
@@ -323,6 +480,155 @@ export class GeminiTtsService {
       throw new Error('GEMINI_API_KEY environment variable is not set');
     }
     this.client = new GoogleGenAI({ apiKey });
+  }
+
+  createJob(text: string, options: GeminiTtsOptions): string {
+    const format = options.format || 'mp3';
+    const requestKey = buildRequestKey(text, options);
+    const outPath = outPathForRequest(requestKey, format);
+    
+    const existingJobId = inFlightByRequestKey.get(requestKey);
+    if (existingJobId && jobs.has(existingJobId)) {
+      console.log(`🔄 Returning existing job: ${existingJobId.slice(0, 8)}...`);
+      return existingJobId;
+    }
+    
+    const jobId = options.jobId || makeJobId();
+    const now = Date.now();
+    
+    const job: TtsJobMeta & { sseClients: Set<any> } = {
+      jobId,
+      status: 'queued',
+      progress: { total: 0, done: 0, pct: 0, message: 'Queued' },
+      outPath,
+      requestKey,
+      format,
+      error: null,
+      createdAt: now,
+      updatedAt: now,
+      sseClients: new Set(),
+    };
+    
+    jobs.set(jobId, job);
+    inFlightByRequestKey.set(requestKey, jobId);
+    persistJob(jobId);
+    
+    console.log(`📋 Created TTS job: ${jobId.slice(0, 8)}...`);
+    
+    this.executeJobAsync(jobId, text, options).catch(err => {
+      console.error(`❌ Job ${jobId.slice(0, 8)}... failed:`, err.message);
+    });
+    
+    return jobId;
+  }
+
+  private async executeJobAsync(jobId: string, text: string, options: GeminiTtsOptions): Promise<void> {
+    const job = jobs.get(jobId);
+    if (!job) return;
+    
+    const format = options.format || 'mp3';
+    const requestKey = job.requestKey;
+    const outPath = job.outPath!;
+    
+    try {
+      if (fileExists(outPath)) {
+        touch(outPath);
+        setJobProgress(jobId, { pct: 100, message: 'Cache hit (instant)' });
+        setJobStatus(jobId, 'done', 'Cache hit');
+        return;
+      }
+      
+      setJobStatus(jobId, 'running', 'Chunking text...');
+      
+      const buffer = await this.generateAudioWithJobProgress(text, options, jobId);
+      
+      const tmpPath = outPath + '.tmp';
+      fs.writeFileSync(tmpPath, buffer);
+      fs.renameSync(tmpPath, outPath);
+      touch(outPath);
+      
+      setJobProgress(jobId, { pct: 100, message: 'Done' });
+      setJobStatus(jobId, 'done', 'Done');
+      
+    } catch (error: any) {
+      const job = jobs.get(jobId);
+      if (job) {
+        job.error = error?.message ?? String(error);
+        setJobStatus(jobId, 'error', job.error || undefined);
+      }
+    } finally {
+      if (inFlightByRequestKey.get(requestKey) === jobId) {
+        inFlightByRequestKey.delete(requestKey);
+      }
+    }
+  }
+
+  private async generateAudioWithJobProgress(text: string, options: GeminiTtsOptions, jobId: string): Promise<Buffer> {
+    const format = options.format || 'mp3';
+    const bitrateKbps = options.bitrateKbps || 192;
+    const maxCharsPerChunk = options.maxCharsPerChunk || 1400;
+    const concurrency = options.concurrency || 3;
+    const pauseMsShort = options.pauseMsShort ?? 120;
+    const pauseMsParagraph = options.pauseMsParagraph ?? 260;
+    const pauseMsHeading = options.pauseMsHeading ?? 420;
+    
+    const chunks = buildChunksWithPauses(text, {
+      maxCharsPerChunk,
+      minChunkChars: 300,
+      pauseMsShort,
+      pauseMsParagraph,
+      pauseMsHeading,
+    });
+    
+    setJobProgress(jobId, { total: chunks.length, done: 0, pct: 0, message: 'Preparing chunks...' });
+    
+    if (!chunks.length) return Buffer.alloc(0);
+
+    let cacheHits = 0;
+    const pcmItems = await runWithConcurrency(
+      chunks,
+      concurrency,
+      async (chunk, idx) => {
+        const chunkKey = buildChunkKey(options.voice, options.styleHint || '', chunk.text, options.model);
+        
+        const cachedPcm = readPcmFromCache(chunkKey);
+        if (cachedPcm) {
+          cacheHits++;
+          return { pcm: cachedPcm, pauseMsAfter: chunk.pauseMsAfter };
+        }
+        
+        const pcm = await this.synthesizeChunkToPcm(chunk.text, options);
+        
+        if (!options.skipCache) {
+          writePcmToCache(chunkKey, pcm);
+        }
+        
+        return { pcm, pauseMsAfter: chunk.pauseMsAfter };
+      },
+      (done, total) => {
+        const pct = Math.round((done / total) * 80);
+        setJobProgress(jobId, { done, total, pct, message: `Generating audio (${done}/${total})` });
+      }
+    );
+
+    setJobProgress(jobId, { pct: 85, message: 'Assembling audio...' });
+    
+    const assembled: Buffer[] = [];
+    for (let i = 0; i < pcmItems.length; i++) {
+      assembled.push(pcmItems[i].pcm);
+      if (i < pcmItems.length - 1) {
+        const ms = Math.max(0, pcmItems[i].pauseMsAfter);
+        if (ms > 0) assembled.push(makeSilencePcm(ms));
+      }
+    }
+
+    const fullPcm = Buffer.concat(assembled);
+    
+    setJobProgress(jobId, { pct: 90, message: 'Encoding output...' });
+    
+    const outputBuffer = await pcmToFormatBuffer(fullPcm, { format, bitrateKbps });
+    
+    return outputBuffer;
   }
 
   async generateAudio(text: string, options: GeminiTtsOptions): Promise<Buffer> {
