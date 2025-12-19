@@ -166,6 +166,55 @@ function loadPersistedJobs(): void {
 
 loadPersistedJobs();
 
+// Periodic job cleanup scheduler - runs every 6 hours to enforce 7-day TTL during long uptimes
+const JOB_CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+function periodicJobCleanup(): void {
+  console.log('🧹 Running periodic TTS job cleanup...');
+  let cleaned = 0;
+  
+  try {
+    if (!fs.existsSync(JOB_DIR)) return;
+    
+    const files = fs.readdirSync(JOB_DIR).filter(f => f.endsWith('.json'));
+    const now = Date.now();
+    
+    for (const f of files) {
+      try {
+        const metaPath = path.join(JOB_DIR, f);
+        const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8')) as TtsJobMeta;
+        
+        if (meta.createdAt && (now - meta.createdAt) > JOB_TTL_MS) {
+          // Remove job from in-memory map
+          if (meta.jobId) {
+            jobs.delete(meta.jobId);
+          }
+          // Remove job metadata file
+          fs.unlinkSync(metaPath);
+          // Also remove output file if exists
+          if (meta.outPath && fileExists(meta.outPath)) {
+            try { fs.unlinkSync(meta.outPath); } catch {}
+          }
+          cleaned++;
+        }
+      } catch {}
+    }
+    
+    if (cleaned > 0) {
+      console.log(`🧹 Cleaned up ${cleaned} expired TTS job(s)`);
+    }
+  } catch (err) {
+    console.error('Error during periodic job cleanup:', err);
+  }
+}
+
+// Schedule periodic job cleanup and run once at startup
+setInterval(periodicJobCleanup, JOB_CLEANUP_INTERVAL_MS);
+console.log(`⏰ TTS job cleanup scheduled every ${JOB_CLEANUP_INTERVAL_MS / (60 * 60 * 1000)} hours`);
+
+// Run cleanup immediately at startup (after loadPersistedJobs) to enforce TTL for long-idle processes
+setTimeout(periodicJobCleanup, 5000); // Delay 5s to let server fully initialize
+
 export function getJob(jobId: string): TtsJobMeta | null {
   const job = jobs.get(jobId);
   if (job) return job;
