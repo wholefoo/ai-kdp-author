@@ -70,17 +70,14 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
 
 ## Current Issues & Limitations
 
-**Gemini TTS Authentication Issue (BLOCKING)**
-- Status: Gemini TTS (30 voices) failing with 401 authentication errors
-- Root Cause: GOOGLE_CLOUD_TTS_API_KEY secret is invalid or incompatible
-- Workaround: System automatically falls back to OpenAI TTS with alloy voice
-- Impact: All 30 Gemini voices display in UI and can be selected, but generate audio with OpenAI fallback
-- Solution: User must provide a valid Google Cloud Text-to-Speech API key with:
-  - API Key type: Service Account Key (JSON) or Simple API Key
-  - Enabled services: Google Cloud Text-to-Speech API
-  - Proper permissions for tts.googleapis.com
-- Recommendation: Use only OpenAI voices (6 available) for now until Gemini TTS auth is resolved
-- Alternative: Remove Gemini TTS entirely and use OpenAI-only for simplicity
+**FIXED: Gemini TTS Authentication Issue (December 19, 2025)**
+- Issue: Gemini TTS (30 voices) was failing with 401 authentication errors
+- Root Cause: Was using GOOGLE_CLOUD_TTS_API_KEY with wrong Google Cloud Text-to-Speech API
+- Solution: Migrated to @google/genai SDK with GEMINI_API_KEY
+  - Installed: @google/genai, ffmpeg-static packages
+  - Updated geminiTts.ts to use GoogleGenAI client
+  - Changed models to: gemini-2.5-flash-preview-tts, gemini-2.5-pro-preview-tts
+- Status: All 30 Gemini voices now working with proper Google AI Studio API key
 
 **FIXED: Audiobook Content Accuracy (December 10, 2025)**
 - Issue: Audiobook generation was incorrectly adding "Chapter 1" announcements to opening/closing files
@@ -101,8 +98,8 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
   - New Service: `server/services/geminiTts.ts` - Handles all Gemini TTS generation (30 voices, multiple models)
   - Updated Schema: `shared/schema.ts` - Added `ttsProvider` column, extended voice and model type definitions
   - Updated AudiobookService: Added provider detection, routes to appropriate TTS service, and FULL voice list in `getAvailableVoices()`
-  - Gemini Models Supported: `gemini-2.5-flash-tts` (faster), `gemini-2.5-pro-tts` (higher quality)
-  - Configuration: Uses `GOOGLE_CLOUD_TTS_API_KEY` environment variable (secret key)
+  - Gemini Models Supported: `gemini-2.5-flash-preview-tts` (faster), `gemini-2.5-pro-preview-tts` (higher quality)
+  - Configuration: Uses `GEMINI_API_KEY` environment variable (Google AI Studio API key)
   - **Fallback Logic**: Automatically falls back to OpenAI if Gemini fails or is unavailable (e.g., 401 auth errors)
     - When Gemini TTS fails: system automatically uses OpenAI to generate audio with alloy voice
     - Both voice previews and full audiobook generation support fallback

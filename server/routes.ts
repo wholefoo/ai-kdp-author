@@ -3693,7 +3693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isGeminiVoice = geminiVoiceList.includes(voice);
       const ttsProvider = isDeepgramVoice ? 'deepgram' : isGeminiVoice ? 'gemini' : 'openai';
       // Auto-select correct model based on provider
-      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-tts' : model;
+      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : model;
 
       const audiobook = await storage.createAudiobook({
         novelId,
@@ -3893,7 +3893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           ttsProvider: previewProvider,
           voice: voice as any,
-          model: previewProvider === 'deepgram' ? 'aura-2' : previewProvider === 'gemini' ? 'gemini-2.5-flash-tts' : 'tts-1',
+          model: previewProvider === 'deepgram' ? 'aura-2' : previewProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'tts-1',
           speed: speed,
           format: 'mp3'
         }

@@ -41,3 +41,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_anthropic:1.0.0", "javascript_object_storage:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_stripe:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+GEMINI_API_KEY = "AIzaSyBAOWv1XArWbegYO2h0IeVdh87-IfLWWUk"
