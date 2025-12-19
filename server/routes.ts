@@ -3661,8 +3661,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Job not found" });
       }
       
+      // Return 409 for interrupted jobs (UI can show retry button)
+      if (job.status === 'interrupted') {
+        return res.status(409).json({ 
+          error: "Job was interrupted. Use POST /api/tts-retry/:jobId to resume.",
+          status: job.status,
+          progress: job.progress 
+        });
+      }
+      
+      // Return 202 for still-running jobs
       if (job.status !== 'done') {
-        return res.status(400).json({ 
+        return res.status(202).json({ 
           error: "Job not complete",
           status: job.status,
           progress: job.progress 
@@ -3681,6 +3691,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error fetching TTS result:", error);
       res.status(500).json({ error: "Failed to fetch TTS result" });
+    }
+  });
+
+  // Retry an interrupted TTS job (reuses cached chunks for fast recovery)
+  app.post("/api/tts-retry/:jobId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { jobId } = req.params;
+      const payload = req.body;
+      const { getJob, createJob, GeminiTtsService } = await import('./services/geminiTts');
+      
+      const existingJob = getJob(jobId);
+      if (!existingJob) {
+        return res.status(404).json({ error: "Original job not found" });
+      }
+      
+      // Only allow retry of interrupted or failed jobs
+      if (existingJob.status !== 'interrupted' && existingJob.status !== 'error') {
+        return res.status(400).json({ 
+          error: `Cannot retry job with status: ${existingJob.status}. Only interrupted or failed jobs can be retried.`,
+          status: existingJob.status
+        });
+      }
+      
+      // Validate payload has required fields
+      if (!payload?.text) {
+        return res.status(400).json({ error: "Missing required field: text" });
+      }
+      
+      console.log(`🔄 Retrying TTS job ${jobId} (status: ${existingJob.status})`);
+      
+      // Create a new job with the same parameters
+      // The per-chunk cache will be reused automatically
+      const geminiTts = new GeminiTtsService();
+      const newJob = createJob({
+        text: payload.text,
+        voiceName: payload.voiceName || existingJob.voiceName || 'Kore',
+        format: payload.format || existingJob.format || 'mp3',
+        styleHint: payload.styleHint || '',
+        maxCharsPerChunk: payload.maxCharsPerChunk || 1400,
+        concurrency: payload.concurrency || 3,
+        pauseMsShort: payload.pauseMsShort || 0,
+        pauseMsParagraph: payload.pauseMsParagraph || 0,
+        pauseMsHeading: payload.pauseMsHeading || 0,
+        bitrateKbps: payload.bitrateKbps || 128,
+      });
+      
+      // Start generation in background (non-blocking)
+      geminiTts.generateAudio(payload.text, {
+        voice: payload.voiceName || 'Kore',
+        model: 'gemini-2.5-flash-preview-tts',
+        speed: 1.0,
+      }).catch(err => {
+        console.error(`❌ Retry job ${newJob.jobId} failed:`, err.message);
+      });
+      
+      res.json({ 
+        jobId: newJob.jobId,
+        previousJobId: jobId,
+        status: 'queued',
+        message: 'Retry job created. Cached chunks will be reused for faster generation.'
+      });
+    } catch (error: any) {
+      console.error("Error retrying TTS job:", error);
+      res.status(500).json({ error: "Failed to retry TTS job" });
     }
   });
 

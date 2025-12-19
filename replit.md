@@ -99,7 +99,8 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
   - New API endpoints for stateless result retrieval:
     - `GET /api/tts-jobs` - List all TTS jobs
     - `GET /api/tts-job/:jobId` - Get specific job status/progress
-    - `GET /api/tts-result/:jobId` - Download completed audio
+    - `GET /api/tts-result/:jobId` - Download completed audio (returns 409 for interrupted jobs, 202 for in-progress)
+    - `POST /api/tts-retry/:jobId` - Retry interrupted/failed job (reuses cached chunks)
   - 7-day TTL for job metadata cleanup
   - Implementation: `server/services/geminiTts.ts` with `createJob()`, `getJob()`, `getJobResult()` exports
 
