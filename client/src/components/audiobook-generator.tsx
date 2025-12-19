@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Headphones, Download, Play, Pause, Volume2, Clock, FileText, Music, CheckSquare, Square, BookOpen } from 'lucide-react';
+import { Headphones, Download, Play, Pause, Volume2, Clock, FileText, Music, CheckSquare, Square, BookOpen, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +67,11 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
   const [backgroundMusicEnabled, setBackgroundMusicEnabled] = useState(false);
   const [selectedMusicType, setSelectedMusicType] = useState('ambient');
   const [musicVolume, setMusicVolume] = useState(20); // 20% volume
+  
+  // ETA estimation state
+  const [etaStartTime, setEtaStartTime] = useState<number | null>(null);
+  const [etaStartChapters, setEtaStartChapters] = useState<number>(0);
+  const [estimatedEta, setEstimatedEta] = useState<string | null>(null);
 
   // Fetch available voices
   const { data: voicesData } = useQuery({
@@ -143,6 +148,49 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
   
   // Get the actively generating audiobook for this novel
   const activeGeneratingAudiobook = audiobooks.find(ab => ab.status === 'generating');
+  
+  // ETA calculation based on chapter completion rate
+  useEffect(() => {
+    if (!activeGeneratingAudiobook) {
+      setEtaStartTime(null);
+      setEtaStartChapters(0);
+      setEstimatedEta(null);
+      return;
+    }
+    
+    const completed = activeGeneratingAudiobook.progress?.completedChapters || 0;
+    const total = activeGeneratingAudiobook.progress?.totalChapters || 0;
+    
+    // Initialize tracking on first detection
+    if (etaStartTime === null && completed > 0) {
+      setEtaStartTime(Date.now());
+      setEtaStartChapters(completed);
+      return;
+    }
+    
+    // Calculate ETA based on rate
+    if (etaStartTime && completed > etaStartChapters && total > 0) {
+      const elapsedMs = Date.now() - etaStartTime;
+      const chaptersCompleted = completed - etaStartChapters;
+      const msPerChapter = elapsedMs / chaptersCompleted;
+      const remainingChapters = total - completed;
+      const remainingMs = remainingChapters * msPerChapter;
+      
+      const remainingSec = Math.floor(remainingMs / 1000);
+      const minutes = Math.floor(remainingSec / 60);
+      const seconds = remainingSec % 60;
+      
+      if (minutes > 60) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        setEstimatedEta(`~${hours}h ${mins}m remaining`);
+      } else if (minutes > 0) {
+        setEstimatedEta(`~${minutes}m ${seconds}s remaining`);
+      } else {
+        setEstimatedEta(`~${seconds}s remaining`);
+      }
+    }
+  }, [activeGeneratingAudiobook?.progress?.completedChapters, activeGeneratingAudiobook?.progress?.totalChapters, etaStartTime, etaStartChapters]);
   
   // Show completion notifications
   useEffect(() => {
@@ -706,9 +754,9 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
 
       {/* Active Generation Progress */}
       {activeGeneratingAudiobook && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700">
+            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
               Generating Audiobook
             </CardTitle>
@@ -717,9 +765,16 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Progress</span>
-                <span>
-                  {activeGeneratingAudiobook.progress?.completedChapters || 0} / {activeGeneratingAudiobook.progress?.totalChapters || 0} chapters
-                </span>
+                <div className="flex items-center gap-3">
+                  <span>
+                    {activeGeneratingAudiobook.progress?.completedChapters || 0} / {activeGeneratingAudiobook.progress?.totalChapters || 0} chapters
+                  </span>
+                  <span className="text-blue-600 dark:text-blue-400">
+                    ({activeGeneratingAudiobook.progress?.totalChapters 
+                      ? Math.round(((activeGeneratingAudiobook.progress.completedChapters || 0) / activeGeneratingAudiobook.progress.totalChapters) * 100)
+                      : 0}%)
+                  </span>
+                </div>
               </div>
               <Progress 
                 value={
@@ -727,19 +782,32 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                     ? ((activeGeneratingAudiobook.progress.completedChapters || 0) / activeGeneratingAudiobook.progress.totalChapters) * 100
                     : 0
                 }
-                className="w-full"
+                className="w-full h-3"
               />
+              {/* ETA Display */}
+              {estimatedEta && (
+                <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <Clock className="h-4 w-4" />
+                  <span>{estimatedEta}</span>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-600">Voice:</span> {activeGeneratingAudiobook.voice}
+                <span className="text-gray-600 dark:text-gray-400">Voice:</span> {activeGeneratingAudiobook.voice}
               </div>
               <div>
-                <span className="text-gray-600">Quality:</span> {activeGeneratingAudiobook.model === 'tts-1-hd' ? 'HD' : 'Standard'}
+                <span className="text-gray-600 dark:text-gray-400">Quality:</span> {activeGeneratingAudiobook.model === 'tts-1-hd' ? 'HD' : 'Standard'}
+              </div>
+              <div>
+                <span className="text-gray-600 dark:text-gray-400">Format:</span> {activeGeneratingAudiobook.format?.toUpperCase() || 'MP3'}
+              </div>
+              <div>
+                <span className="text-gray-600 dark:text-gray-400">Speed:</span> {(activeGeneratingAudiobook.speed || 100) / 100}x
               </div>
             </div>
             {activeGeneratingAudiobook.progress?.currentChapter && (
-              <div className="text-sm text-blue-600">
+              <div className="text-sm text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900 p-2 rounded">
                 Currently processing: Chapter {activeGeneratingAudiobook.progress.currentChapter}
               </div>
             )}
@@ -820,10 +888,33 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                     );
                   })()}
 
-                  {/* Error Message */}
-                  {audiobook.status === 'failed' && audiobook.error && (
-                    <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
-                      <strong>Error:</strong> {audiobook.error}
+                  {/* Error Message with Auto-Retry Prompt */}
+                  {audiobook.status === 'failed' && (
+                    <div className="border border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800 p-4 rounded-lg space-y-3">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-medium text-red-700 dark:text-red-300">Generation Failed</p>
+                          {audiobook.error && (
+                            <p className="text-sm text-red-600 dark:text-red-400 mt-1">{audiobook.error}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 pt-2 border-t border-red-200 dark:border-red-800">
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => handleResumeAudiobook(audiobook.id, audiobook.title)}
+                          data-testid={`button-retry-failed-${audiobook.id}`}
+                          className="gap-1"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Retry Generation
+                        </Button>
+                        <span className="text-xs text-red-600 dark:text-red-400">
+                          Cached audio will be reused for faster retry
+                        </span>
+                      </div>
                     </div>
                   )}
 
