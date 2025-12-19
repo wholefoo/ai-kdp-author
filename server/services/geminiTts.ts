@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
-import { promises as fs } from 'fs';
-import path from 'path';
+import ffmpegPath from 'ffmpeg-static';
+import { spawn } from 'node:child_process';
 
 export type GeminiVoice = 
   | 'Zephyr' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Leda' | 'Orus' | 'Aoede' | 'Callirrhoe'
@@ -13,6 +13,46 @@ export interface GeminiTtsOptions {
   model: 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
   speed: number;
   language?: string;
+}
+
+const PCM_SAMPLE_RATE = 24000;
+const PCM_CHANNELS = 1;
+
+function pcmToMp3Buffer(pcmBuffer: Buffer, { bitrateKbps = 192 } = {}): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    if (!ffmpegPath) return reject(new Error("ffmpeg binary not found"));
+
+    const args = [
+      "-hide_banner",
+      "-loglevel", "error",
+      "-f", "s16le",
+      "-ar", String(PCM_SAMPLE_RATE),
+      "-ac", String(PCM_CHANNELS),
+      "-i", "pipe:0",
+      "-codec:a", "libmp3lame",
+      "-b:a", `${bitrateKbps}k`,
+      "-f", "mp3",
+      "pipe:1",
+    ];
+
+    const ff = spawn(ffmpegPath, args, { stdio: ["pipe", "pipe", "pipe"] });
+
+    const out: Buffer[] = [];
+    const err: Buffer[] = [];
+
+    ff.stdout.on("data", (d) => out.push(d));
+    ff.stderr.on("data", (d) => err.push(d));
+
+    ff.on("close", (code) => {
+      if (code === 0) return resolve(Buffer.concat(out));
+      reject(new Error(`ffmpeg failed (code ${code}): ${Buffer.concat(err).toString()}`));
+    });
+
+    ff.on("error", reject);
+
+    ff.stdin.write(pcmBuffer);
+    ff.stdin.end();
+  });
 }
 
 export class GeminiTtsService {
@@ -71,12 +111,15 @@ export class GeminiTtsService {
         }
       });
 
-      const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!audioData) {
+      const b64 = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!b64) {
         throw new Error('No audio content in Gemini response');
       }
 
-      return Buffer.from(audioData, 'base64');
+      const pcmBuffer = Buffer.from(b64, 'base64');
+      const mp3Buffer = await pcmToMp3Buffer(pcmBuffer, { bitrateKbps: 192 });
+      
+      return mp3Buffer;
     } catch (error: any) {
       console.error('Error synthesizing chunk with Gemini:', error.message);
       if (error.message?.includes('401') || error.message?.includes('UNAUTHENTICATED')) {
