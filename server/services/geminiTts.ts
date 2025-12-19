@@ -1,6 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
 import ffmpegPath from 'ffmpeg-static';
 import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export type GeminiVoice = 
   | 'Zephyr' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Leda' | 'Orus' | 'Aoede' | 'Callirrhoe'
@@ -19,6 +22,7 @@ export interface GeminiTtsOptions {
   pauseMsShort?: number;
   pauseMsParagraph?: number;
   pauseMsHeading?: number;
+  skipCache?: boolean;
 }
 
 interface ChunkWithPause {
@@ -29,6 +33,66 @@ interface ChunkWithPause {
 const PCM_SAMPLE_RATE = 24000;
 const PCM_CHANNELS = 1;
 const PCM_BYTES_PER_SAMPLE = 2;
+
+const CACHE_DIR = path.join(process.cwd(), 'cache', 'gemini-tts');
+const inFlightByKey = new Map<string, Promise<Buffer>>();
+
+try {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+} catch {}
+
+function sha256(str: string): string {
+  return crypto.createHash('sha256').update(str).digest('hex');
+}
+
+function buildCacheKey(text: string, options: GeminiTtsOptions): string {
+  const keyObj = {
+    model: options.model,
+    voice: options.voice,
+    styleHint: options.styleHint || '',
+    pauseMsShort: options.pauseMsShort ?? 120,
+    pauseMsParagraph: options.pauseMsParagraph ?? 260,
+    pauseMsHeading: options.pauseMsHeading ?? 420,
+    maxCharsPerChunk: options.maxCharsPerChunk || 1400,
+    text: text,
+  };
+  return sha256(JSON.stringify(keyObj));
+}
+
+function cachePathForKey(cacheKey: string): string {
+  return path.join(CACHE_DIR, `${cacheKey}.mp3`);
+}
+
+function cacheExists(cacheKey: string): boolean {
+  const p = cachePathForKey(cacheKey);
+  try {
+    return fs.existsSync(p) && fs.statSync(p).size > 0;
+  } catch {
+    return false;
+  }
+}
+
+function readFromCache(cacheKey: string): Buffer | null {
+  try {
+    const p = cachePathForKey(cacheKey);
+    if (fs.existsSync(p)) {
+      return fs.readFileSync(p);
+    }
+  } catch {}
+  return null;
+}
+
+function writeToCache(cacheKey: string, mp3Buffer: Buffer): void {
+  try {
+    const outPath = cachePathForKey(cacheKey);
+    const tmpPath = outPath + '.tmp';
+    fs.writeFileSync(tmpPath, mp3Buffer);
+    fs.renameSync(tmpPath, outPath);
+    console.log(`💾 Cached Gemini TTS audio: ${cacheKey.slice(0, 12)}...`);
+  } catch (err: any) {
+    console.error('Failed to write cache:', err.message);
+  }
+}
 
 function pcmToMp3Buffer(pcmBuffer: Buffer, { bitrateKbps = 192 } = {}): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -219,6 +283,33 @@ export class GeminiTtsService {
   }
 
   async generateAudio(text: string, options: GeminiTtsOptions): Promise<Buffer> {
+    const cacheKey = buildCacheKey(text, options);
+    
+    if (!options.skipCache) {
+      const cached = readFromCache(cacheKey);
+      if (cached) {
+        console.log(`⚡ Gemini TTS cache hit: ${cacheKey.slice(0, 12)}...`);
+        return cached;
+      }
+      
+      const inFlight = inFlightByKey.get(cacheKey);
+      if (inFlight) {
+        console.log(`🔄 Gemini TTS de-dupe: waiting for in-flight request...`);
+        return inFlight;
+      }
+    }
+
+    const generatePromise = this.generateAudioInternal(text, options, cacheKey);
+    
+    if (!options.skipCache) {
+      inFlightByKey.set(cacheKey, generatePromise);
+      generatePromise.finally(() => inFlightByKey.delete(cacheKey));
+    }
+
+    return generatePromise;
+  }
+
+  private async generateAudioInternal(text: string, options: GeminiTtsOptions, cacheKey: string): Promise<Buffer> {
     const maxCharsPerChunk = options.maxCharsPerChunk || 1400;
     const concurrency = options.concurrency || 3;
     const pauseMsShort = options.pauseMsShort ?? 120;
@@ -271,6 +362,10 @@ export class GeminiTtsService {
       
       const mp3Buffer = await pcmToMp3Buffer(fullPcm, { bitrateKbps: 192 });
       console.log(`✅ Gemini TTS completed (${mp3Buffer.length} bytes MP3)`);
+      
+      if (!options.skipCache) {
+        writeToCache(cacheKey, mp3Buffer);
+      }
       
       return mp3Buffer;
     } catch (error: any) {
@@ -327,4 +422,43 @@ export class GeminiTtsService {
   static getAvailableModels() {
     return ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'] as const;
   }
+
+  static cleanupOldCache(maxAgeDays: number = 7): void {
+    try {
+      const now = Date.now();
+      const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+      const files = fs.readdirSync(CACHE_DIR).filter(f => f.endsWith('.mp3'));
+      let cleaned = 0;
+      
+      for (const f of files) {
+        const fp = path.join(CACHE_DIR, f);
+        const st = fs.statSync(fp);
+        if (now - st.mtimeMs > maxAgeMs) {
+          fs.unlinkSync(fp);
+          cleaned++;
+        }
+      }
+      
+      if (cleaned > 0) {
+        console.log(`🧹 Cleaned ${cleaned} old Gemini TTS cache files`);
+      }
+    } catch {}
+  }
+
+  static getCacheStats(): { files: number; totalBytes: number } {
+    try {
+      const files = fs.readdirSync(CACHE_DIR).filter(f => f.endsWith('.mp3'));
+      let totalBytes = 0;
+      for (const f of files) {
+        totalBytes += fs.statSync(path.join(CACHE_DIR, f)).size;
+      }
+      return { files: files.length, totalBytes };
+    } catch {
+      return { files: 0, totalBytes: 0 };
+    }
+  }
 }
+
+setInterval(() => {
+  GeminiTtsService.cleanupOldCache(7);
+}, 60 * 60 * 1000);
