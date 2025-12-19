@@ -11,12 +11,16 @@ export type GeminiVoice =
   | 'Laomedeia' | 'Achernar' | 'Alnilam' | 'Schedar' | 'Gacrux' | 'Pulcherrima' | 'Achird' | 'Zubenelgenubi'
   | 'Rasalgethi' | 'Sadachbia' | 'Sadaltager' | 'Sulafat' | 'Vindemiatrix';
 
+export type OutputFormat = 'mp3' | 'wav';
+
 export interface GeminiTtsOptions {
   voice: GeminiVoice;
   model: 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
   speed: number;
   language?: string;
   styleHint?: string;
+  format?: OutputFormat;
+  bitrateKbps?: number;
   maxCharsPerChunk?: number;
   concurrency?: number;
   pauseMsShort?: number;
@@ -34,69 +38,137 @@ const PCM_SAMPLE_RATE = 24000;
 const PCM_CHANNELS = 1;
 const PCM_BYTES_PER_SAMPLE = 2;
 
-const CACHE_DIR = path.join(process.cwd(), 'cache', 'gemini-tts');
+const CACHE_DIR = path.join(process.cwd(), 'cache');
+const PCM_DIR = path.join(CACHE_DIR, 'pcm');
+const OUT_DIR = path.join(CACHE_DIR, 'out');
+
+const CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const CACHE_MAX_BYTES = 800 * 1024 * 1024;
+const CLEANUP_INTERVAL_MS = 30 * 60 * 1000;
+
 const inFlightByKey = new Map<string, Promise<Buffer>>();
 
 try {
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.mkdirSync(PCM_DIR, { recursive: true });
+  fs.mkdirSync(OUT_DIR, { recursive: true });
 } catch {}
 
 function sha256(str: string): string {
   return crypto.createHash('sha256').update(str).digest('hex');
 }
 
-function buildCacheKey(text: string, options: GeminiTtsOptions): string {
+function fileExists(p: string): boolean {
+  try { return fs.existsSync(p) && fs.statSync(p).isFile(); } catch { return false; }
+}
+
+function ensureDir(p: string): void {
+  fs.mkdirSync(p, { recursive: true });
+}
+
+function touch(p: string): void {
+  try {
+    const now = new Date();
+    fs.utimesSync(p, now, now);
+  } catch {}
+}
+
+function listFilesRecursive(dir: string): string[] {
+  const out: string[] = [];
+  try {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) out.push(...listFilesRecursive(full));
+      else out.push(full);
+    }
+  } catch {}
+  return out;
+}
+
+function buildChunkKey(voiceName: string, styleHint: string, chunkText: string, model: string): string {
+  const obj = {
+    model,
+    voiceName,
+    styleHint: styleHint || '',
+    chunkText,
+    pcm: { sampleRate: PCM_SAMPLE_RATE, channels: PCM_CHANNELS, fmt: 's16le' },
+  };
+  return sha256(JSON.stringify(obj));
+}
+
+function pcmPathForChunkKey(chunkKey: string): string {
+  const shard = chunkKey.slice(0, 2);
+  const dir = path.join(PCM_DIR, shard);
+  ensureDir(dir);
+  return path.join(dir, `${chunkKey}.pcm`);
+}
+
+function buildRequestKey(text: string, options: GeminiTtsOptions): string {
   const keyObj = {
     model: options.model,
     voice: options.voice,
     styleHint: options.styleHint || '',
+    format: options.format || 'mp3',
+    bitrateKbps: options.bitrateKbps || 192,
     pauseMsShort: options.pauseMsShort ?? 120,
     pauseMsParagraph: options.pauseMsParagraph ?? 260,
     pauseMsHeading: options.pauseMsHeading ?? 420,
     maxCharsPerChunk: options.maxCharsPerChunk || 1400,
-    text: text,
+    text,
   };
   return sha256(JSON.stringify(keyObj));
 }
 
-function cachePathForKey(cacheKey: string): string {
-  return path.join(CACHE_DIR, `${cacheKey}.mp3`);
+function outPathForRequest(requestKey: string, format: OutputFormat): string {
+  const shard = requestKey.slice(0, 2);
+  const dir = path.join(OUT_DIR, shard);
+  ensureDir(dir);
+  return path.join(dir, `${requestKey}.${format}`);
 }
 
-function cacheExists(cacheKey: string): boolean {
-  const p = cachePathForKey(cacheKey);
-  try {
-    return fs.existsSync(p) && fs.statSync(p).size > 0;
-  } catch {
-    return false;
+function readPcmFromCache(chunkKey: string): Buffer | null {
+  const p = pcmPathForChunkKey(chunkKey);
+  if (fileExists(p)) {
+    touch(p);
+    return fs.readFileSync(p);
   }
-}
-
-function readFromCache(cacheKey: string): Buffer | null {
-  try {
-    const p = cachePathForKey(cacheKey);
-    if (fs.existsSync(p)) {
-      return fs.readFileSync(p);
-    }
-  } catch {}
   return null;
 }
 
-function writeToCache(cacheKey: string, mp3Buffer: Buffer): void {
+function writePcmToCache(chunkKey: string, pcmBuffer: Buffer): void {
   try {
-    const outPath = cachePathForKey(cacheKey);
+    const outPath = pcmPathForChunkKey(chunkKey);
     const tmpPath = outPath + '.tmp';
-    fs.writeFileSync(tmpPath, mp3Buffer);
+    fs.writeFileSync(tmpPath, pcmBuffer);
     fs.renameSync(tmpPath, outPath);
-    console.log(`💾 Cached Gemini TTS audio: ${cacheKey.slice(0, 12)}...`);
-  } catch (err: any) {
-    console.error('Failed to write cache:', err.message);
-  }
+  } catch {}
 }
 
-function pcmToMp3Buffer(pcmBuffer: Buffer, { bitrateKbps = 192 } = {}): Promise<Buffer> {
+function readOutputFromCache(requestKey: string, format: OutputFormat): Buffer | null {
+  const p = outPathForRequest(requestKey, format);
+  if (fileExists(p)) {
+    touch(p);
+    return fs.readFileSync(p);
+  }
+  return null;
+}
+
+function writeOutputToCache(requestKey: string, format: OutputFormat, buffer: Buffer): void {
+  try {
+    const outPath = outPathForRequest(requestKey, format);
+    const tmpPath = outPath + '.tmp';
+    fs.writeFileSync(tmpPath, buffer);
+    fs.renameSync(tmpPath, outPath);
+    console.log(`💾 Cached Gemini TTS output: ${requestKey.slice(0, 12)}...`);
+  } catch {}
+}
+
+function pcmToFormatBuffer(pcmBuffer: Buffer, { format = 'mp3', bitrateKbps = 192 }: { format?: OutputFormat; bitrateKbps?: number } = {}): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     if (!ffmpegPath) return reject(new Error("ffmpeg binary not found"));
+
+    const outArgs = format === 'wav'
+      ? ['-f', 'wav', 'pipe:1']
+      : ['-codec:a', 'libmp3lame', '-b:a', `${bitrateKbps}k`, '-f', 'mp3', 'pipe:1'];
 
     const args = [
       "-hide_banner",
@@ -105,10 +177,7 @@ function pcmToMp3Buffer(pcmBuffer: Buffer, { bitrateKbps = 192 } = {}): Promise<
       "-ar", String(PCM_SAMPLE_RATE),
       "-ac", String(PCM_CHANNELS),
       "-i", "pipe:0",
-      "-codec:a", "libmp3lame",
-      "-b:a", `${bitrateKbps}k`,
-      "-f", "mp3",
-      "pipe:1",
+      ...outArgs,
     ];
 
     const ff = spawn(ffmpegPath, args, { stdio: ["pipe", "pipe", "pipe"] });
@@ -167,8 +236,7 @@ function buildChunksWithPauses(fullText: string, {
   const paragraphs = splitByParagraphs(fullText);
   const chunks: ChunkWithPause[] = [];
 
-  for (let pIndex = 0; pIndex < paragraphs.length; pIndex++) {
-    const para = paragraphs[pIndex];
+  for (const para of paragraphs) {
     const heading = isHeading(para);
 
     if (heading && para.length <= maxCharsPerChunk) {
@@ -186,31 +254,17 @@ function buildChunksWithPauses(fullText: string, {
     };
 
     for (const s of sentences) {
-      if (!current) {
-        current = s;
-        continue;
-      }
-
-      if ((current.length + 1 + s.length) <= maxCharsPerChunk) {
-        current += " " + s;
-      } else {
-        flush(pauseMsShort);
-        current = s;
-      }
+      if (!current) { current = s; continue; }
+      if ((current.length + 1 + s.length) <= maxCharsPerChunk) current += " " + s;
+      else { flush(pauseMsShort); current = s; }
     }
 
-    if (current.trim()) {
-      const pause = heading ? pauseMsHeading : pauseMsParagraph;
-      flush(pause);
-    }
+    if (current.trim()) flush(heading ? pauseMsHeading : pauseMsParagraph);
   }
 
   const merged: ChunkWithPause[] = [];
   for (const c of chunks) {
-    if (!merged.length) {
-      merged.push(c);
-      continue;
-    }
+    if (!merged.length) { merged.push(c); continue; }
     const prev = merged[merged.length - 1];
     if (
       c.text.length < Math.floor(minChunkChars / 2) &&
@@ -220,27 +274,18 @@ function buildChunksWithPauses(fullText: string, {
         text: (prev.text + " " + c.text).trim(),
         pauseMsAfter: Math.max(prev.pauseMsAfter, c.pauseMsAfter),
       };
-    } else {
-      merged.push(c);
-    }
+    } else merged.push(c);
   }
 
   const finalChunks: ChunkWithPause[] = [];
   for (const c of merged) {
-    if (c.text.length <= maxCharsPerChunk) {
-      finalChunks.push(c);
-      continue;
-    }
+    if (c.text.length <= maxCharsPerChunk) { finalChunks.push(c); continue; }
     let i = 0;
     while (i < c.text.length) {
-      finalChunks.push({
-        text: c.text.slice(i, i + maxCharsPerChunk).trim(),
-        pauseMsAfter: c.pauseMsAfter,
-      });
+      finalChunks.push({ text: c.text.slice(i, i + maxCharsPerChunk).trim(), pauseMsAfter: c.pauseMsAfter });
       i += maxCharsPerChunk;
     }
   }
-
   return finalChunks;
 }
 
@@ -264,10 +309,8 @@ async function runWithConcurrency<T, R>(
     }
   }
 
-  const runners: Promise<void>[] = [];
   const n = Math.max(1, Math.min(concurrency, items.length));
-  for (let i = 0; i < n; i++) runners.push(runner());
-  await Promise.all(runners);
+  await Promise.all(Array.from({ length: n }, runner));
   return results;
 }
 
@@ -283,33 +326,36 @@ export class GeminiTtsService {
   }
 
   async generateAudio(text: string, options: GeminiTtsOptions): Promise<Buffer> {
-    const cacheKey = buildCacheKey(text, options);
+    const format = options.format || 'mp3';
+    const requestKey = buildRequestKey(text, options);
     
     if (!options.skipCache) {
-      const cached = readFromCache(cacheKey);
+      const cached = readOutputFromCache(requestKey, format);
       if (cached) {
-        console.log(`⚡ Gemini TTS cache hit: ${cacheKey.slice(0, 12)}...`);
+        console.log(`⚡ Gemini TTS final cache hit: ${requestKey.slice(0, 12)}...`);
         return cached;
       }
       
-      const inFlight = inFlightByKey.get(cacheKey);
+      const inFlight = inFlightByKey.get(requestKey);
       if (inFlight) {
         console.log(`🔄 Gemini TTS de-dupe: waiting for in-flight request...`);
         return inFlight;
       }
     }
 
-    const generatePromise = this.generateAudioInternal(text, options, cacheKey);
+    const generatePromise = this.generateAudioInternal(text, options, requestKey);
     
     if (!options.skipCache) {
-      inFlightByKey.set(cacheKey, generatePromise);
-      generatePromise.finally(() => inFlightByKey.delete(cacheKey));
+      inFlightByKey.set(requestKey, generatePromise);
+      generatePromise.finally(() => inFlightByKey.delete(requestKey));
     }
 
     return generatePromise;
   }
 
-  private async generateAudioInternal(text: string, options: GeminiTtsOptions, cacheKey: string): Promise<Buffer> {
+  private async generateAudioInternal(text: string, options: GeminiTtsOptions, requestKey: string): Promise<Buffer> {
+    const format = options.format || 'mp3';
+    const bitrateKbps = options.bitrateKbps || 192;
     const maxCharsPerChunk = options.maxCharsPerChunk || 1400;
     const concurrency = options.concurrency || 3;
     const pauseMsShort = options.pauseMsShort ?? 120;
@@ -327,47 +373,63 @@ export class GeminiTtsService {
         pauseMsHeading,
       });
       
-      console.log(`📝 Split text into ${chunks.length} chunks for Gemini TTS (concurrency: ${concurrency})`);
+      console.log(`📝 Split text into ${chunks.length} chunks (concurrency: ${concurrency})`);
       
       if (!chunks.length) return Buffer.alloc(0);
 
-      const pcmChunks = await runWithConcurrency(
+      let cacheHits = 0;
+      const pcmItems = await runWithConcurrency(
         chunks,
         concurrency,
         async (chunk, idx) => {
-          console.log(`🎵 Processing Gemini chunk ${idx + 1}/${chunks.length} (${chunk.text.length} chars)`);
+          const chunkKey = buildChunkKey(options.voice, options.styleHint || '', chunk.text, options.model);
+          
+          const cachedPcm = readPcmFromCache(chunkKey);
+          if (cachedPcm) {
+            cacheHits++;
+            console.log(`⚡ Chunk ${idx + 1} PCM cache hit`);
+            return { pcm: cachedPcm, pauseMsAfter: chunk.pauseMsAfter };
+          }
+          
+          console.log(`🎵 Generating chunk ${idx + 1}/${chunks.length} (${chunk.text.length} chars)`);
           const pcm = await this.synthesizeChunkToPcm(chunk.text, options);
-          console.log(`✅ Gemini chunk ${idx + 1} completed (${pcm.length} bytes PCM)`);
+          
+          if (!options.skipCache) {
+            writePcmToCache(chunkKey, pcm);
+          }
+          
+          console.log(`✅ Chunk ${idx + 1} completed (${pcm.length} bytes PCM)`);
           return { pcm, pauseMsAfter: chunk.pauseMsAfter };
         },
         (done, total) => {
-          const pct = Math.round((done / total) * 100);
-          console.log(`📊 Gemini TTS progress: ${done}/${total} chunks (${pct}%)`);
+          const pct = Math.round((done / total) * 80);
+          console.log(`📊 Progress: ${done}/${total} chunks (${pct}%)`);
         }
       );
 
-      console.log(`🔄 Assembling ${pcmChunks.length} PCM chunks with section-aware pauses...`);
+      console.log(`📊 PCM cache hits: ${cacheHits}/${chunks.length}`);
+      console.log(`🔄 Assembling ${pcmItems.length} PCM chunks...`);
       
       const assembled: Buffer[] = [];
-      for (let i = 0; i < pcmChunks.length; i++) {
-        assembled.push(pcmChunks[i].pcm);
-        if (i < pcmChunks.length - 1) {
-          const ms = Math.max(0, pcmChunks[i].pauseMsAfter);
+      for (let i = 0; i < pcmItems.length; i++) {
+        assembled.push(pcmItems[i].pcm);
+        if (i < pcmItems.length - 1) {
+          const ms = Math.max(0, pcmItems[i].pauseMsAfter);
           if (ms > 0) assembled.push(makeSilencePcm(ms));
         }
       }
 
       const fullPcm = Buffer.concat(assembled);
-      console.log(`🔄 Converting ${fullPcm.length} bytes PCM to MP3...`);
+      console.log(`🔄 Encoding ${fullPcm.length} bytes PCM to ${format.toUpperCase()}...`);
       
-      const mp3Buffer = await pcmToMp3Buffer(fullPcm, { bitrateKbps: 192 });
-      console.log(`✅ Gemini TTS completed (${mp3Buffer.length} bytes MP3)`);
+      const outputBuffer = await pcmToFormatBuffer(fullPcm, { format, bitrateKbps });
+      console.log(`✅ Gemini TTS completed (${outputBuffer.length} bytes ${format.toUpperCase()})`);
       
       if (!options.skipCache) {
-        writeToCache(cacheKey, mp3Buffer);
+        writeOutputToCache(requestKey, format, outputBuffer);
       }
       
-      return mp3Buffer;
+      return outputBuffer;
     } catch (error: any) {
       console.error('❌ Gemini TTS API error:', error.message);
       throw new Error(`Failed to generate audio with Gemini: ${error.message}`);
@@ -423,20 +485,40 @@ export class GeminiTtsService {
     return ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'] as const;
   }
 
-  static cleanupOldCache(maxAgeDays: number = 7): void {
+  static cleanupCache(): void {
     try {
+      const files = [
+        ...listFilesRecursive(PCM_DIR),
+        ...listFilesRecursive(OUT_DIR),
+      ];
+
       const now = Date.now();
-      const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
-      const files = fs.readdirSync(CACHE_DIR).filter(f => f.endsWith('.mp3'));
-      let cleaned = 0;
+      let survivors: { f: string; st: fs.Stats }[] = [];
       
       for (const f of files) {
-        const fp = path.join(CACHE_DIR, f);
-        const st = fs.statSync(fp);
-        if (now - st.mtimeMs > maxAgeMs) {
-          fs.unlinkSync(fp);
+        try {
+          const st = fs.statSync(f);
+          if (now - st.mtimeMs > CACHE_TTL_MS) {
+            fs.unlinkSync(f);
+          } else {
+            survivors.push({ f, st });
+          }
+        } catch {}
+      }
+
+      let total = survivors.reduce((sum, x) => sum + x.st.size, 0);
+      if (total <= CACHE_MAX_BYTES) return;
+
+      survivors.sort((a, b) => a.st.mtimeMs - b.st.mtimeMs);
+      let cleaned = 0;
+      
+      for (const x of survivors) {
+        if (total <= CACHE_MAX_BYTES) break;
+        try {
+          fs.unlinkSync(x.f);
+          total -= x.st.size;
           cleaned++;
-        }
+        } catch {}
       }
       
       if (cleaned > 0) {
@@ -445,20 +527,21 @@ export class GeminiTtsService {
     } catch {}
   }
 
-  static getCacheStats(): { files: number; totalBytes: number } {
+  static getCacheStats(): { pcmFiles: number; outFiles: number; totalBytes: number } {
     try {
-      const files = fs.readdirSync(CACHE_DIR).filter(f => f.endsWith('.mp3'));
+      const pcmFiles = listFilesRecursive(PCM_DIR);
+      const outFiles = listFilesRecursive(OUT_DIR);
       let totalBytes = 0;
-      for (const f of files) {
-        totalBytes += fs.statSync(path.join(CACHE_DIR, f)).size;
+      for (const f of [...pcmFiles, ...outFiles]) {
+        totalBytes += fs.statSync(f).size;
       }
-      return { files: files.length, totalBytes };
+      return { pcmFiles: pcmFiles.length, outFiles: outFiles.length, totalBytes };
     } catch {
-      return { files: 0, totalBytes: 0 };
+      return { pcmFiles: 0, outFiles: 0, totalBytes: 0 };
     }
   }
 }
 
 setInterval(() => {
-  GeminiTtsService.cleanupOldCache(7);
-}, 60 * 60 * 1000);
+  GeminiTtsService.cleanupCache();
+}, CLEANUP_INTERVAL_MS);
