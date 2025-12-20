@@ -343,8 +343,9 @@ export class AudiobookService {
 
   /**
    * Generate audio using Gemini TTS (PRIMARY Provider)
+   * Now uses audiobook text processor for natural narration
    */
-  private async generateGeminiAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
+  private async generateGeminiAudio(text: string, options: AudiobookOptions, useAudiobookProcessor: boolean = true): Promise<Buffer> {
     console.log(`🔧 Starting Gemini TTS generation (PRIMARY). Text length: ${text.length} characters`);
     
     if (!this.geminiTts) {
@@ -357,6 +358,8 @@ export class AudiobookService {
         voice: options.voice as GeminiVoice,
         model: options.model as 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts',
         speed: options.speed,
+        useAudiobookProcessor,
+        narrationPreset: 'audiobook',
       });
 
       console.log(`✅ Gemini TTS completed (${audioBuffer.length} bytes)`);

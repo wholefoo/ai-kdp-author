@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { AudiobookTextProcessor, type NarrationPreset, type ProcessedChunk } from './audiobookTextProcessor';
 
 export type GeminiVoice = 
   | 'Zephyr' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Leda' | 'Orus' | 'Aoede' | 'Callirrhoe'
@@ -49,6 +50,9 @@ export interface GeminiTtsOptions {
   pauseMsHeading?: number;
   skipCache?: boolean;
   jobId?: string;
+  useAudiobookProcessor?: boolean;
+  narrationPreset?: 'audiobook' | 'conversational' | 'documentary' | 'bedtime' | 'dramatic';
+  pronunciationDictionary?: Record<string, string>;
 }
 
 interface ChunkWithPause {
@@ -319,6 +323,9 @@ function buildRequestKey(text: string, options: GeminiTtsOptions): string {
     pauseMsParagraph: options.pauseMsParagraph ?? 260,
     pauseMsHeading: options.pauseMsHeading ?? 420,
     maxCharsPerChunk: options.maxCharsPerChunk || 1400,
+    useAudiobookProcessor: options.useAudiobookProcessor || false,
+    narrationPreset: options.narrationPreset || 'audiobook',
+    pronunciationDict: options.pronunciationDictionary ? JSON.stringify(options.pronunciationDictionary) : '',
     text,
   };
   return sha256(JSON.stringify(keyObj));
@@ -621,24 +628,55 @@ export class GeminiTtsService {
     const pauseMsParagraph = options.pauseMsParagraph ?? 260;
     const pauseMsHeading = options.pauseMsHeading ?? 420;
     
-    const chunks = buildChunksWithPauses(text, {
-      maxCharsPerChunk,
-      minChunkChars: 300,
-      pauseMsShort,
-      pauseMsParagraph,
-      pauseMsHeading,
-    });
+    let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
     
-    setJobProgress(jobId, { total: chunks.length, done: 0, pct: 0, message: 'Preparing chunks...' });
+    if (options.useAudiobookProcessor) {
+      const processor = new AudiobookTextProcessor({
+        preset: options.narrationPreset || 'audiobook',
+        targetChunkChars: 1100,
+        minChunkChars: 350,
+        maxChunkChars: maxCharsPerChunk,
+        pronunciationDictionary: options.pronunciationDictionary,
+        expandAbbreviations: true,
+        normalizeNumbers: true,
+        dialogueCues: true,
+      });
+      
+      const audiobookChunks = processor.processForTts(text);
+      processedChunks = audiobookChunks.map(c => ({
+        text: c.text,
+        pauseMsAfter: c.pauseMsAfter,
+        promptPrefix: c.promptPrefix,
+      }));
+      
+      console.log(`📚 Audiobook processor: ${processedChunks.length} chunks with ${options.narrationPreset || 'audiobook'} preset`);
+    } else {
+      const chunks = buildChunksWithPauses(text, {
+        maxCharsPerChunk,
+        minChunkChars: 300,
+        pauseMsShort,
+        pauseMsParagraph,
+        pauseMsHeading,
+      });
+      processedChunks = chunks;
+    }
     
-    if (!chunks.length) return Buffer.alloc(0);
+    setJobProgress(jobId, { total: processedChunks.length, done: 0, pct: 0, message: 'Preparing chunks...' });
+    
+    if (!processedChunks.length) return Buffer.alloc(0);
 
     let cacheHits = 0;
     const pcmItems = await runWithConcurrency(
-      chunks,
+      processedChunks,
       concurrency,
       async (chunk, idx) => {
-        const chunkKey = buildChunkKey(options.voice, options.styleHint || '', chunk.text, options.model);
+        if (!chunk.text || chunk.text.trim() === '') {
+          return { pcm: makeSilencePcm(chunk.pauseMsAfter), pauseMsAfter: 0 };
+        }
+        
+        const promptPrefix = chunk.promptPrefix || '';
+        const textForTts = promptPrefix ? `${promptPrefix}\n\n${chunk.text}` : chunk.text;
+        const chunkKey = buildChunkKey(options.voice, options.styleHint || promptPrefix, chunk.text, options.model);
         
         const cachedPcm = readPcmFromCache(chunkKey);
         if (cachedPcm) {
@@ -646,7 +684,7 @@ export class GeminiTtsService {
           return { pcm: cachedPcm, pauseMsAfter: chunk.pauseMsAfter };
         }
         
-        const pcm = await this.synthesizeChunkToPcm(chunk.text, options);
+        const pcm = await this.synthesizeChunkToPcm(textForTts, options);
         
         if (!options.skipCache) {
           writePcmToCache(chunkKey, pcm);
@@ -720,24 +758,54 @@ export class GeminiTtsService {
     console.log(`🎙️ Generating audio with Gemini TTS using voice: ${options.voice}`);
     
     try {
-      const chunks = buildChunksWithPauses(text, {
-        maxCharsPerChunk,
-        minChunkChars: 300,
-        pauseMsShort,
-        pauseMsParagraph,
-        pauseMsHeading,
-      });
+      let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
       
-      console.log(`📝 Split text into ${chunks.length} chunks (concurrency: ${concurrency})`);
+      if (options.useAudiobookProcessor) {
+        const processor = new AudiobookTextProcessor({
+          preset: options.narrationPreset || 'audiobook',
+          targetChunkChars: 1100,
+          minChunkChars: 350,
+          maxChunkChars: maxCharsPerChunk,
+          pronunciationDictionary: options.pronunciationDictionary,
+          expandAbbreviations: true,
+          normalizeNumbers: true,
+          dialogueCues: true,
+        });
+        
+        const audiobookChunks = processor.processForTts(text);
+        processedChunks = audiobookChunks.map(c => ({
+          text: c.text,
+          pauseMsAfter: c.pauseMsAfter,
+          promptPrefix: c.promptPrefix,
+        }));
+        
+        console.log(`📚 Audiobook processor: ${processedChunks.length} chunks with ${options.narrationPreset || 'audiobook'} preset`);
+      } else {
+        const chunks = buildChunksWithPauses(text, {
+          maxCharsPerChunk,
+          minChunkChars: 300,
+          pauseMsShort,
+          pauseMsParagraph,
+          pauseMsHeading,
+        });
+        processedChunks = chunks;
+        console.log(`📝 Split text into ${processedChunks.length} chunks (concurrency: ${concurrency})`);
+      }
       
-      if (!chunks.length) return Buffer.alloc(0);
+      if (!processedChunks.length) return Buffer.alloc(0);
 
       let cacheHits = 0;
       const pcmItems = await runWithConcurrency(
-        chunks,
+        processedChunks,
         concurrency,
         async (chunk, idx) => {
-          const chunkKey = buildChunkKey(options.voice, options.styleHint || '', chunk.text, options.model);
+          if (!chunk.text || chunk.text.trim() === '') {
+            return { pcm: makeSilencePcm(chunk.pauseMsAfter), pauseMsAfter: 0 };
+          }
+          
+          const promptPrefix = chunk.promptPrefix || '';
+          const textForTts = promptPrefix ? `${promptPrefix}\n\n${chunk.text}` : chunk.text;
+          const chunkKey = buildChunkKey(options.voice, options.styleHint || promptPrefix, chunk.text, options.model);
           
           const cachedPcm = readPcmFromCache(chunkKey);
           if (cachedPcm) {
@@ -746,8 +814,8 @@ export class GeminiTtsService {
             return { pcm: cachedPcm, pauseMsAfter: chunk.pauseMsAfter };
           }
           
-          console.log(`🎵 Generating chunk ${idx + 1}/${chunks.length} (${chunk.text.length} chars)`);
-          const pcm = await this.synthesizeChunkToPcm(chunk.text, options);
+          console.log(`🎵 Generating chunk ${idx + 1}/${processedChunks.length} (${chunk.text.length} chars)`);
+          const pcm = await this.synthesizeChunkToPcm(textForTts, options);
           
           if (!options.skipCache) {
             writePcmToCache(chunkKey, pcm);
@@ -762,7 +830,7 @@ export class GeminiTtsService {
         }
       );
 
-      console.log(`📊 PCM cache hits: ${cacheHits}/${chunks.length}`);
+      console.log(`📊 PCM cache hits: ${cacheHits}/${processedChunks.length}`);
       console.log(`🔄 Assembling ${pcmItems.length} PCM chunks...`);
       
       const assembled: Buffer[] = [];
