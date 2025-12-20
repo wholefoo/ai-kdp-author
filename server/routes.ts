@@ -3623,9 +3623,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // TTS Job Status and Recovery Routes (for resume-after-restart capability)
+  // Now uses unified TtsJobManager for all providers (Gemini, Deepgram, OpenAI)
   app.get("/api/tts-jobs", isAuthenticated, async (req: any, res) => {
     try {
-      const { getJob, getAllJobs } = await import('./services/geminiTts');
+      const { getAllJobs } = await import('./services/ttsJobManager');
       const jobs = getAllJobs();
       res.json({ jobs });
     } catch (error: any) {
@@ -3637,7 +3638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tts-job/:jobId", isAuthenticated, async (req: any, res) => {
     try {
       const { jobId } = req.params;
-      const { getJob } = await import('./services/geminiTts');
+      const { getJob } = await import('./services/ttsJobManager');
       
       const job = getJob(jobId);
       if (!job) {
@@ -3654,7 +3655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tts-result/:jobId", isAuthenticated, async (req: any, res) => {
     try {
       const { jobId } = req.params;
-      const { getJob, getJobResult } = await import('./services/geminiTts');
+      const { getJob, getJobResult } = await import('./services/ttsJobManager');
       
       const job = getJob(jobId);
       if (!job) {
@@ -3666,7 +3667,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ 
           error: "Job was interrupted. Use POST /api/tts-retry/:jobId to resume.",
           status: job.status,
-          progress: job.progress 
+          progress: job.progress,
+          provider: job.provider
         });
       }
       
@@ -3675,7 +3677,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(202).json({ 
           error: "Job not complete",
           status: job.status,
-          progress: job.progress 
+          progress: job.progress,
+          provider: job.provider
         });
       }
       
@@ -3684,7 +3687,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Audio file not found" });
       }
       
-      const contentType = job.format === 'wav' ? 'audio/wav' : 'audio/mpeg';
+      const contentType = job.format === 'wav' ? 'audio/wav' 
+        : job.format === 'aac' ? 'audio/aac'
+        : job.format === 'opus' ? 'audio/opus'
+        : 'audio/mpeg';
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Disposition', `attachment; filename="audio.${job.format}"`);
       res.send(audioBuffer);
@@ -3695,11 +3701,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Retry an interrupted TTS job (reuses cached chunks for fast recovery)
+  // Now supports all providers: Gemini, Deepgram, OpenAI
   app.post("/api/tts-retry/:jobId", isAuthenticated, async (req: any, res) => {
     try {
       const { jobId } = req.params;
       const payload = req.body;
-      const { getJob, createJob, GeminiTtsService } = await import('./services/geminiTts');
+      const { getJob } = await import('./services/ttsJobManager');
       
       const existingJob = getJob(jobId);
       if (!existingJob) {
@@ -3719,38 +3726,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required field: text" });
       }
       
-      console.log(`🔄 Retrying TTS job ${jobId} (status: ${existingJob.status})`);
+      const provider = existingJob.provider || 'gemini';
+      console.log(`🔄 Retrying ${provider} TTS job ${jobId} (status: ${existingJob.status})`);
       
-      // Create a new job with the same parameters
-      // The per-chunk cache will be reused automatically
-      const geminiTts = new GeminiTtsService();
-      const newJob = createJob({
-        text: payload.text,
-        voiceName: payload.voiceName || existingJob.voiceName || 'Kore',
-        format: payload.format || existingJob.format || 'mp3',
-        styleHint: payload.styleHint || '',
-        maxCharsPerChunk: payload.maxCharsPerChunk || 1400,
-        concurrency: payload.concurrency || 3,
-        pauseMsShort: payload.pauseMsShort || 0,
-        pauseMsParagraph: payload.pauseMsParagraph || 0,
-        pauseMsHeading: payload.pauseMsHeading || 0,
-        bitrateKbps: payload.bitrateKbps || 128,
-      });
+      let newJobId: string;
       
-      // Start generation in background (non-blocking)
-      geminiTts.generateAudio(payload.text, {
-        voice: payload.voiceName || 'Kore',
-        model: 'gemini-2.5-flash-preview-tts',
-        speed: 1.0,
-      }).catch(err => {
-        console.error(`❌ Retry job ${newJob.jobId} failed:`, err.message);
-      });
+      // Route to appropriate provider
+      if (provider === 'openai') {
+        const { OpenAITtsService } = await import('./services/openaiTts');
+        const openaiTts = new OpenAITtsService();
+        newJobId = openaiTts.createJob(payload.text, {
+          voice: payload.voice || existingJob.voice || 'alloy',
+          model: payload.model || existingJob.model || 'tts-1',
+          format: payload.format || existingJob.format || 'mp3',
+          speed: payload.speed || 1.0,
+        });
+      } else if (provider === 'deepgram') {
+        const { DeepgramTtsService } = await import('./services/deepgramTts');
+        const deepgramTts = new DeepgramTtsService();
+        newJobId = deepgramTts.createJob(payload.text, {
+          voice: payload.voice || existingJob.voice || 'aura-2-thalia-en',
+          format: payload.format || existingJob.format || 'mp3',
+          speed: payload.speed || 1.0,
+        });
+      } else {
+        // Default to Gemini
+        const { GeminiTtsService } = await import('./services/geminiTts');
+        const geminiTts = new GeminiTtsService();
+        newJobId = geminiTts.createJob(payload.text, {
+          voice: payload.voice || existingJob.voice || 'Kore',
+          model: payload.model || 'gemini-2.5-flash-preview-tts',
+          format: payload.format || existingJob.format || 'mp3',
+          speed: payload.speed || 1.0,
+        });
+      }
       
       res.json({ 
-        jobId: newJob.jobId,
+        jobId: newJobId,
         previousJobId: jobId,
+        provider,
         status: 'queued',
-        message: 'Retry job created. Cached chunks will be reused for faster generation.'
+        message: `${provider.charAt(0).toUpperCase() + provider.slice(1)} retry job created. Cached chunks will be reused for faster generation.`
       });
     } catch (error: any) {
       console.error("Error retrying TTS job:", error);

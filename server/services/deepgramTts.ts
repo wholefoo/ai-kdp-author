@@ -1,4 +1,23 @@
 import axios from 'axios';
+import {
+  TtsProvider,
+  OutputFormat,
+  createJob,
+  setJobProgress,
+  setJobStatus,
+  setJobError,
+  completeJob,
+  buildChunkKey,
+  readPcmFromCache,
+  writePcmToCache,
+  pcmToFormatBuffer,
+  makeSilencePcm,
+  getJob,
+  getJobResult,
+  checkJobOutputExists,
+} from './ttsJobManager';
+import ffmpegPath from 'ffmpeg-static';
+import { spawn } from 'node:child_process';
 
 // Deepgram Aura-2 English voices (40+ voices)
 export type DeepgramEnglishVoice =
@@ -27,6 +46,9 @@ export interface DeepgramTtsOptions {
   voice: DeepgramVoice;
   speed?: number; // 0.25 to 2.0 (default 1.0)
   encoding?: 'mp3' | 'wav' | 'linear16' | 'aac' | 'opus';
+  format?: OutputFormat;
+  jobId?: string;
+  skipCache?: boolean;
 }
 
 export interface DeepgramVoiceInfo {
@@ -41,6 +63,9 @@ export interface DeepgramVoiceInfo {
   isRecommended?: boolean;
 }
 
+const PCM_SAMPLE_RATE = 24000;
+const PCM_CHANNELS = 1;
+
 export class DeepgramTtsService {
   private apiKey: string;
   private baseUrl = 'https://api.deepgram.com/v1/speak';
@@ -54,6 +79,107 @@ export class DeepgramTtsService {
 
   isAvailable(): boolean {
     return !!this.apiKey;
+  }
+
+  createJob(text: string, options: DeepgramTtsOptions): string {
+    const format = options.format || 'mp3';
+    const jobId = createJob({
+      provider: 'deepgram',
+      voice: options.voice,
+      format,
+      text,
+      jobId: options.jobId,
+    });
+    
+    this.executeJobAsync(jobId, text, options).catch(err => {
+      console.error(`❌ Deepgram job ${jobId.slice(0, 8)}... failed:`, err.message);
+    });
+    
+    return jobId;
+  }
+
+  private async executeJobAsync(jobId: string, text: string, options: DeepgramTtsOptions): Promise<void> {
+    const job = getJob(jobId);
+    if (!job) return;
+    
+    try {
+      if (checkJobOutputExists(jobId)) {
+        setJobProgress(jobId, { pct: 100, message: 'Cache hit (instant)' });
+        setJobStatus(jobId, 'done', 'Cache hit');
+        return;
+      }
+      
+      setJobStatus(jobId, 'running', 'Chunking text...');
+      
+      const buffer = await this.generateAudioWithJobProgress(text, options, jobId);
+      
+      completeJob(jobId, buffer);
+      
+    } catch (error: any) {
+      setJobError(jobId, error?.message ?? String(error));
+    }
+  }
+
+  private async generateAudioWithJobProgress(text: string, options: DeepgramTtsOptions, jobId: string): Promise<Buffer> {
+    const format = options.format || 'mp3';
+    const chunks = this.splitTextIntoChunks(text, 2000);
+    
+    setJobProgress(jobId, { total: chunks.length, done: 0, pct: 0, message: 'Preparing chunks...' });
+    
+    if (!chunks.length) return Buffer.alloc(0);
+
+    let cacheHits = 0;
+    const pcmBuffers: Buffer[] = [];
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const chunkKey = buildChunkKey('deepgram', options.voice, chunk);
+      
+      const cachedPcm = readPcmFromCache(chunkKey);
+      if (cachedPcm && !options.skipCache) {
+        cacheHits++;
+        pcmBuffers.push(cachedPcm);
+      } else {
+        const pcm = await this.synthesizeChunkToPcm(chunk, options);
+        
+        if (!options.skipCache) {
+          writePcmToCache(chunkKey, pcm);
+        }
+        
+        pcmBuffers.push(pcm);
+      }
+      
+      const done = i + 1;
+      const pct = Math.round((done / chunks.length) * 80);
+      setJobProgress(jobId, { done, total: chunks.length, pct, message: `Generating audio (${done}/${chunks.length})` });
+    }
+
+    if (cacheHits > 0) {
+      console.log(`⚡ Deepgram TTS: ${cacheHits}/${chunks.length} chunks from cache`);
+    }
+
+    setJobProgress(jobId, { pct: 85, message: 'Assembling audio...' });
+    
+    const assembled: Buffer[] = [];
+    for (let i = 0; i < pcmBuffers.length; i++) {
+      assembled.push(pcmBuffers[i]);
+      if (i < pcmBuffers.length - 1) {
+        assembled.push(makeSilencePcm(120));
+      }
+    }
+
+    const fullPcm = Buffer.concat(assembled);
+    
+    setJobProgress(jobId, { pct: 90, message: 'Encoding output...' });
+    
+    const outputBuffer = await pcmToFormatBuffer(fullPcm, { format, bitrateKbps: 192 });
+    
+    return outputBuffer;
+  }
+
+  private async synthesizeChunkToPcm(text: string, options: DeepgramTtsOptions): Promise<Buffer> {
+    const audioBuffer = await this.synthesizeChunk(text, { ...options, encoding: 'linear16' });
+    return audioBuffer;
   }
 
   async generateAudio(text: string, options: DeepgramTtsOptions): Promise<Buffer> {

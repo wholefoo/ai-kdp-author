@@ -92,17 +92,33 @@ Subscription model preference: Trial users get only "Refine (Analyze & improve)"
   - Full KDP compliance - no duplicate chapter numbers in submissions
 
 ## Recent Changes (December 2025)
+
+- **Unified TTS Job Manager for ALL Providers (December 20, 2025)**
+  - Created `server/services/ttsJobManager.ts` - Provider-agnostic job persistence module
+  - All three TTS providers now benefit from the same infrastructure:
+    - **Gemini TTS** (30 voices) - PRIMARY provider with per-chunk PCM caching
+    - **Deepgram Aura-2** (45+ voices) - Fallback with per-chunk caching
+    - **OpenAI TTS** (6 voices) - Final fallback with per-chunk caching
+  - New adapters created:
+    - `server/services/openaiTts.ts` - OpenAI adapter with job persistence and caching
+    - Updated `server/services/deepgramTts.ts` - Now uses unified job manager
+  - Features available for ALL providers:
+    - Jobs survive server restarts (persisted to `cache/jobs/*.json`)
+    - Per-chunk PCM caching for fast retry recovery
+    - 7-day TTL with automatic cleanup (runs every 6 hours + at startup)
+    - Retry capability via `POST /api/tts-retry/:jobId` (routes to correct provider)
+    - Progress tracking with ETA estimation
+  - API endpoints now provider-agnostic:
+    - `GET /api/tts-jobs` - List all TTS jobs from all providers
+    - `GET /api/tts-job/:jobId` - Get specific job status (includes provider field)
+    - `GET /api/tts-result/:jobId` - Download completed audio (returns 409 for interrupted jobs, 202 for in-progress)
+    - `POST /api/tts-retry/:jobId` - Retry interrupted/failed job (auto-routes to original provider)
+
 - **TTS Job Persistence & Resume Capability (December 19, 2025)**
   - Jobs survive server restarts via persisted `cache/jobs/<jobId>.json` files
   - If server restarts mid-job, status shows as "interrupted" - users can retry
   - Per-chunk PCM caching means retries pick up fast from cached chunks
-  - New API endpoints for stateless result retrieval:
-    - `GET /api/tts-jobs` - List all TTS jobs
-    - `GET /api/tts-job/:jobId` - Get specific job status/progress
-    - `GET /api/tts-result/:jobId` - Download completed audio (returns 409 for interrupted jobs, 202 for in-progress)
-    - `POST /api/tts-retry/:jobId` - Retry interrupted/failed job (reuses cached chunks)
   - 7-day TTL for job metadata cleanup
-  - Implementation: `server/services/geminiTts.ts` with `createJob()`, `getJob()`, `getJobResult()` exports
 
 - **Multi-TTS Provider Support (Approach 1 Implementation) - FULLY WORKING WITH FALLBACK**
   - Added dual TTS provider support: OpenAI and Gemini TTS (36 total voices available)
