@@ -122,7 +122,7 @@ export default function AdvancedSettings({ onToggle }: AdvancedSettingsProps) {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">AI Model:</span>
-                  <span className="font-medium">GPT-4o (Latest)</span>
+                  <span className="font-medium">GPT-5.2 (Primary)</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Generation Mode:</span>
