@@ -434,6 +434,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   await setupAuth(app);
 
+  // Security headers middleware
+  app.use((req, res, next) => {
+    // Content-Security-Policy - protect against XSS and injection attacks
+    res.setHeader('Content-Security-Policy', 
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
+      "img-src 'self' data: blob: https:; " +
+      "connect-src 'self' https://api.stripe.com https://*.replit.dev https://*.replit.app wss://*.replit.dev wss://*.replit.app; " +
+      "frame-src 'self' https://js.stripe.com; " +
+      "object-src 'none'; " +
+      "base-uri 'self';"
+    );
+    // X-Frame-Options - prevent clickjacking
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    // X-Content-Type-Options - prevent MIME type sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Referrer-Policy - control referrer information
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    // X-XSS-Protection - legacy XSS protection for older browsers
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+  });
+
   // Character Consistency Analyzer route for novels
   app.post('/api/novels/:novelId/character-consistency', isAuthenticated, async (req, res) => {
     try {
