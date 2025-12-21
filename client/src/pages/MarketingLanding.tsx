@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Helmet } from "react-helmet-async";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { 
   BookOpen, 
   Headphones, 
@@ -15,7 +16,10 @@ import {
   PenTool,
   Target,
   BarChart3,
-  Megaphone
+  Megaphone,
+  HelpCircle,
+  Mail,
+  Globe
 } from "lucide-react";
 
 export default function MarketingLanding() {
@@ -123,7 +127,7 @@ export default function MarketingLanding() {
   ];
 
   const pricing = {
-    monthly: 49,
+    monthly: 29,
     features: [
       "Complete audiobook creation",
       "Advanced AI analysis tools",
@@ -135,16 +139,122 @@ export default function MarketingLanding() {
     ]
   };
 
+  const faqs = [
+    {
+      question: "Can AI-generated books be published on Amazon KDP?",
+      answer: "Yes, AI-generated content can be published on Amazon KDP. According to Amazon's content guidelines, you must have the rights to publish the content and it must meet their quality standards. AI KDP Author generates original content that you own full rights to publish. We recommend reviewing Amazon's latest KDP Content Guidelines before publishing."
+    },
+    {
+      question: "How long does it take to generate a 50,000-80,000 word novel?",
+      answer: "AI KDP Author generates complete novels in approximately 15-45 minutes depending on the word count and chapter complexity. A typical 60,000-word novel with 25 chapters takes about 25-30 minutes. The process includes outline generation, chapter-by-chapter writing with character consistency, and professional formatting."
+    },
+    {
+      question: "Does AI KDP Author format manuscripts to KDP standards?",
+      answer: "Yes, all exports are formatted specifically for Amazon KDP publishing. Our DOCX exports use industry-standard Aptos font, proper margins, chapter headings, page breaks, and front matter formatting. We also support PDF, TXT, and Markdown exports for different publishing needs."
+    },
+    {
+      question: "What genres does AI KDP Author support?",
+      answer: "AI KDP Author supports all major fiction genres including Romance, Mystery/Thriller, Science Fiction, Fantasy, Horror, Literary Fiction, Historical Fiction, Young Adult, and more. Each genre uses specialized AI prompts to ensure authentic genre conventions, tropes, and reader expectations are met."
+    },
+    {
+      question: "How does the audiobook generation work?",
+      answer: "AI KDP Author uses a triple-provider TTS system with 80+ professional AI voices. Gemini TTS serves as the primary provider (30 voices), with Deepgram Aura-2 (45+ voices) and OpenAI TTS (6 voices) as fallbacks. Our smart text processor includes dialogue detection, natural pause insertion, and 5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)."
+    },
+    {
+      question: "What word count and chapter options are available?",
+      answer: "You can customize word count from 30,000 to 120,000 words, and chapter count from 10 to 50 chapters. Individual chapter lengths range from 1,500 to 5,000 words. The default settings (50,000-80,000 words, 20-30 chapters) are optimized for typical novel lengths on Amazon KDP."
+    },
+    {
+      question: "Is there a free trial available?",
+      answer: "Trial users can access the Manuscript Quality Analyzer feature to test our analysis capabilities. The full novel generation, audiobook creation, and export features require a Pro subscription at $29/month. We offer a 30-day money-back guarantee on all subscriptions."
+    },
+    {
+      question: "What AI models power the novel generation?",
+      answer: "AI KDP Author uses OpenAI's GPT-5.2 as the primary model for novel generation, with GPT-4o as a fallback. These advanced language models ensure high-quality, coherent storytelling with consistent characters, plot development, and genre-appropriate writing styles."
+    }
+  ];
+
+  // JSON-LD structured data for SEO and AI visibility
+  const jsonLdOrganization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "AI KDP Author",
+    "url": "https://ai-kdp-author.replit.app",
+    "logo": "https://ai-kdp-author.replit.app/logo.png",
+    "description": "Professional AI-powered novel generation and publishing tools for Amazon KDP authors.",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "email": "support@ai-kdp-author.com"
+    }
+  };
+
+  const jsonLdWebsite = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "AI KDP Author",
+    "url": "https://ai-kdp-author.replit.app",
+    "description": "Create professional, publishable novels of 50,000-80,000 words with AI for Amazon KDP publishing."
+  };
+
+  const jsonLdSoftwareApplication = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AI KDP Author",
+    "applicationCategory": "Writing Assistant",
+    "operatingSystem": "Web Browser",
+    "description": "AI-powered novel generation platform that creates complete 50,000-80,000 word novels with 20-30 chapters, professional audiobook narration with 80+ voices, and KDP-ready formatting.",
+    "featureList": [
+      "Complete novel generation (50,000-80,000 words)",
+      "20-30 professionally structured chapters",
+      "80+ AI voices for audiobook creation",
+      "5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)",
+      "GPT-5.2 powered content generation",
+      "KDP-ready DOCX, PDF, TXT, Markdown exports",
+      "Character consistency analyzer",
+      "Narrative arc visualization",
+      "AI-powered marketing content generation"
+    ],
+    "offers": {
+      "@type": "Offer",
+      "price": "29.00",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2025-12-31",
+      "availability": "https://schema.org/InStock"
+    }
+  };
+
+  const jsonLdFaqPage = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Helmet>
         <title>AI KDP Author - Generate Complete Novels for Amazon KDP Publishing</title>
-        <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with GPT-5.2. Generate complete manuscripts, audiobooks with 80+ AI voices, and marketing content. Perfect for Amazon KDP publishing." />
-        <link rel="canonical" href="https://ai-kdp-author.com/home" />
+        <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with GPT-5.2. Generate complete manuscripts with 20-30 chapters, audiobooks with 80+ AI voices, and marketing content. Perfect for Amazon KDP publishing." />
+        <link rel="canonical" href="https://ai-kdp-author.replit.app/home" />
         <meta property="og:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP Publishing" />
-        <meta property="og:description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts, audiobooks, and get quality analysis tools." />
+        <meta property="og:description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts, audiobooks with 80+ voices, and get quality analysis tools." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.com/home" />
+        <meta property="og:url" content="https://ai-kdp-author.replit.app/home" />
+        <meta property="og:site_name" content="AI KDP Author" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP" />
+        <meta name="twitter:description" content="Create 50,000-80,000 word novels with GPT-5.2. 80+ AI voices for audiobooks. KDP-ready formatting." />
+        <script type="application/ld+json">{JSON.stringify(jsonLdOrganization)}</script>
+        <script type="application/ld+json">{JSON.stringify(jsonLdWebsite)}</script>
+        <script type="application/ld+json">{JSON.stringify(jsonLdSoftwareApplication)}</script>
+        <script type="application/ld+json">{JSON.stringify(jsonLdFaqPage)}</script>
       </Helmet>
 
       {/* Hero Section */}
@@ -390,6 +500,89 @@ export default function MarketingLanding() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section id="faq" className="py-20 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="flex justify-center mb-4">
+              <HelpCircle className="h-12 w-12 text-primary" />
+            </div>
+            <h2 className="text-4xl font-bold mb-6">Frequently Asked Questions</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Everything you need to know about AI KDP Author and publishing AI-generated novels on Amazon KDP
+            </p>
+          </div>
+          
+          <Accordion type="single" collapsible className="space-y-4">
+            {faqs.map((faq, index) => (
+              <AccordionItem 
+                key={index} 
+                value={`faq-${index}`} 
+                className="bg-white rounded-lg border px-6"
+                data-testid={`faq-item-${index}`}
+              >
+                <AccordionTrigger className="text-left font-semibold text-lg py-6 hover:no-underline" data-testid={`faq-trigger-${index}`}>
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-600 pb-6 leading-relaxed" data-testid={`faq-content-${index}`}>
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          
+          <div className="mt-12 text-center">
+            <p className="text-gray-600 mb-4">
+              Have more questions? Check out our comprehensive documentation or contact support.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Button variant="outline" onClick={() => window.location.href = '/docs'} data-testid="button-view-docs">
+                View Documentation
+              </Button>
+              <Button variant="outline" onClick={() => window.location.href = '/about'} data-testid="button-contact-support">
+                <Mail className="h-4 w-4 mr-2" />
+                Contact Support
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-20">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-6">How AI KDP Author Works</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From idea to published novel in four simple steps
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
+              <h3 className="font-semibold text-lg mb-2">Enter Your Idea</h3>
+              <p className="text-gray-600 text-sm">Choose a genre, provide a title and plot idea. Select word count (30K-120K) and chapter count (10-50).</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-purple-100 text-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
+              <h3 className="font-semibold text-lg mb-2">AI Generates Novel</h3>
+              <p className="text-gray-600 text-sm">GPT-5.2 creates a detailed outline, then writes each chapter with consistent characters and plot development.</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-green-100 text-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
+              <h3 className="font-semibold text-lg mb-2">Review & Enhance</h3>
+              <p className="text-gray-600 text-sm">Use our quality analyzer, character consistency checker, and AI-powered revision tools to perfect your manuscript.</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-orange-100 text-orange-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">4</div>
+              <h3 className="font-semibold text-lg mb-2">Export & Publish</h3>
+              <p className="text-gray-600 text-sm">Download KDP-ready DOCX, create audiobooks with 80+ voices, and use AI marketing tools to launch your book.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-br from-blue-600 to-purple-600 text-white">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -429,24 +622,35 @@ export default function MarketingLanding() {
       {/* Footer */}
       <footer className="py-12 bg-gray-900 text-gray-300">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
+          <div className="grid md:grid-cols-5 gap-8">
+            <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <Crown className="h-6 w-6 text-primary" />
                 <span className="text-xl font-bold text-white">AI KDP Author</span>
               </div>
-              <p className="text-sm leading-relaxed">
-                Professional AI-powered novel generation and publishing tools for Amazon KDP authors.
+              <p className="text-sm leading-relaxed mb-4">
+                Professional AI-powered novel generation and publishing tools for Amazon KDP authors. Create complete 50,000-80,000 word novels with 80+ AI voices for audiobooks.
               </p>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center">
+                  <Mail className="h-4 w-4 mr-2" />
+                  <span>support@ai-kdp-author.com</span>
+                </div>
+                <div className="flex items-center">
+                  <Globe className="h-4 w-4 mr-2" />
+                  <span>ai-kdp-author.replit.app</span>
+                </div>
+              </div>
             </div>
             
             <div>
               <h4 className="text-white font-semibold mb-4">Features</h4>
               <div className="space-y-2 text-sm">
-                <div>Novel Generation</div>
-                <div>Audiobook Creation</div>
+                <div>Novel Generation (30K-120K words)</div>
+                <div>Audiobook Creation (80+ voices)</div>
                 <div>Character Development</div>
                 <div>Quality Analysis</div>
+                <div>Marketing Tools</div>
               </div>
             </div>
             
@@ -457,7 +661,10 @@ export default function MarketingLanding() {
                   <a href="/api/login" className="hover:text-white transition-colors" data-testid="link-footer-login">Login</a>
                 </div>
                 <div>
-                  <a href="/subscribe" className="hover:text-white transition-colors" data-testid="link-footer-subscribe">Subscribe</a>
+                  <a href="/subscribe" className="hover:text-white transition-colors" data-testid="link-footer-subscribe">Subscribe ($29/mo)</a>
+                </div>
+                <div>
+                  <a href="#faq" className="hover:text-white transition-colors" data-testid="link-footer-faq">FAQ</a>
                 </div>
               </div>
             </div>
@@ -472,7 +679,7 @@ export default function MarketingLanding() {
                   <a href="/blog" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" data-testid="link-footer-blog">Blog</a>
                 </div>
                 <div>
-                  <a href="/docs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" data-testid="link-footer-docs">Docs</a>
+                  <a href="/docs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" data-testid="link-footer-docs">Documentation</a>
                 </div>
                 <div>
                   <a href="/privacy" className="hover:text-white transition-colors" data-testid="link-footer-privacy">Privacy Policy</a>
@@ -481,14 +688,22 @@ export default function MarketingLanding() {
                   <a href="/terms" className="hover:text-white transition-colors" data-testid="link-footer-terms">Terms of Use</a>
                 </div>
                 <div>
-                  <a href="/about" className="hover:text-white transition-colors" data-testid="link-footer-about">About</a>
+                  <a href="/about" className="hover:text-white transition-colors" data-testid="link-footer-about">About Us</a>
+                </div>
+                <div>
+                  <a href="https://kdp.amazon.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" data-testid="link-footer-kdp">Amazon KDP</a>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm">
-            <p>&copy; 2025 AI KDP Author. All rights reserved.</p>
+          <div className="border-t border-gray-700 mt-8 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center text-sm">
+              <p>&copy; 2025 AI KDP Author. All rights reserved.</p>
+              <p className="mt-2 md:mt-0 text-gray-500">
+                Powered by GPT-5.2 | Gemini TTS | Deepgram Aura-2 | OpenAI TTS
+              </p>
+            </div>
           </div>
         </div>
       </footer>
