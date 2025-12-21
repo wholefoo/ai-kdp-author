@@ -14,7 +14,8 @@ import {
   Download,
   PenTool,
   Target,
-  BarChart3
+  BarChart3,
+  Megaphone
 } from "lucide-react";
 
 export default function MarketingLanding() {
@@ -22,23 +23,23 @@ export default function MarketingLanding() {
     {
       icon: BookOpen,
       title: "Complete Novel Generation",
-      description: "Generate full 50,000-80,000 word novels with 20-30 professionally structured chapters, ready for Amazon KDP publishing.",
+      description: "Generate full 50,000-80,000 word novels with 20-30 professionally structured chapters using GPT-5.2, ready for Amazon KDP publishing.",
       details: [
-        "Customizable word count (30K-120K)",
-        "Multiple genres and writing styles", 
-        "Character development and plot consistency",
-        "Professional manuscript formatting"
+        "Powered by GPT-5.2 with GPT-4o fallback",
+        "Customizable word count (30K-120K) and chapter count (10-50)",
+        "Multiple genres with AI-powered character development", 
+        "Professional manuscript formatting (Aptos font)"
       ]
     },
     {
       icon: Headphones,
       title: "Professional Audiobook Creation",
-      description: "Transform your novels into high-quality audiobooks with multiple voice options, speeds, and professional audio formats.",
+      description: "Transform your novels into high-quality audiobooks with 80+ AI voices, smart narration processing, and KDP-compliant audio formats.",
       details: [
-        "6 premium AI voices (Alloy, Echo, Fable, Onyx, Nova, Shimmer)",
-        "Adjustable narration speed (25-400%)",
-        "Multiple audio formats (MP3, Opus, AAC, FLAC)",
-        "Chapter-by-chapter generation with metadata"
+        "80+ premium voices across 3 TTS providers (Gemini, Deepgram, OpenAI)",
+        "Smart text processor with dialogue detection and natural pauses",
+        "5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)",
+        "Per-chunk caching with job persistence and resume capability"
       ]
     },
     {
@@ -84,6 +85,17 @@ export default function MarketingLanding() {
         "Content quality validation",
         "Progress tracking and metrics"
       ]
+    },
+    {
+      icon: Megaphone,
+      title: "Marketing & Promotion Tools",
+      description: "AI-powered marketing toolkit to help promote your novels with professional marketing content.",
+      details: [
+        "Book description and blurb generator",
+        "Social media post creation for multiple platforms",
+        "Email marketing content and newsletters",
+        "Launch strategy and promotional materials"
+      ]
     }
   ];
 
@@ -127,7 +139,7 @@ export default function MarketingLanding() {
     <div className="min-h-screen bg-white">
       <Helmet>
         <title>AI KDP Author - Generate Complete Novels for Amazon KDP Publishing</title>
-        <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts, audiobooks, and get quality analysis tools. Perfect for Amazon KDP publishing with built-in formatting." />
+        <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with GPT-5.2. Generate complete manuscripts, audiobooks with 80+ AI voices, and marketing content. Perfect for Amazon KDP publishing." />
         <link rel="canonical" href="https://ai-kdp-author.com/home" />
         <meta property="og:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP Publishing" />
         <meta property="og:description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts, audiobooks, and get quality analysis tools." />
@@ -156,7 +168,7 @@ export default function MarketingLanding() {
           </p>
           
           <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
-            From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word novels, audiobooks, and comprehensive analysis tools - all powered by advanced AI.
+            From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word novels, audiobooks with 80+ AI voices, and marketing content - all powered by GPT-5.2.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -210,7 +222,7 @@ export default function MarketingLanding() {
               <div className="text-sm text-gray-600">Chapters generated</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-green-600">6</div>
+              <div className="text-3xl font-bold text-green-600">80+</div>
               <div className="text-sm text-gray-600">AI voice options</div>
             </div>
             <div className="space-y-2">
