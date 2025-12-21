@@ -90,7 +90,7 @@ export default function PromotionHub({ novel }: PromotionHubProps) {
 
   const createCampaignMutation = useMutation({
     mutationFn: async (novelId: string) => {
-      const response = await apiRequest(`/api/marketing/novels/${novelId}/campaign`, { method: 'POST' });
+      const response = await apiRequest(`/api/marketing/novels/${novelId}/campaign`, 'POST');
       return response;
     },
     onSuccess: () => {
@@ -104,7 +104,7 @@ export default function PromotionHub({ novel }: PromotionHubProps) {
 
   const generateFullCampaignMutation = useMutation({
     mutationFn: async (campaignId: string) => {
-      const response = await apiRequest(`/api/marketing/campaigns/${campaignId}/generate`, { method: 'POST' });
+      const response = await apiRequest(`/api/marketing/campaigns/${campaignId}/generate`, 'POST');
       return response;
     },
     onSuccess: () => {
@@ -118,7 +118,7 @@ export default function PromotionHub({ novel }: PromotionHubProps) {
 
   const generateContentMutation = useMutation({
     mutationFn: async ({ campaignId, contentType }: { campaignId: string; contentType: string }) => {
-      const response = await apiRequest(`/api/marketing/campaigns/${campaignId}/generate/${contentType}`, { method: 'POST' });
+      const response = await apiRequest(`/api/marketing/campaigns/${campaignId}/generate/${contentType}`, 'POST');
       return response;
     },
     onSuccess: () => {
