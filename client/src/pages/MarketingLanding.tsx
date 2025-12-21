@@ -203,7 +203,7 @@ export default function MarketingLanding() {
             </div>
             <div className="flex items-center">
               <Check className="h-4 w-4 text-green-600 mr-2" />
-              <span>Unlimited novels</span>
+              <span>No setup fees</span>
             </div>
           </div>
         </div>
