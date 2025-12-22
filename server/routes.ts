@@ -3869,8 +3869,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isDeepgramVoice = voice.startsWith('aura-') || voice.startsWith('aura2-');
       const isGeminiVoice = geminiVoiceList.includes(voice);
       const ttsProvider = isDeepgramVoice ? 'deepgram' : isGeminiVoice ? 'gemini' : 'openai';
-      // Auto-select correct model based on provider
-      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : model;
+      // Auto-select correct model based on provider - always use valid model for each provider
+      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'tts-1';
 
       const audiobook = await storage.createAudiobook({
         novelId,
@@ -4230,14 +4230,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             content: typeof chapter === 'string' ? chapter : chapter.content || '',
           }));
 
+          // Auto-select correct model based on TTS provider to fix any incorrectly stored models
+          const ttsProvider = audiobook.ttsProvider || 'openai';
+          const correctedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'tts-1';
+          
           const audioFiles = await audiobookService.generateAudiobook(
             audiobook.novelId,
             novel.title,
             audiobookChapters,
             {
-              ttsProvider: audiobook.ttsProvider as any || 'openai',
+              ttsProvider: ttsProvider as any,
               voice: audiobook.voice as any,
-              model: audiobook.model as any,
+              model: correctedModel as any,
               speed: (audiobook.speed || 100) / 100,
               format: audiobook.format as any,
             },
