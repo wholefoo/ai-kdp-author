@@ -1,10 +1,38 @@
-# Allow all search engines to crawl all pages
+# AI KDP Author - Robots.txt
+# Optimized for search engines and AI crawlers
+
+# Allow all web crawlers
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://ai-kdp-author.com/sitemap.xml
+# Allow AI and content crawlers (ChatGPT, Perplexity, Google AI, etc.)
+User-agent: GPTBot
+Allow: /
 
-# Disallow admin pages (optional - add if you want to hide certain paths)
-# User-agent: *
-# Disallow: /admin
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# Sitemap location
+Sitemap: https://aikdpauthor.com/sitemap.xml
+
+# Disallow private/admin areas
+Disallow: /api/
+Disallow: /admin/

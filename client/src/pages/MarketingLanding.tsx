@@ -179,13 +179,13 @@ export default function MarketingLanding() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "AI KDP Author",
-    "url": "https://ai-kdp-author.replit.app",
-    "logo": "https://ai-kdp-author.replit.app/logo.png",
+    "url": "https://aikdpauthor.com",
+    "logo": "https://aikdpauthor.com/logo.png",
     "description": "Professional AI-powered novel generation and publishing tools for Amazon KDP authors.",
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "customer support",
-      "email": "support@ai-kdp-author.com"
+      "email": "support@aikdpauthor.com"
     }
   };
 
@@ -193,7 +193,7 @@ export default function MarketingLanding() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "AI KDP Author",
-    "url": "https://ai-kdp-author.replit.app",
+    "url": "https://aikdpauthor.com",
     "description": "Create professional, publishable novels of 50,000-80,000 words with AI for Amazon KDP publishing."
   };
 
@@ -242,11 +242,11 @@ export default function MarketingLanding() {
       <Helmet>
         <title>AI KDP Author - Generate Complete Novels for Amazon KDP Publishing</title>
         <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with GPT-5.2. Generate complete manuscripts with 20-30 chapters, audiobooks with 80+ AI voices, and marketing content. Perfect for Amazon KDP publishing." />
-        <link rel="canonical" href="https://ai-kdp-author.replit.app/home" />
+        <link rel="canonical" href="https://aikdpauthor.com/home" />
         <meta property="og:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP Publishing" />
         <meta property="og:description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts, audiobooks with 80+ voices, and get quality analysis tools." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.replit.app/home" />
+        <meta property="og:url" content="https://aikdpauthor.com/home" />
         <meta property="og:site_name" content="AI KDP Author" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP" />
@@ -634,11 +634,11 @@ export default function MarketingLanding() {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
                   <Mail className="h-4 w-4 mr-2" />
-                  <span>support@ai-kdp-author.com</span>
+                  <span>support@aikdpauthor.com</span>
                 </div>
                 <div className="flex items-center">
                   <Globe className="h-4 w-4 mr-2" />
-                  <span>ai-kdp-author.replit.app</span>
+                  <span>aikdpauthor.com</span>
                 </div>
               </div>
             </div>

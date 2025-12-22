@@ -13,8 +13,8 @@ export default function TermsOfUse() {
         <meta property="og:title" content="Terms of Use - AI KDP Author" />
         <meta property="og:description" content="Review the terms and conditions governing the use of AI KDP Author's services." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.com/terms" />
-        <link rel="canonical" href="https://ai-kdp-author.com/terms" />
+        <meta property="og:url" content="https://aikdpauthor.com/terms" />
+        <link rel="canonical" href="https://aikdpauthor.com/terms" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">

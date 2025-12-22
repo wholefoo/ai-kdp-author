@@ -13,8 +13,8 @@ export default function PrivacyPolicy() {
         <meta property="og:title" content="Privacy Policy - AI KDP Author" />
         <meta property="og:description" content="Learn how AI KDP Author protects your privacy and handles your personal data." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.com/privacy" />
-        <link rel="canonical" href="https://ai-kdp-author.com/privacy" />
+        <meta property="og:url" content="https://aikdpauthor.com/privacy" />
+        <link rel="canonical" href="https://aikdpauthor.com/privacy" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">

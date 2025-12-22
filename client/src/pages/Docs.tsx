@@ -160,11 +160,11 @@ export default function Docs() {
       <Helmet>
         <title>Documentation - AI KDP Author | Complete User Guide</title>
         <meta name="description" content="Complete documentation for AI KDP Author. Learn how to generate novels, create audiobooks, analyze manuscripts, and publish to Amazon KDP with our comprehensive guides and tutorials." />
-        <link rel="canonical" href="https://ai-kdp-author.com/docs" />
+        <link rel="canonical" href="https://aikdpauthor.com/docs" />
         <meta property="og:title" content="Documentation - AI KDP Author | Complete User Guide" />
         <meta property="og:description" content="Master AI KDP Author with our complete documentation. Step-by-step guides for novel generation, audiobook creation, and Amazon KDP publishing." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.com/docs" />
+        <meta property="og:url" content="https://aikdpauthor.com/docs" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">

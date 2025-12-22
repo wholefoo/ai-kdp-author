@@ -30,8 +30,8 @@ export default function About() {
         <meta property="og:title" content={`${pageTitle} - AI KDP Author`} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.com/about" />
-        <link rel="canonical" href="https://ai-kdp-author.com/about" />
+        <meta property="og:url" content="https://aikdpauthor.com/about" />
+        <link rel="canonical" href="https://aikdpauthor.com/about" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">

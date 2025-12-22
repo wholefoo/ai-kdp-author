@@ -63,11 +63,11 @@ export default function Documentation() {
       <Helmet>
         <title>Feature Documentation - AI KDP Author | Technical Reference</title>
         <meta name="description" content="Comprehensive technical documentation for all AI KDP Author features. Learn about novel generation, audiobook creation, manuscript analysis, character development, and publishing tools." />
-        <link rel="canonical" href="https://ai-kdp-author.com/documentation" />
+        <link rel="canonical" href="https://aikdpauthor.com/documentation" />
         <meta property="og:title" content="Feature Documentation - AI KDP Author | Technical Reference" />
         <meta property="og:description" content="Complete technical reference for AI KDP Author's novel generation, analysis, and publishing features." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.com/documentation" />
+        <meta property="og:url" content="https://aikdpauthor.com/documentation" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">

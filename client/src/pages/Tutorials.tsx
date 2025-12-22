@@ -224,11 +224,11 @@ export default function Tutorials() {
       <Helmet>
         <title>Tutorials - AI KDP Author | Step-by-Step Guides</title>
         <meta name="description" content="Comprehensive video tutorials and step-by-step guides for AI KDP Author. Learn novel generation, audiobook creation, manuscript analysis, character development, and publishing strategies." />
-        <link rel="canonical" href="https://ai-kdp-author.com/tutorials" />
+        <link rel="canonical" href="https://aikdpauthor.com/tutorials" />
         <meta property="og:title" content="Tutorials - AI KDP Author | Step-by-Step Guides" />
         <meta property="og:description" content="Master AI KDP Author with our comprehensive tutorial library. Step-by-step guides for all skill levels." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ai-kdp-author.com/tutorials" />
+        <meta property="og:url" content="https://aikdpauthor.com/tutorials" />
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
