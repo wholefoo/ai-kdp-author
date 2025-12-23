@@ -569,8 +569,8 @@ export class DocxExportService {
                 after: 200,
                 line: opts.lineSpacing
               },
-              // First-line indent for body paragraphs (except first paragraph after chapter title)
-              indent: pIndex > 0 ? { firstLine: 360 } : { firstLine: 0 }
+              // No paragraph indentation per user preference
+              indent: { firstLine: 0 }
             })
           );
         }
