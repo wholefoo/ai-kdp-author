@@ -156,104 +156,121 @@ export class DocxExportService {
   private parseChapters(content: string): Array<{ title: string; chapterName: string; content: string }> {
     const chapters: Array<{ title: string; chapterName: string; content: string }> = [];
     
-    // Remove copyright and table of contents sections
+    // Clean content - remove front matter and page breaks
     let cleanContent = content
-      .replace(/^#[\s\S]*?(?=\*\*Chapter\s+1\*\*)/g, '')
-      .replace(/## Copyright[\s\S]*?(?=\*\*Chapter)/g, '')
-      .replace(/## Table of Contents[\s\S]*?(?=\*\*Chapter)/g, '')
       .replace(/\[Page Break\]/g, '')
+      .replace(/## Copyright[\s\S]*?(?=#{1,2}\s*Chapter|\*\*Chapter)/gi, '')
+      .replace(/## Table of Contents[\s\S]*?(?=#{1,2}\s*Chapter|\*\*Chapter)/gi, '')
+      .replace(/## About the Author[\s\S]*$/gi, '')
       .trim();
 
-    // Split by chapter markers - look for **Chapter X** or **Chapter X: Title** format
-    const chapterRegex = /\*\*(Chapter\s+\d+)(?:\s*:\s*([^*]+))?\*\*/gi;
-    const parts = cleanContent.split(chapterRegex);
+    // Remove book title at the very beginning (# Title line before chapters)
+    cleanContent = cleanContent.replace(/^#\s+[^\n]+\n+/i, '');
+
+    // PATTERN 1: Markdown heading format: # Chapter X: Title or ## Chapter X: Title
+    const markdownChapterRegex = /#{1,2}\s*Chapter\s+(\d+)(?:\s*:\s*([^\n]+))?\n/gi;
+    let match;
+    const chapterMatches: Array<{ index: number; fullMatch: string; num: string; name: string }> = [];
     
-    // Process chapter titles and content
-    for (let i = 1; i < parts.length; i += 3) {
-      if (parts[i]) {
-        const chapterHeader = parts[i].trim(); // "Chapter 1"
-        const chapterName = parts[i + 1]?.trim() || ''; // "The Glass Monolith" (optional)
-        let chapterContent = parts[i + 2]?.trim() || '';
-        
-        // Remove duplicate chapter headers from content
-        chapterContent = this.removeDuplicateChapterHeaders(chapterContent);
-        
-        if (chapterContent) {
-          chapters.push({
-            title: chapterName ? `${chapterHeader}: ${chapterName}` : chapterHeader,
-            chapterName: chapterName,
-            content: chapterContent
-          });
-        }
-      }
+    while ((match = markdownChapterRegex.exec(cleanContent)) !== null) {
+      chapterMatches.push({
+        index: match.index,
+        fullMatch: match[0],
+        num: match[1],
+        name: (match[2] || '').trim()
+      });
     }
 
-    // If no chapters found with **Chapter X: Title** format, try simpler format
-    if (chapters.length === 0) {
-      const simpleRegex = /\*\*(Chapter\s+\d+)\*\*/gi;
-      const simpleParts = cleanContent.split(simpleRegex);
-      
-      for (let i = 1; i < simpleParts.length; i += 2) {
-        if (simpleParts[i] && simpleParts[i + 1]) {
-          const title = simpleParts[i].trim();
-          let chapterContent = simpleParts[i + 1].trim();
-          
-          // Try to extract chapter name from first line
-          const firstLineMatch = chapterContent.match(/^([^\n]+)\n/);
-          let chapterName = '';
-          if (firstLineMatch && firstLineMatch[1].length < 100) {
-            chapterName = firstLineMatch[1].trim();
-            chapterContent = chapterContent.substring(firstLineMatch[0].length).trim();
-          }
-          
-          chapterContent = this.removeDuplicateChapterHeaders(chapterContent);
-          
-          if (chapterContent) {
-            chapters.push({
-              title: chapterName ? `${title}: ${chapterName}` : title,
-              chapterName: chapterName,
-              content: chapterContent
-            });
-          }
-        }
-      }
-    }
-
-    // If still no chapters found, try plain Chapter X format
-    if (chapters.length === 0) {
-      const altRegex = /^(Chapter\s+\d+)(?:\s*:\s*(.*))?$/gim;
-      let match;
-      let lastIndex = 0;
-      const matches: Array<{ index: number; chapterNum: string; chapterName: string }> = [];
-      
-      while ((match = altRegex.exec(cleanContent)) !== null) {
-        matches.push({
-          index: match.index,
-          chapterNum: match[1],
-          chapterName: match[2] || ''
-        });
-      }
-      
-      for (let i = 0; i < matches.length; i++) {
-        const startIndex = matches[i].index + matches[i].chapterNum.length + (matches[i].chapterName ? matches[i].chapterName.length + 2 : 0);
-        const endIndex = i < matches.length - 1 ? matches[i + 1].index : cleanContent.length;
+    if (chapterMatches.length > 0) {
+      for (let i = 0; i < chapterMatches.length; i++) {
+        const startIndex = chapterMatches[i].index + chapterMatches[i].fullMatch.length;
+        const endIndex = i < chapterMatches.length - 1 ? chapterMatches[i + 1].index : cleanContent.length;
         let chapterContent = cleanContent.substring(startIndex, endIndex).trim();
         
         chapterContent = this.removeDuplicateChapterHeaders(chapterContent);
         
         if (chapterContent) {
+          const chapterNum = chapterMatches[i].num;
+          const chapterName = chapterMatches[i].name;
           chapters.push({
-            title: matches[i].chapterName 
-              ? `${matches[i].chapterNum}: ${matches[i].chapterName.trim()}`
-              : matches[i].chapterNum,
-            chapterName: matches[i].chapterName?.trim() || '',
+            title: chapterName ? `Chapter ${chapterNum}: ${chapterName}` : `Chapter ${chapterNum}`,
+            chapterName: chapterName,
             content: chapterContent
           });
         }
       }
+      return chapters;
     }
 
-    // If still no chapters found, treat entire content as one chapter
+    // PATTERN 2: Bold format: **Chapter X: Title** or **Chapter X**
+    const boldChapterRegex = /\*\*Chapter\s+(\d+)(?:\s*:\s*([^*]+))?\*\*/gi;
+    const boldMatches: Array<{ index: number; fullMatch: string; num: string; name: string }> = [];
+    
+    while ((match = boldChapterRegex.exec(cleanContent)) !== null) {
+      boldMatches.push({
+        index: match.index,
+        fullMatch: match[0],
+        num: match[1],
+        name: (match[2] || '').trim()
+      });
+    }
+
+    if (boldMatches.length > 0) {
+      for (let i = 0; i < boldMatches.length; i++) {
+        const startIndex = boldMatches[i].index + boldMatches[i].fullMatch.length;
+        const endIndex = i < boldMatches.length - 1 ? boldMatches[i + 1].index : cleanContent.length;
+        let chapterContent = cleanContent.substring(startIndex, endIndex).trim();
+        
+        chapterContent = this.removeDuplicateChapterHeaders(chapterContent);
+        
+        if (chapterContent) {
+          const chapterNum = boldMatches[i].num;
+          const chapterName = boldMatches[i].name;
+          chapters.push({
+            title: chapterName ? `Chapter ${chapterNum}: ${chapterName}` : `Chapter ${chapterNum}`,
+            chapterName: chapterName,
+            content: chapterContent
+          });
+        }
+      }
+      return chapters;
+    }
+
+    // PATTERN 3: Plain text format: Chapter X: Title or Chapter X
+    const plainChapterRegex = /^Chapter\s+(\d+)(?:\s*:\s*(.+))?$/gim;
+    const plainMatches: Array<{ index: number; fullMatch: string; num: string; name: string }> = [];
+    
+    while ((match = plainChapterRegex.exec(cleanContent)) !== null) {
+      plainMatches.push({
+        index: match.index,
+        fullMatch: match[0],
+        num: match[1],
+        name: (match[2] || '').trim()
+      });
+    }
+
+    if (plainMatches.length > 0) {
+      for (let i = 0; i < plainMatches.length; i++) {
+        const startIndex = plainMatches[i].index + plainMatches[i].fullMatch.length;
+        const endIndex = i < plainMatches.length - 1 ? plainMatches[i + 1].index : cleanContent.length;
+        let chapterContent = cleanContent.substring(startIndex, endIndex).trim();
+        
+        chapterContent = this.removeDuplicateChapterHeaders(chapterContent);
+        
+        if (chapterContent) {
+          const chapterNum = plainMatches[i].num;
+          const chapterName = plainMatches[i].name;
+          chapters.push({
+            title: chapterName ? `Chapter ${chapterNum}: ${chapterName}` : `Chapter ${chapterNum}`,
+            chapterName: chapterName,
+            content: chapterContent
+          });
+        }
+      }
+      return chapters;
+    }
+
+    // If no chapters found, treat entire content as one chapter
     if (chapters.length === 0 && cleanContent.trim()) {
       const processedContent = this.removeDuplicateChapterHeaders(cleanContent.trim());
       chapters.push({
@@ -268,9 +285,9 @@ export class DocxExportService {
 
   private removeDuplicateChapterHeaders(content: string): string {
     return content
-      .replace(/^#{1,6}\s*Chapter\s+\d+.*?\n?/gmi, '')
-      .replace(/^\*\*Chapter\s+\d+.*?\*\*\n?/gmi, '')
-      .replace(/^Chapter\s+\d+.*?\n?/gmi, '')
+      .replace(/^#{1,6}\s*Chapter\s+\d+[^\n]*\n?/gmi, '')
+      .replace(/^\*\*Chapter\s+\d+[^*]*\*\*\n?/gmi, '')
+      .replace(/^Chapter\s+\d+[^\n]*\n?/gmi, '')
       .trim();
   }
 

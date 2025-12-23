@@ -9,6 +9,18 @@ Manuscript formatting preference: Aptos font instead of Times New Roman for DOCX
 Download preferences: Remove unformatted DOCX download option from manuscripts (only TXT and MD needed).
 Library preferences: Completely removed manuscript library - only novel library should be used for all functionality.
 Subscription model preference: Trial users get only "Refine (Analyze & improve)" feature, while "Create (Generate your novel)" and "Publish (Export & share)" require Pro subscription.
+Paragraph indentation: No paragraph indentation in DOCX exports (clean left-aligned text).
+
+## Professional DOCX Format Standard (Based on "FRICTIONLESS" template)
+Chapter format: "Chapter X: Title Name" (e.g., "Chapter 1: The Glass Monolith")
+Front matter includes (in order):
+1. Title Page - Book title (large caps), subtitle, author name
+2. Copyright Page - Copyright notice, "All rights reserved.", ISBN, "Independently published"
+3. Dedication Page - "DEDICATION" header with customizable text
+4. Acknowledgements Page - "ACKNOWLEDGEMENTS" header with customizable text
+5. Table of Contents - Lists all chapters
+Page settings: 6x9 (trade paperback), Aptos 11pt font, 0.75" top/bottom margins, 0.75" inside (gutter), 0.5" outside
+Each chapter starts on a new page.
 
 ## System Architecture
 

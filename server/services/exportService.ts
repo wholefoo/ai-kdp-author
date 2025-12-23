@@ -112,7 +112,7 @@ export class ExportService {
   }
 
   /**
-   * Format chapter title to remove "Chapter" prefix and format as "1 TITLE"
+   * Format chapter title to professional "Chapter X: Title" format
    */
   private formatChapterTitle(title: string): string {
     // Extract chapter number and any additional title
@@ -125,15 +125,15 @@ export class ExportService {
       if (chapterName && chapterName.length > 0) {
         // Clean up chapter name - remove quotes and extra formatting
         const cleanName = chapterName.replace(/^[\"\']+|[\"\']+$/g, '').trim();
-        // Format as "1 TITLE" (no "CHAPTER" word)
-        return `${chapterNum} ${cleanName.toUpperCase()}`;
+        // Format as "Chapter X: Title Name"
+        return `Chapter ${chapterNum}: ${cleanName}`;
       } else {
-        return `${chapterNum}`;
+        return `Chapter ${chapterNum}`;
       }
     }
     
-    // Fallback - just return uppercase version without "Chapter" prefix
-    return title.replace(/^chapter\s+/i, '').trim().toUpperCase();
+    // Fallback - return original
+    return title;
   }
 
   private createDocumentContent(parsedContent: Array<{ type: 'chapter' | 'paragraph', content: string }>, options: ExportOptions): Paragraph[] {
