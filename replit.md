@@ -1,14 +1,15 @@
 # AI KDP Author - Replit Guide
 
 ## Overview
-The AI KDP Author is a full-stack web application designed to generate complete, publishable novels (50,000-80,000 words, 20-30 chapters) for Amazon KDP. It automates manuscript creation from minimal user input (genre, title, plot idea) using a multi-step, AI-driven process. The application also includes a Plot Inspiration Vault and a Manuscript Quality Analyzer. The project's ambition is to significantly streamline the novel writing and publishing process for authors.
+The AI KDP Author is a full-stack web application designed to generate complete, publishable fiction and non-fiction books (50,000-80,000 words, 20-30 chapters) for Amazon KDP. It automates manuscript creation from minimal user input (genre/category, title, plot idea or topic) using a multi-step, AI-driven process. The application also includes a Plot Inspiration Vault and a Manuscript Quality Analyzer. The project's ambition is to significantly streamline the book writing and publishing process for authors.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 Manuscript formatting preference: Aptos font instead of Times New Roman for DOCX exports.
 Download preferences: Remove unformatted DOCX download option from manuscripts (only TXT and MD needed).
-Library preferences: Completely removed manuscript library - only novel library should be used for all functionality.
-Subscription model preference: Trial users get only "Refine (Analyze & improve)" feature, while "Create (Generate your novel)" and "Publish (Export & share)" require Pro subscription.
+Library preferences: Completely removed manuscript library - only book library should be used for all functionality.
+Subscription model preference: Trial users get only "Refine (Analyze & improve)" feature, while "Create (Generate your book)" and "Publish (Export & share)" require Pro subscription.
+Content types: Both fiction (novels) and non-fiction are supported with dedicated generation flows.
 Paragraph indentation: No paragraph indentation in DOCX exports (clean left-aligned text).
 
 ## Professional DOCX Format Standard (Based on "FRICTIONLESS" template)
@@ -34,7 +35,7 @@ Each chapter starts on a new page.
 ### Backend
 - **Runtime**: Node.js with Express.js REST API.
 - **Language**: TypeScript (ES modules).
-- **API Design**: RESTful for novel creation and content generation.
+- **API Design**: RESTful for fiction and non-fiction book creation and content generation.
 - **Production Mode**: Auto-detects by checking for dist/public folder existence.
 
 ### Data Storage
@@ -46,8 +47,8 @@ Each chapter starts on a new page.
 - **User Management**: User profiles in PostgreSQL.
 
 ### Core Features
-- **Novel Generation**: Multi-step AI-driven process (outline, chapter-by-chapter generation, compilation).
-- **Non-Fiction Generation**: Fact-checked content with multi-source verification, automatic bibliography generation, and excluded biased sources (Wikipedia, Reddit, etc.).
+- **Fiction Generation**: Multi-step AI-driven process (outline, chapter-by-chapter generation, compilation) for novels across multiple genres.
+- **Non-Fiction Generation**: Fact-checked content with multi-source verification, automatic bibliography generation (APA-style), 17 categories, and excluded biased sources (Wikipedia, Reddit, Quora, etc.).
 - **AI Integration**: OpenAI GPT-5.2 for core generation and analysis tasks.
 - **Character Development**: AI-powered Interview Mode, Emotional Journey Mapping, Character Growth Suggestions.
 - **Manuscript Analysis**: Advanced Grammar & Style Checker, Style and Tone Consistency Checker, Comprehensive Quality Analyzer.
