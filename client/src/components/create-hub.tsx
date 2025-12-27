@@ -33,9 +33,9 @@ export default function CreateHub({
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold text-slate-900">Create Your Novel</h2>
+        <h2 className="text-3xl font-bold text-slate-900">Create Your Manuscript</h2>
         <p className="text-slate-600 max-w-2xl mx-auto">
-          Start your journey from idea to published novel. Generate, plan, and develop your story with AI assistance.
+          Start your journey from idea to published manuscript. Generate, plan, and develop your story with AI assistance.
         </p>
       </div>
 
