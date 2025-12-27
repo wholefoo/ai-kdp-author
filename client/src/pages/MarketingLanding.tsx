@@ -26,19 +26,19 @@ export default function MarketingLanding() {
   const features = [
     {
       icon: BookOpen,
-      title: "Complete Novel Generation",
-      description: "Generate full 50,000-80,000 word novels with 20-30 professionally structured chapters using GPT-5.2, ready for Amazon KDP publishing.",
+      title: "Complete Book Generation",
+      description: "Generate full 50,000-80,000 word fiction and non-fiction books with 20-30 professionally structured chapters using GPT-5.2, ready for Amazon KDP publishing.",
       details: [
         "Powered by GPT-5.2 with GPT-4o fallback",
+        "Fiction and non-fiction support with 17+ categories",
         "Customizable word count (30K-120K) and chapter count (10-50)",
-        "Multiple genres with AI-powered character development", 
-        "Professional manuscript formatting (Aptos font)"
+        "Non-fiction includes source verification and automatic bibliography"
       ]
     },
     {
       icon: Headphones,
       title: "Professional Audiobook Creation",
-      description: "Transform your novels into high-quality audiobooks with 80+ AI voices, smart narration processing, and KDP-compliant audio formats.",
+      description: "Transform your books into high-quality audiobooks with 80+ AI voices, smart narration processing, and KDP-compliant audio formats.",
       details: [
         "80+ premium voices across 3 TTS providers (Gemini, Deepgram, OpenAI)",
         "Smart text processor with dialogue detection and natural pauses",
@@ -71,12 +71,12 @@ export default function MarketingLanding() {
     {
       icon: Target,
       title: "Publishing-Ready Output",
-      description: "Export novels in multiple professional formats optimized for different publishing platforms and use cases.",
+      description: "Export books in multiple professional formats optimized for different publishing platforms and use cases.",
       details: [
         "Amazon KDP-ready DOCX formatting",
+        "Non-fiction bibliography with APA-style citations",
         "Multiple export formats (PDF, TXT, Markdown)",
-        "Professional manuscript submission formatting",
-        "Customizable styling and layout options"
+        "Professional manuscript submission formatting"
       ]
     },
     {
@@ -93,7 +93,7 @@ export default function MarketingLanding() {
     {
       icon: Megaphone,
       title: "Marketing & Promotion Tools",
-      description: "AI-powered marketing toolkit to help promote your novels with professional marketing content.",
+      description: "AI-powered marketing toolkit to help promote your books with professional marketing content.",
       details: [
         "Book description and blurb generator",
         "Social media post creation for multiple platforms",
@@ -105,14 +105,14 @@ export default function MarketingLanding() {
 
   const tutorials = [
     {
-      title: "Getting Started: Your First Novel",
-      description: "Learn how to generate your first complete novel from idea to publication-ready manuscript in under 30 minutes.",
-      steps: ["Choose genre and theme", "Set word count and style preferences", "Generate outline and review", "Create chapters automatically", "Export for publishing"]
+      title: "Getting Started: Your First Book",
+      description: "Learn how to generate your first complete fiction or non-fiction book from idea to publication-ready manuscript in under 30 minutes.",
+      steps: ["Choose fiction or non-fiction", "Set word count and style preferences", "Generate outline and review", "Create chapters automatically", "Export for publishing"]
     },
     {
       title: "Creating Professional Audiobooks",
-      description: "Transform your written novels into engaging audiobooks with professional-quality narration and audio formatting.",
-      steps: ["Select completed novel", "Choose voice and speed settings", "Configure audio format", "Generate audiobook chapters", "Download complete audiobook"]
+      description: "Transform your written books into engaging audiobooks with professional-quality narration and audio formatting.",
+      steps: ["Select completed book", "Choose voice and speed settings", "Configure audio format", "Generate audiobook chapters", "Download complete audiobook"]
     },
     {
       title: "Character Development Workshop",
@@ -121,7 +121,7 @@ export default function MarketingLanding() {
     },
     {
       title: "Manuscript Quality Analysis",
-      description: "Analyze and improve your novels with comprehensive quality checking, style analysis, and improvement suggestions.",
+      description: "Analyze and improve your books with comprehensive quality checking, style analysis, and improvement suggestions.",
       steps: ["Upload or select manuscript", "Run quality analyzer", "Review detailed feedback", "Apply suggested improvements", "Re-analyze and compare"]
     }
   ];

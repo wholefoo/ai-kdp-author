@@ -8,32 +8,32 @@ export default function Tutorials() {
   const tutorials = [
     {
       icon: BookOpen,
-      title: "Novel Generation Tutorials",
-      description: "Step-by-step guides for creating your first novel",
+      title: "Book Generation Tutorials",
+      description: "Step-by-step guides for creating your first fiction or non-fiction book",
       lessons: [
         { 
-          name: "Quick Start: Your First Novel in 30 Minutes",
+          name: "Quick Start: Your First Book in 30 Minutes",
           duration: "30 min",
           level: "Beginner",
-          link: "#first-novel"
+          link: "#first-book"
         },
         { 
-          name: "Advanced Genre Configuration",
+          name: "Fiction: Advanced Genre Configuration",
           duration: "20 min",
           level: "Intermediate",
           link: "#genre-config"
+        },
+        { 
+          name: "Non-Fiction: Category & Research Setup",
+          duration: "25 min",
+          level: "Intermediate",
+          link: "#non-fiction-setup"
         },
         { 
           name: "Customizing Word Count & Chapter Structure",
           duration: "15 min",
           level: "Beginner",
           link: "#word-count"
-        },
-        { 
-          name: "Creating Multi-Genre Novels",
-          duration: "25 min",
-          level: "Advanced",
-          link: "#multi-genre"
         },
         { 
           name: "Editing & Refining AI-Generated Content",

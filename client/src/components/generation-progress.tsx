@@ -16,7 +16,7 @@ export default function GenerationProgress({ novel, onCancel }: GenerationProgre
     return (
       <Card className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <CardContent className="p-6 text-center">
-          <p className="text-slate-600">Loading novel generation...</p>
+          <p className="text-slate-600">Loading book generation...</p>
         </CardContent>
       </Card>
     );
@@ -59,8 +59,8 @@ export default function GenerationProgress({ novel, onCancel }: GenerationProgre
   return (
     <Card className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-        <h2 className="text-xl font-semibold text-slate-900">Generating Your Novel</h2>
-        <p className="text-slate-600 mt-1">Please wait while we create your complete novel...</p>
+        <h2 className="text-xl font-semibold text-slate-900">Generating Your Book</h2>
+        <p className="text-slate-600 mt-1">Please wait while we create your complete book...</p>
       </div>
 
       <CardContent className="p-6">

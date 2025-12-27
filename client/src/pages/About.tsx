@@ -20,7 +20,7 @@ export default function About() {
   });
 
   const pageTitle = aboutPage?.title || "About AI KDP Author";
-  const pageDescription = aboutPage?.content?.substring(0, 160) || "Learn about AI KDP Author - the AI-powered novel generation platform for Amazon KDP authors.";
+  const pageDescription = aboutPage?.content?.substring(0, 160) || "Learn about AI KDP Author - the AI-powered fiction and non-fiction book generation platform for Amazon KDP authors.";
 
   return (
     <>
@@ -42,10 +42,10 @@ export default function About() {
               AI KDP Author
             </h1>
             <p className="text-xl lg:text-2xl text-gray-600 dark:text-gray-300 mb-3">
-              Generate complete, publishable novels for Amazon KDP
+              Generate complete, publishable fiction and non-fiction books for Amazon KDP
             </p>
             <p className="text-base text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-              From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word novels, audiobooks, and comprehensive analysis tools - all powered by advanced AI.
+              From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word books, audiobooks, and comprehensive analysis tools - all powered by advanced AI.
             </p>
           </div>
         </div>
