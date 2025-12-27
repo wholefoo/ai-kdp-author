@@ -4,13 +4,36 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BookOpen, FileText, AlertCircle } from "lucide-react";
 import AdvancedSettings from "./advanced-settings";
 import type { NovelGenerationRequest } from "@shared/schema";
+import { nonFictionSubtypes } from "@shared/schema";
 
 interface NovelGeneratorProps {
   onStartGeneration: (request: NovelGenerationRequest) => void;
   isGenerating: boolean;
 }
+
+const NON_FICTION_SUBTYPE_LABELS: Record<string, string> = {
+  "self-help": "Self-Help & Personal Development",
+  "business": "Business & Entrepreneurship",
+  "history": "History",
+  "science": "Science & Nature",
+  "biography": "Biography & Memoir",
+  "how-to": "How-To & DIY",
+  "health-wellness": "Health & Wellness",
+  "finance": "Finance & Investing",
+  "technology": "Technology & Computing",
+  "philosophy": "Philosophy & Religion",
+  "psychology": "Psychology & Behavior",
+  "education": "Education & Teaching",
+  "travel": "Travel & Culture",
+  "true-crime": "True Crime",
+  "politics": "Politics & Current Events",
+  "memoir": "Personal Memoir",
+  "reference": "Reference & Guides",
+};
 
 export default function NovelGenerator({ onStartGeneration, isGenerating }: NovelGeneratorProps) {
   const [formData, setFormData] = useState<NovelGenerationRequest>({
@@ -24,8 +47,15 @@ export default function NovelGenerator({ onStartGeneration, isGenerating }: Nove
     pointOfView: "third-person-limited",
     toneAndMood: "adventurous",
     contentRating: "pg-13",
-    customInstructions: ""
+    customInstructions: "",
+    contentType: "fiction",
+    nonFictionSubtype: undefined,
+    nonFictionTopic: "",
+    targetAudience: "",
+    excludedSources: ["wikipedia.org", "wiki"],
   });
+
+  const isNonFiction = formData.contentType === "non-fiction";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,11 +101,61 @@ export default function NovelGenerator({ onStartGeneration, isGenerating }: Nove
 
       <CardContent className="p-6">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Novel Parameters</h2>
-          <p className="text-slate-600">Enter your novel details below. Leave fields empty to use intelligent defaults.</p>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Book Parameters</h2>
+          <p className="text-slate-600">Enter your book details below. Leave fields empty to use intelligent defaults.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Content Type Selector */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-slate-700">Content Type</label>
+            <Tabs 
+              value={formData.contentType} 
+              onValueChange={(value) => setFormData({
+                ...formData, 
+                contentType: value as "fiction" | "non-fiction",
+                genre: value === "non-fiction" ? "Non-Fiction" : "Fantasy",
+                toneAndMood: value === "non-fiction" ? "serious" : "adventurous",
+              })}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2 h-12">
+                <TabsTrigger 
+                  value="fiction" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  data-testid="tab-fiction"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Fiction (Novel)
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="non-fiction" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  data-testid="tab-non-fiction"
+                >
+                  <FileText className="h-4 w-4" />
+                  Non-Fiction (Factual)
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Non-Fiction Notice */}
+          {isNonFiction && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                <div>
+                  <h3 className="text-sm font-medium text-green-900">Non-Fiction Mode</h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Content will be fact-checked and verified from multiple credible sources. 
+                    A bibliography will be automatically generated. Wikipedia and other unreliable sources are excluded.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* API Key Notice */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start space-x-3">
@@ -87,57 +167,137 @@ export default function NovelGenerator({ onStartGeneration, isGenerating }: Nove
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Genre Input */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Genre</label>
-              <Select value={formData.genre} onValueChange={(value) => setFormData({...formData, genre: value})}>
-                <SelectTrigger data-testid="select-genre">
-                  <SelectValue placeholder="Select genre or use default (Fantasy)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Fantasy">Fantasy</SelectItem>
-                  <SelectItem value="Science Fiction">Science Fiction</SelectItem>
-                  <SelectItem value="Romance">Romance</SelectItem>
-                  <SelectItem value="Mystery">Mystery</SelectItem>
-                  <SelectItem value="Thriller">Thriller</SelectItem>
-                  <SelectItem value="Horror">Horror</SelectItem>
-                  <SelectItem value="Historical Fiction">Historical Fiction</SelectItem>
-                  <SelectItem value="Contemporary Fiction">Contemporary Fiction</SelectItem>
-                  <SelectItem value="Young Adult">Young Adult</SelectItem>
-                  <SelectItem value="Adventure">Adventure</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Fiction Fields */}
+          {!isNonFiction && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Genre Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Genre</label>
+                <Select value={formData.genre} onValueChange={(value) => setFormData({...formData, genre: value})}>
+                  <SelectTrigger data-testid="select-genre">
+                    <SelectValue placeholder="Select genre or use default (Fantasy)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Fantasy">Fantasy</SelectItem>
+                    <SelectItem value="Science Fiction">Science Fiction</SelectItem>
+                    <SelectItem value="Romance">Romance</SelectItem>
+                    <SelectItem value="Mystery">Mystery</SelectItem>
+                    <SelectItem value="Thriller">Thriller</SelectItem>
+                    <SelectItem value="Horror">Horror</SelectItem>
+                    <SelectItem value="Historical Fiction">Historical Fiction</SelectItem>
+                    <SelectItem value="Contemporary Fiction">Contemporary Fiction</SelectItem>
+                    <SelectItem value="Young Adult">Young Adult</SelectItem>
+                    <SelectItem value="Adventure">Adventure</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
+              {/* Title Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Novel Title</label>
+                <Input
+                  type="text"
+                  placeholder="Enter your novel title..."
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  data-testid="input-title"
+                />
+              </div>
             </div>
+          )}
 
-            {/* Title Input */}
+          {/* Non-Fiction Fields */}
+          {isNonFiction && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Non-Fiction Category */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-700">Category</label>
+                  <Select 
+                    value={formData.nonFictionSubtype || ""} 
+                    onValueChange={(value) => setFormData({...formData, nonFictionSubtype: value as any, genre: NON_FICTION_SUBTYPE_LABELS[value] || value})}
+                  >
+                    <SelectTrigger data-testid="select-nonfiction-category">
+                      <SelectValue placeholder="Select category..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nonFictionSubtypes.map((subtype) => (
+                        <SelectItem key={subtype} value={subtype}>
+                          {NON_FICTION_SUBTYPE_LABELS[subtype] || subtype}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Book Title */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-700">Book Title</label>
+                  <Input
+                    type="text"
+                    placeholder="Enter your book title..."
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    data-testid="input-nonfiction-title"
+                  />
+                </div>
+              </div>
+
+              {/* Main Topic */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Main Topic / Subject</label>
+                <Input
+                  type="text"
+                  placeholder="e.g., 'Personal Finance for Millennials', 'The History of Ancient Rome', 'Modern Leadership Strategies'"
+                  value={formData.nonFictionTopic || ""}
+                  onChange={(e) => setFormData({...formData, nonFictionTopic: e.target.value})}
+                  data-testid="input-nonfiction-topic"
+                />
+                <p className="text-xs text-slate-500">Be specific about the subject matter your book will cover</p>
+              </div>
+
+              {/* Target Audience */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Target Audience</label>
+                <Input
+                  type="text"
+                  placeholder="e.g., 'Young professionals', 'Small business owners', 'History enthusiasts'"
+                  value={formData.targetAudience || ""}
+                  onChange={(e) => setFormData({...formData, targetAudience: e.target.value})}
+                  data-testid="input-target-audience"
+                />
+                <p className="text-xs text-slate-500">Who is this book written for?</p>
+              </div>
+
+              {/* Book Description / Concept */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Book Concept / Description</label>
+                <Textarea
+                  rows={4}
+                  placeholder="Describe what your book will cover, key themes, and what readers will learn..."
+                  value={formData.plotIdea}
+                  onChange={(e) => setFormData({...formData, plotIdea: e.target.value})}
+                  className="resize-none"
+                  data-testid="textarea-nonfiction-concept"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Fiction Plot Idea */}
+          {!isNonFiction && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Novel Title</label>
-              <Input
-                type="text"
-                placeholder="Enter your novel title..."
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                data-testid="input-title"
+              <label className="block text-sm font-medium text-slate-700">Plot Idea</label>
+              <Textarea
+                rows={4}
+                placeholder="Describe your basic plot idea..."
+                value={formData.plotIdea}
+                onChange={(e) => setFormData({...formData, plotIdea: e.target.value})}
+                className="resize-none"
+                data-testid="textarea-plot-idea"
               />
-
             </div>
-          </div>
-
-          {/* Plot Idea Input */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-slate-700">Plot Idea</label>
-            <Textarea
-              rows={4}
-              placeholder="Describe your basic plot idea..."
-              value={formData.plotIdea}
-              onChange={(e) => setFormData({...formData, plotIdea: e.target.value})}
-              className="resize-none"
-              data-testid="textarea-plot-idea"
-            />
-
-          </div>
+          )}
 
           {/* Writing Style & Customization */}
           <div className="space-y-4">
@@ -152,28 +312,32 @@ export default function NovelGenerator({ onStartGeneration, isGenerating }: Nove
                     <SelectValue placeholder="Select writing style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="balanced">Balanced - Equal mix of narrative, dialogue, and description</SelectItem>
-                    <SelectItem value="narrative">Narrative - Focus on storytelling and action</SelectItem>
-                    <SelectItem value="descriptive">Descriptive - Rich details and atmospheric writing</SelectItem>
-                    <SelectItem value="dialogue-heavy">Dialogue-Heavy - Character conversations drive the story</SelectItem>
+                    <SelectItem value="balanced">Balanced - Clear explanations with examples</SelectItem>
+                    <SelectItem value="narrative">Narrative - Storytelling approach</SelectItem>
+                    <SelectItem value="descriptive">Descriptive - Rich details and depth</SelectItem>
+                    {!isNonFiction && (
+                      <SelectItem value="dialogue-heavy">Dialogue-Heavy - Character conversations</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Point of View */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-700">Point of View</label>
-                <Select value={formData.pointOfView} onValueChange={(value) => setFormData({...formData, pointOfView: value as any})}>
-                  <SelectTrigger data-testid="select-point-of-view">
-                    <SelectValue placeholder="Select point of view" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="first-person">First Person - "I" perspective, intimate and personal</SelectItem>
-                    <SelectItem value="third-person-limited">Third Person Limited - "He/She", single character focus</SelectItem>
-                    <SelectItem value="third-person-omniscient">Third Person Omniscient - "He/She", multiple perspectives</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Point of View - Only for Fiction */}
+              {!isNonFiction && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-slate-700">Point of View</label>
+                  <Select value={formData.pointOfView} onValueChange={(value) => setFormData({...formData, pointOfView: value as any})}>
+                    <SelectTrigger data-testid="select-point-of-view">
+                      <SelectValue placeholder="Select point of view" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="first-person">First Person - "I" perspective, intimate and personal</SelectItem>
+                      <SelectItem value="third-person-limited">Third Person Limited - "He/She", single character focus</SelectItem>
+                      <SelectItem value="third-person-omniscient">Third Person Omniscient - "He/She", multiple perspectives</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Tone and Mood */}
               <div className="space-y-2">
@@ -183,14 +347,25 @@ export default function NovelGenerator({ onStartGeneration, isGenerating }: Nove
                     <SelectValue placeholder="Select tone and mood" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="adventurous">Adventurous - Exciting and thrilling</SelectItem>
-                    <SelectItem value="dark">Dark - Serious and intense</SelectItem>
-                    <SelectItem value="light">Light - Upbeat and optimistic</SelectItem>
-                    <SelectItem value="humorous">Humorous - Funny and entertaining</SelectItem>
-                    <SelectItem value="serious">Serious - Thoughtful and dramatic</SelectItem>
-                    <SelectItem value="romantic">Romantic - Emotional and heartfelt</SelectItem>
-                    <SelectItem value="mysterious">Mysterious - Suspenseful and enigmatic</SelectItem>
-                    <SelectItem value="epic">Epic - Grand and heroic</SelectItem>
+                    {isNonFiction ? (
+                      <>
+                        <SelectItem value="serious">Serious - Professional and authoritative</SelectItem>
+                        <SelectItem value="light">Light - Accessible and friendly</SelectItem>
+                        <SelectItem value="humorous">Humorous - Engaging with wit</SelectItem>
+                        <SelectItem value="adventurous">Adventurous - Exciting and inspiring</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="adventurous">Adventurous - Exciting and thrilling</SelectItem>
+                        <SelectItem value="dark">Dark - Serious and intense</SelectItem>
+                        <SelectItem value="light">Light - Upbeat and optimistic</SelectItem>
+                        <SelectItem value="humorous">Humorous - Funny and entertaining</SelectItem>
+                        <SelectItem value="serious">Serious - Thoughtful and dramatic</SelectItem>
+                        <SelectItem value="romantic">Romantic - Emotional and heartfelt</SelectItem>
+                        <SelectItem value="mysterious">Mysterious - Suspenseful and enigmatic</SelectItem>
+                        <SelectItem value="epic">Epic - Grand and heroic</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -333,7 +508,7 @@ export default function NovelGenerator({ onStartGeneration, isGenerating }: Nove
               data-testid="button-start-generation"
             >
               <i className="fas fa-magic mr-2"></i>
-              Start Novel Generation
+              {isNonFiction ? "Start Book Generation" : "Start Novel Generation"}
             </Button>
           </div>
         </form>

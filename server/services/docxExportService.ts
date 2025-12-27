@@ -1,5 +1,5 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, TabStopPosition, TabStopType, PageBreak, TableOfContents, StyleLevel } from "docx";
-import type { Novel } from "@shared/schema";
+import type { Novel, BibliographyEntry } from "@shared/schema";
 
 export interface DocxExportOptions {
   fontSize?: number;
@@ -22,6 +22,9 @@ export interface DocxExportOptions {
   isbn?: string;
   dedicationText?: string;
   acknowledgementsText?: string;
+  // Non-fiction bibliography support
+  includeBibliography?: boolean;
+  bibliography?: BibliographyEntry[];
 }
 
 export class DocxExportService {
@@ -46,7 +49,9 @@ export class DocxExportService {
     authorName: '',
     isbn: '',
     dedicationText: '',
-    acknowledgementsText: ''
+    acknowledgementsText: '',
+    includeBibliography: false,
+    bibliography: []
   };
 
   async generateDocx(novel: Novel, options: Partial<DocxExportOptions> = {}): Promise<Buffer> {
@@ -540,6 +545,22 @@ export class DocxExportService {
         );
       });
       
+      // Add Bibliography to TOC if included
+      if (opts.includeBibliography && opts.bibliography && opts.bibliography.length > 0) {
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "Bibliography",
+                font: opts.fontFamily,
+                size: opts.fontSize
+              })
+            ],
+            spacing: { after: 120 }
+          })
+        );
+      }
+      
       paragraphs.push(new Paragraph({ children: [new PageBreak()] }));
     }
 
@@ -593,6 +614,72 @@ export class DocxExportService {
         }
       });
     });
+
+    // ===== BIBLIOGRAPHY (for non-fiction) =====
+    if (opts.includeBibliography && opts.bibliography && opts.bibliography.length > 0) {
+      paragraphs.push(new Paragraph({ children: [new PageBreak()] }));
+      
+      // Bibliography header
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Bibliography",
+              font: opts.fontFamily,
+              size: 32, // 16pt
+              bold: true
+            })
+          ],
+          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
+          spacing: { before: 480, after: 480 }
+        })
+      );
+
+      // Sort bibliography by author
+      const sortedBibliography = [...opts.bibliography].sort((a, b) => 
+        (a.author || 'Unknown').localeCompare(b.author || 'Unknown')
+      );
+
+      // Add each bibliography entry
+      sortedBibliography.forEach((entry, index) => {
+        const author = entry.author || 'Unknown Author';
+        const year = entry.publishDate || 'n.d.';
+        const title = entry.title;
+        const source = entry.source;
+        
+        // Format: Author (Year). Title. Source.
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `${index + 1}. `,
+                font: opts.fontFamily,
+                size: opts.fontSize || 24
+              }),
+              new TextRun({
+                text: `${author} (${year}). `,
+                font: opts.fontFamily,
+                size: opts.fontSize || 24
+              }),
+              new TextRun({
+                text: `${title}. `,
+                font: opts.fontFamily,
+                size: opts.fontSize || 24,
+                italics: true
+              }),
+              new TextRun({
+                text: source,
+                font: opts.fontFamily,
+                size: opts.fontSize || 24
+              })
+            ],
+            spacing: { after: 200 },
+            indent: { left: 360, hanging: 360 } // Hanging indent for bibliography
+          })
+        );
+      });
+    }
 
     return paragraphs;
   }

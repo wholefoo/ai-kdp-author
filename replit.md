@@ -47,6 +47,7 @@ Each chapter starts on a new page.
 
 ### Core Features
 - **Novel Generation**: Multi-step AI-driven process (outline, chapter-by-chapter generation, compilation).
+- **Non-Fiction Generation**: Fact-checked content with multi-source verification, automatic bibliography generation, and excluded biased sources (Wikipedia, Reddit, etc.).
 - **AI Integration**: OpenAI GPT-5.2 for core generation and analysis tasks.
 - **Character Development**: AI-powered Interview Mode, Emotional Journey Mapping, Character Growth Suggestions.
 - **Manuscript Analysis**: Advanced Grammar & Style Checker, Style and Tone Consistency Checker, Comprehensive Quality Analyzer.
