@@ -26,6 +26,14 @@ export const novels = pgTable("novels", {
   actualChapterCount: integer("actual_chapter_count").default(0),
   sourceContent: text("source_content"), // For novel composer source material
   error: text("error"),
+  // Non-fiction specific fields
+  contentType: varchar("content_type").default("fiction"), // fiction, non-fiction
+  nonFictionSubtype: varchar("non_fiction_subtype"), // self-help, business, history, science, biography, how-to, etc.
+  nonFictionTopic: text("non_fiction_topic"), // Main topic/subject for non-fiction
+  targetAudience: text("target_audience"), // Who is this book for?
+  bibliography: jsonb("bibliography").default([]), // Array of source citations
+  excludedSources: jsonb("excluded_sources").default(["wikipedia.org", "wiki"]), // Sources to exclude
+  verificationStatus: varchar("verification_status"), // pending, verified, partial
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -44,6 +52,11 @@ export const insertNovelSchema = createInsertSchema(novels).pick({
   contentRating: true,
   customInstructions: true,
   sourceContent: true,
+  contentType: true,
+  nonFictionSubtype: true,
+  nonFictionTopic: true,
+  targetAudience: true,
+  excludedSources: true,
 });
 
 export const updateNovelSchema = createInsertSchema(novels).pick({
@@ -55,11 +68,51 @@ export const updateNovelSchema = createInsertSchema(novels).pick({
   wordCount: true,
   actualChapterCount: true,
   error: true,
+  bibliography: true,
+  verificationStatus: true,
 }).partial();
 
 export type InsertNovel = z.infer<typeof insertNovelSchema>;
 export type UpdateNovel = z.infer<typeof updateNovelSchema>;
 export type Novel = typeof novels.$inferSelect;
+
+// Bibliography entry schema for non-fiction citations
+export const bibliographyEntrySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  author: z.string().optional(),
+  source: z.string(), // URL or publication name
+  publishDate: z.string().optional(),
+  accessDate: z.string().optional(),
+  chapterNumber: z.number().optional(), // Which chapter this citation is used in
+  claimText: z.string().optional(), // The specific claim this supports
+  verified: z.boolean().default(true),
+});
+
+export type BibliographyEntry = z.infer<typeof bibliographyEntrySchema>;
+
+// Non-fiction subtypes
+export const nonFictionSubtypes = [
+  "self-help",
+  "business",
+  "history",
+  "science",
+  "biography",
+  "how-to",
+  "health-wellness",
+  "finance",
+  "technology",
+  "philosophy",
+  "psychology",
+  "education",
+  "travel",
+  "true-crime",
+  "politics",
+  "memoir",
+  "reference",
+] as const;
+
+export type NonFictionSubtype = typeof nonFictionSubtypes[number];
 
 // Novel generation request schema
 export const novelGenerationRequestSchema = z.object({
@@ -74,6 +127,12 @@ export const novelGenerationRequestSchema = z.object({
   toneAndMood: z.enum(["dark", "light", "humorous", "serious", "adventurous", "romantic", "mysterious", "epic"]).optional().default("adventurous"),
   contentRating: z.enum(["g", "pg", "pg-13", "r"]).optional().default("pg-13"),
   customInstructions: z.string().optional(),
+  // Non-fiction specific fields
+  contentType: z.enum(["fiction", "non-fiction"]).optional().default("fiction"),
+  nonFictionSubtype: z.enum(nonFictionSubtypes).optional(),
+  nonFictionTopic: z.string().optional(),
+  targetAudience: z.string().optional(),
+  excludedSources: z.array(z.string()).optional().default(["wikipedia.org", "wiki"]),
 });
 
 export type NovelGenerationRequest = z.infer<typeof novelGenerationRequestSchema>;
@@ -92,24 +151,33 @@ export const progressSchema = z.object({
 
 export type Progress = z.infer<typeof progressSchema>;
 
-// Outline schema
+// Outline schema (supports both fiction and non-fiction)
 export const outlineSchema = z.object({
   title: z.string(),
   genre: z.string(),
   length: z.string(),
   summary: z.string(),
+  contentType: z.enum(["fiction", "non-fiction"]).optional().default("fiction"),
+  // Fiction-specific fields
   characters: z.array(z.object({
     name: z.string(),
     description: z.string(),
     role: z.string(),
-  })),
+  })).optional().default([]),
+  timeline: z.string().optional(),
+  // Non-fiction specific fields
+  keyTopics: z.array(z.string()).optional(), // Main topics covered
+  learningObjectives: z.array(z.string()).optional(), // What readers will learn
+  targetAudience: z.string().optional(),
+  // Shared fields
   chapters: z.array(z.object({
     number: z.number(),
     title: z.string(),
     summary: z.string(),
+    keyPoints: z.array(z.string()).optional(), // For non-fiction chapters
+    sourcesNeeded: z.array(z.string()).optional(), // Types of sources needed
   })),
   themes: z.array(z.string()),
-  timeline: z.string(),
 });
 
 export type Outline = z.infer<typeof outlineSchema>;
