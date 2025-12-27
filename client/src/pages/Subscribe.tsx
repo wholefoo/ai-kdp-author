@@ -37,7 +37,7 @@ const subscriptionTiers: SubscriptionTier[] = [
     description: 'Perfect for occasional writers',
     icon: BookOpen,
     features: [
-      '5 novels per month',
+      '5 books per month (fiction & non-fiction)',
       'Complete 50K-80K word manuscripts',
       'Amazon KDP-ready formatting',
       'Character development tools',
@@ -55,7 +55,7 @@ const subscriptionTiers: SubscriptionTier[] = [
     icon: Star,
     popular: true,
     features: [
-      '20 novels per month',
+      '20 books per month (fiction & non-fiction)',
       'Everything in Basic',
       'Advanced audiobook generation',
       'Priority AI processing',
@@ -72,7 +72,7 @@ const subscriptionTiers: SubscriptionTier[] = [
     description: 'For professional publishers',
     icon: Crown,
     features: [
-      '50 novels per month',
+      '50 books per month (fiction & non-fiction)',
       'Everything in Pro',
       'AI cover creation (coming soon)',
       'Automated KDP publishing (coming soon)',
@@ -91,7 +91,7 @@ const subscriptionTiers: SubscriptionTier[] = [
     features: [
       '🎯 Limited to 100 members',
       '💫 Lifetime access (one-time payment)',
-      '100 novels per month',
+      '100 books per month (fiction & non-fiction)',
       'Everything in Pro',
       'Early access to new features',
       'Direct feedback channel',

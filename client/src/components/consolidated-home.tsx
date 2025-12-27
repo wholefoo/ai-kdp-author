@@ -85,7 +85,7 @@ export default function ConsolidatedHome() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">AI KDP Author</h1>
-                <p className="text-slate-600 text-sm">Creating your novel...</p>
+                <p className="text-slate-600 text-sm">Creating your book...</p>
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function ConsolidatedHome() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">AI KDP Author</h1>
-                <p className="text-slate-600 text-sm">Review your novel outline</p>
+                <p className="text-slate-600 text-sm">Review your book outline</p>
               </div>
             </div>
           </div>

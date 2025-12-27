@@ -71,7 +71,7 @@ export default function CreateHub({
                 AI KDP Author
               </CardTitle>
               <CardDescription>
-                Generate complete 50K-80K word novels ready for Amazon KDP
+                Generate complete 50K-80K word fiction and non-fiction books ready for Amazon KDP
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -21,8 +21,8 @@ export default function CompletedNovel({ novel, onDownload, onGenerateAnother }:
       <div className="bg-gradient-to-r from-accent to-primary px-6 py-6 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Novel Generation Complete!</h2>
-            <p className="mt-2 opacity-90">Your novel is ready for download and publishing</p>
+            <h2 className="text-2xl font-bold">Book Generation Complete!</h2>
+            <p className="mt-2 opacity-90">Your book is ready for download and publishing</p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold" data-testid="text-word-count">{wordCount.toLocaleString()}</div>
@@ -54,7 +54,7 @@ export default function CompletedNovel({ novel, onDownload, onGenerateAnother }:
 
         {/* Preview Section */}
         <div className="mb-6">
-          <h3 className="font-semibold text-slate-900 mb-3">Novel Preview</h3>
+          <h3 className="font-semibold text-slate-900 mb-3">Book Preview</h3>
           <ScrollArea className="bg-slate-50 rounded-lg p-4 max-h-64">
             <div className="font-mono text-sm text-slate-700">
               <h1 className="text-xl font-bold mb-4" data-testid="text-preview-title">{novel.title}</h1>
@@ -88,7 +88,7 @@ export default function CompletedNovel({ novel, onDownload, onGenerateAnother }:
             data-testid="button-generate-another"
           >
             <i className="fas fa-plus mr-2"></i>
-            Generate Another Novel
+            Generate Another Book
           </Button>
         </div>
       </CardContent>

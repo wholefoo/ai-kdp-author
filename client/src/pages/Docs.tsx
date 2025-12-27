@@ -16,24 +16,26 @@ export default function Docs() {
       ]
     },
     {
-      title: "2. Generate Your First Novel",
-      description: "Create a complete, publishable novel in minutes with AI assistance.",
+      title: "2. Generate Your First Book",
+      description: "Create a complete, publishable fiction or non-fiction book in minutes with AI assistance.",
       steps: [
         "Navigate to the 'Create' hub from your dashboard",
-        "Enter your novel details (genre, title, plot idea)",
+        "Choose Fiction or Non-Fiction content type",
+        "Enter your book details (genre/category, title, plot idea or topic)",
         "Customize word count (30K-120K) and chapter count (10-50)",
-        "Click 'Generate Novel' and wait for AI to create your manuscript",
+        "Click 'Generate' and wait for AI to create your manuscript",
         "Review and edit the generated content"
       ]
     },
     {
       title: "3. Export and Publish",
-      description: "Download your novel in professional formats ready for publishing.",
+      description: "Download your book in professional formats ready for publishing.",
       steps: [
         "Go to the 'Publish' hub",
-        "Select your novel from the library",
+        "Select your book from the library",
         "Choose export format (DOCX, PDF, TXT, or Markdown)",
         "Select formatting preset (KDP, CreateSpace, eBook, or Manuscript)",
+        "Non-fiction books include automatic bibliography formatting",
         "Download and publish to Amazon KDP or other platforms"
       ]
     }
@@ -42,24 +44,25 @@ export default function Docs() {
   const features = [
     {
       icon: BookOpen,
-      title: "Novel Generation",
-      description: "Generate complete 50,000-80,000 word novels with AI.",
+      title: "Book Generation",
+      description: "Generate complete 50,000-80,000 word fiction and non-fiction books with AI.",
       guides: [
-        "Choose from multiple genres (Romance, Thriller, Fantasy, Sci-Fi, etc.)",
+        "Choose Fiction or Non-Fiction content type",
+        "Fiction: Choose from genres (Romance, Thriller, Fantasy, Sci-Fi, etc.)",
+        "Non-Fiction: Select from 17 categories (Business, History, Science, Self-Help, etc.)",
         "Customize word count between 30,000-120,000 words",
         "Set chapter count from 10-50 chapters",
-        "Define chapter length (1,500-5,000 words per chapter)",
-        "Provide plot ideas or let AI generate suggestions",
+        "Non-fiction includes automatic source verification and bibliography",
         "Review and edit AI-generated outlines before full generation"
       ]
     },
     {
       icon: Headphones,
       title: "Audiobook Creation",
-      description: "Transform your novels into professional audiobooks.",
+      description: "Transform your books into professional audiobooks.",
       guides: [
-        "Select a completed novel from your library",
-        "Choose from 6 premium AI voices (Alloy, Echo, Fable, Onyx, Nova, Shimmer)",
+        "Select a completed book from your library",
+        "Choose from 80+ premium AI voices (Gemini TTS, Deepgram, OpenAI)",
         "Adjust narration speed (25%-400%)",
         "Select audio format (MP3, Opus, AAC, FLAC)",
         "Generate chapter-by-chapter or complete audiobook",
@@ -122,8 +125,8 @@ export default function Docs() {
 
   const faqs = [
     {
-      question: "How long does it take to generate a novel?",
-      answer: "Novel generation typically takes 15-30 minutes depending on the word count and complexity. You'll receive email notifications when your novel is ready."
+      question: "How long does it take to generate a book?",
+      answer: "Book generation typically takes 15-30 minutes depending on the word count and complexity. You'll receive email notifications when your book is ready."
     },
     {
       question: "Can I edit the AI-generated content?",
@@ -134,8 +137,8 @@ export default function Docs() {
       answer: "You can export in DOCX (Microsoft Word), PDF, Markdown (.md), and plain text (.txt). DOCX files use the Aptos font by default and include Amazon KDP-ready formatting."
     },
     {
-      question: "How many novels can I generate per month?",
-      answer: "It depends on your subscription tier: Basic (5 novels), Pro (20 novels), Premium (50 novels), and Founders (100 novels). Trial users can only access the Refine features."
+      question: "How many books can I generate per month?",
+      answer: "It depends on your subscription tier: Basic (5 books), Pro (20 books), Premium (50 books), and Founders (100 books). Both fiction and non-fiction count toward your limit. Trial users can only access the Refine features."
     },
     {
       question: "Can I upload my own manuscript for analysis?",
@@ -146,8 +149,8 @@ export default function Docs() {
       answer: "All content generated through AI KDP Author is yours to use commercially. You can publish audiobooks on Audible, ACX, or any other platform."
     },
     {
-      question: "What AI model powers the novel generation?",
-      answer: "We primarily use OpenAI GPT-5 for novel generation, character development, and analysis. For audiobooks, we use OpenAI's text-to-speech technology."
+      question: "What AI model powers the book generation?",
+      answer: "We primarily use OpenAI GPT-5.2 for fiction and non-fiction generation, character development, and analysis. For audiobooks, we support 80+ voices from Gemini TTS, Deepgram Aura-2, and OpenAI."
     },
     {
       question: "Can I cancel my subscription anytime?",
@@ -159,10 +162,10 @@ export default function Docs() {
     <>
       <Helmet>
         <title>Documentation - AI KDP Author | Complete User Guide</title>
-        <meta name="description" content="Complete documentation for AI KDP Author. Learn how to generate novels, create audiobooks, analyze manuscripts, and publish to Amazon KDP with our comprehensive guides and tutorials." />
+        <meta name="description" content="Complete documentation for AI KDP Author. Learn how to generate fiction and non-fiction books, create audiobooks, analyze manuscripts, and publish to Amazon KDP with our comprehensive guides and tutorials." />
         <link rel="canonical" href="https://aikdpauthor.com/docs" />
         <meta property="og:title" content="Documentation - AI KDP Author | Complete User Guide" />
-        <meta property="og:description" content="Master AI KDP Author with our complete documentation. Step-by-step guides for novel generation, audiobook creation, and Amazon KDP publishing." />
+        <meta property="og:description" content="Master AI KDP Author with our complete documentation. Step-by-step guides for fiction and non-fiction book generation, audiobook creation, and Amazon KDP publishing." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aikdpauthor.com/docs" />
       </Helmet>
@@ -183,7 +186,7 @@ export default function Docs() {
                 Documentation
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                Everything you need to know about creating, analyzing, and publishing novels with AI KDP Author
+                Everything you need to know about creating, analyzing, and publishing fiction and non-fiction books with AI KDP Author
               </p>
             </div>
 

@@ -13,13 +13,13 @@ export default function BlogFooter() {
             </div>
             
             <h3 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Ready to Write Your Novel?
+              Ready to Write Your Book?
             </h3>
             
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Join thousands of authors using AI KDP Author to create professional, 
-              publishable novels in days, not months. Start your journey today with 
-              our powerful AI-driven novel generation platform.
+              publishable fiction and non-fiction books in days, not months. Start your journey today with 
+              our powerful AI-driven book generation platform.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">

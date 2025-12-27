@@ -29,7 +29,7 @@ export default function WorkflowSidebar({
     {
       id: "create" as const,
       title: "Create",
-      description: "Generate your novel",
+      description: "Generate your book",
       icon: Wand2,
       progress: progress.create
     },
@@ -55,7 +55,7 @@ export default function WorkflowSidebar({
         <div className="space-y-2 mb-6">
           <div className="flex items-center space-x-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold text-lg">Novel Workflow</h2>
+            <h2 className="font-semibold text-lg">Book Workflow</h2>
           </div>
           <p className="text-sm text-slate-600">
             Follow the guided process from creation to publication
@@ -114,9 +114,9 @@ export default function WorkflowSidebar({
             Current Stage
           </div>
           <div className="text-xs text-slate-600">
-            {currentStage === "create" && "Generate novels, explore ideas, and develop characters"}
+            {currentStage === "create" && "Generate fiction & non-fiction books, explore ideas, and develop characters"}
             {currentStage === "refine" && "Upload manuscripts and analyze quality"}
-            {currentStage === "publish" && "Access your library and export novels"}
+            {currentStage === "publish" && "Access your library and export books"}
           </div>
         </div>
       </CardContent>

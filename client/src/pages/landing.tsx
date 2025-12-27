@@ -15,7 +15,7 @@ export default function Landing() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">AI KDP Author</h1>
-                <p className="text-slate-600 text-sm">Create complete novels ready for Amazon KDP</p>
+                <p className="text-slate-600 text-sm">Create complete books ready for Amazon KDP</p>
               </div>
             </div>
             <Button 
@@ -33,10 +33,10 @@ export default function Landing() {
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <h2 className="text-5xl font-bold text-slate-900 mb-6">
-            Generate Complete Novels with AI
+            Generate Complete Books with AI
           </h2>
           <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
-            Create professional, publishable novels of 50,000-80,000 words with advanced AI technology. 
+            Create professional, publishable fiction and non-fiction books of 50,000-80,000 words with advanced AI technology. 
             Perfect for Amazon KDP publishing with built-in formatting and quality assurance.
           </p>
           <Button 
@@ -45,7 +45,7 @@ export default function Landing() {
             className="bg-primary hover:bg-primary/90 text-white text-lg px-8 py-3"
             data-testid="button-hero-login"
           >
-            Start Writing Your Novel
+            Start Writing Your Book
           </Button>
         </div>
       </section>
@@ -131,9 +131,9 @@ export default function Landing() {
       {/* CTA Section */}
       <section className="py-20 bg-primary text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h3 className="text-3xl font-bold mb-6">Ready to Write Your Novel?</h3>
+          <h3 className="text-3xl font-bold mb-6">Ready to Write Your Book?</h3>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of authors who have published their AI-generated novels on Amazon KDP
+            Join thousands of authors who have published their AI-generated books on Amazon KDP
           </p>
           <Button 
             size="lg"
@@ -141,7 +141,7 @@ export default function Landing() {
             className="bg-white text-primary hover:bg-gray-100 text-lg px-8 py-3"
             data-testid="button-cta-login"
           >
-            Start Your Novel Today
+            Start Your Book Today
           </Button>
         </div>
       </section>

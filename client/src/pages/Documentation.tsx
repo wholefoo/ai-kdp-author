@@ -8,10 +8,11 @@ export default function Documentation() {
   const featureDocs = [
     {
       icon: BookOpen,
-      title: "Novel Generation",
-      description: "Complete guide to AI-powered novel creation",
+      title: "Book Generation",
+      description: "Complete guide to AI-powered fiction and non-fiction creation",
       topics: [
-        { name: "Outline Creation & Story Structure", link: "/docs/outline-creation" },
+        { name: "Fiction: Outline Creation & Story Structure", link: "/docs/outline-creation" },
+        { name: "Non-Fiction: Research & Source Verification", link: "/docs/non-fiction-research" },
         { name: "AI Model & Customization Options", link: "/docs/ai-customization" },
         { name: "Chapter-by-Chapter Generation Process", link: "/docs/chapter-generation" }
       ]
@@ -39,7 +40,7 @@ export default function Documentation() {
     {
       icon: Headphones,
       title: "Audiobook Creation",
-      description: "Professional audiobook generation from your novels",
+      description: "Professional audiobook generation from your books",
       topics: [
         { name: "Voice Selection & Preview", link: "/docs/voice-selection" },
         { name: "Audio Quality & Settings", link: "/docs/audio-settings" },
@@ -49,9 +50,10 @@ export default function Documentation() {
     {
       icon: Download,
       title: "Export & Publishing",
-      description: "Format and export your novels for publishing",
+      description: "Format and export your books for publishing",
       topics: [
         { name: "DOCX & PDF Formatting Options", link: "/docs/docx-pdf-formatting" },
+        { name: "Non-Fiction Bibliography Formatting", link: "/docs/bibliography-formatting" },
         { name: "KDP-Ready File Preparation", link: "/docs/kdp-preparation" },
         { name: "Cover Design Guidelines", link: "/docs/cover-design" }
       ]
@@ -62,10 +64,10 @@ export default function Documentation() {
     <>
       <Helmet>
         <title>Feature Documentation - AI KDP Author | Technical Reference</title>
-        <meta name="description" content="Comprehensive technical documentation for all AI KDP Author features. Learn about novel generation, audiobook creation, manuscript analysis, character development, and publishing tools." />
+        <meta name="description" content="Comprehensive technical documentation for all AI KDP Author features. Learn about fiction and non-fiction book generation, audiobook creation, manuscript analysis, character development, and publishing tools." />
         <link rel="canonical" href="https://aikdpauthor.com/documentation" />
         <meta property="og:title" content="Feature Documentation - AI KDP Author | Technical Reference" />
-        <meta property="og:description" content="Complete technical reference for AI KDP Author's novel generation, analysis, and publishing features." />
+        <meta property="og:description" content="Complete technical reference for AI KDP Author's fiction and non-fiction book generation, analysis, and publishing features." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aikdpauthor.com/documentation" />
       </Helmet>
