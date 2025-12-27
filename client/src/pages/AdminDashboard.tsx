@@ -151,24 +151,26 @@ export default function AdminDashboard() {
     enabled: shouldFetchAdminData,
   });
 
-  // Check if user is not authenticated
-  if (!authLoading && !user) {
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      window.location.href = "/api/login";
+    }
+  }, [authLoading, user]);
+
+  // Show loading while checking auth or redirecting
+  if (authLoading || (!authLoading && !user)) {
     return (
       <div className="min-h-screen bg-background p-8 flex items-center justify-center">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Authentication Required
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 animate-spin" />
+              Checking Authentication...
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                You must be logged in to access the admin dashboard.
-              </AlertDescription>
-            </Alert>
+            <p className="text-muted-foreground">Please wait while we verify your access.</p>
           </CardContent>
         </Card>
       </div>
