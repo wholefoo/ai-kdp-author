@@ -1130,7 +1130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               let previousContent = "";
               const totalChapters = outline.chapters.length;
               const isNonFiction = novel.contentType === "non-fiction";
-              const allCitations: Array<{claim: string; source: string; author?: string; title: string; publishDate?: string}> = [];
+              const allCitations: Array<{claim: string; source: string; author?: string; title: string; publishDate?: string; chapterNumber: number}> = [];
 
               // Use appropriate generation method based on content type
               for (let i = 1; i <= totalChapters; i++) {
@@ -1153,9 +1153,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     (novel.excludedSources as string[]) || ["wikipedia.org", "wiki", "reddit.com", "quora.com"]
                   );
                   chapterContent = nonFictionResult.content;
-                  // Collect citations for bibliography
+                  // Collect citations for bibliography with chapter tracking
                   if (nonFictionResult.citations && nonFictionResult.citations.length > 0) {
-                    allCitations.push(...nonFictionResult.citations);
+                    allCitations.push(...nonFictionResult.citations.map(c => ({ ...c, chapterNumber: i })));
                   }
                 } else {
                   // Generate fiction chapter
@@ -1212,18 +1212,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Final quality pass on complete manuscript - use appropriate compiler
               let manuscript: string;
               if (isNonFiction) {
-                // Convert citations to bibliography entries
+                // Convert citations to bibliography entries with full metadata
                 const bibliographyEntries = allCitations.map((citation, index) => ({
                   id: `cite-${index + 1}`,
                   title: citation.title,
                   author: citation.author,
                   source: citation.source,
                   publishDate: citation.publishDate,
+                  accessDate: new Date().toISOString().split('T')[0],
+                  chapterNumber: citation.chapterNumber,
+                  claimText: citation.claim,
                   verified: true,
                 }));
                 manuscript = await novelGenerationService.compileNonFictionManuscript(novel.title, chapters, bibliographyEntries);
-                // Save bibliography to novel
-                await storage.updateNovel(id, { bibliography: bibliographyEntries });
+                // Save bibliography and update verification status
+                await storage.updateNovel(id, { 
+                  bibliography: bibliographyEntries,
+                  verificationStatus: bibliographyEntries.length > 0 ? "verified" : "pending"
+                });
               } else {
                 manuscript = await novelGenerationService.compileManuscript(novel.title, chapters);
               }
