@@ -198,7 +198,7 @@ export class DocxExportService {
           const chapterNum = chapterMatches[i].num;
           const chapterName = chapterMatches[i].name;
           chapters.push({
-            title: chapterName ? `Chapter ${chapterNum}: ${chapterName}` : `Chapter ${chapterNum}`,
+            title: chapterName ? `CHAPTER ${chapterNum}: ${chapterName}` : `CHAPTER ${chapterNum}`,
             chapterName: chapterName,
             content: chapterContent
           });
@@ -232,7 +232,7 @@ export class DocxExportService {
           const chapterNum = boldMatches[i].num;
           const chapterName = boldMatches[i].name;
           chapters.push({
-            title: chapterName ? `Chapter ${chapterNum}: ${chapterName}` : `Chapter ${chapterNum}`,
+            title: chapterName ? `CHAPTER ${chapterNum}: ${chapterName}` : `CHAPTER ${chapterNum}`,
             chapterName: chapterName,
             content: chapterContent
           });
@@ -266,7 +266,7 @@ export class DocxExportService {
           const chapterNum = plainMatches[i].num;
           const chapterName = plainMatches[i].name;
           chapters.push({
-            title: chapterName ? `Chapter ${chapterNum}: ${chapterName}` : `Chapter ${chapterNum}`,
+            title: chapterName ? `CHAPTER ${chapterNum}: ${chapterName}` : `CHAPTER ${chapterNum}`,
             chapterName: chapterName,
             content: chapterContent
           });
@@ -279,7 +279,7 @@ export class DocxExportService {
     if (chapters.length === 0 && cleanContent.trim()) {
       const processedContent = this.removeDuplicateChapterHeaders(cleanContent.trim());
       chapters.push({
-        title: "Chapter 1",
+        title: "CHAPTER 1",
         chapterName: "",
         content: processedContent
       });

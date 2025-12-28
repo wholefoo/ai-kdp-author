@@ -112,7 +112,7 @@ export class ExportService {
   }
 
   /**
-   * Format chapter title to professional "Chapter X: Title" format
+   * Format chapter title to professional "CHAPTER X: Title" format
    */
   private formatChapterTitle(title: string): string {
     // Extract chapter number and any additional title
@@ -125,14 +125,21 @@ export class ExportService {
       if (chapterName && chapterName.length > 0) {
         // Clean up chapter name - remove quotes and extra formatting
         const cleanName = chapterName.replace(/^[\"\']+|[\"\']+$/g, '').trim();
-        // Format as "Chapter X: Title Name"
-        return `Chapter ${chapterNum}: ${cleanName}`;
+        // Format as "CHAPTER X: Title Name"
+        return `CHAPTER ${chapterNum}: ${cleanName}`;
       } else {
-        return `Chapter ${chapterNum}`;
+        return `CHAPTER ${chapterNum}`;
       }
     }
     
-    // Fallback - return original
+    // Fallback - check if it's just a number with title
+    const numMatch = title.match(/^(\d+)\s*:?\s*(.*)$/);
+    if (numMatch) {
+      const num = numMatch[1];
+      const name = numMatch[2]?.trim();
+      return name ? `CHAPTER ${num}: ${name}` : `CHAPTER ${num}`;
+    }
+    
     return title;
   }
 

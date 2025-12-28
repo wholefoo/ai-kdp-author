@@ -404,7 +404,7 @@ export class SimpleDocxExportService {
   }
 
   /**
-   * Format chapter title to match KDP template style: "1 CHAPTER NAME"
+   * Format chapter title to match professional KDP style: "CHAPTER X: Title Name"
    */
   private formatChapterTitle(title: string): string {
     // Extract chapter number and any additional title
@@ -415,15 +415,24 @@ export class SimpleDocxExportService {
       const chapterName = match[2]?.trim();
       
       if (chapterName && chapterName.length > 0) {
-        // Format as "1 CHAPTER NAME" (space-separated, no colon)
-        return `${chapterNum} CHAPTER ${chapterName.toUpperCase()}`;
+        // Clean up chapter name - remove quotes and extra formatting
+        const cleanName = chapterName.replace(/^[\"\']+|[\"\']+$/g, '').trim();
+        // Format as "CHAPTER X: Title Name" (professional format)
+        return `CHAPTER ${chapterNum}: ${cleanName}`;
       } else {
-        return `${chapterNum} CHAPTER`;
+        return `CHAPTER ${chapterNum}`;
       }
     }
     
-    // Fallback - just return uppercase version
-    return title.toUpperCase();
+    // Fallback - check if it's just a number with title
+    const numMatch = title.match(/^(\d+)\s*:?\s*(.*)$/);
+    if (numMatch) {
+      const num = numMatch[1];
+      const name = numMatch[2]?.trim();
+      return name ? `CHAPTER ${num}: ${name}` : `CHAPTER ${num}`;
+    }
+    
+    return title;
   }
 
   /**
