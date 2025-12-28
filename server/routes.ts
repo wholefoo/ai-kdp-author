@@ -851,6 +851,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         toneAndMood: validatedData.toneAndMood,
         contentRating: validatedData.contentRating,
         customInstructions: validatedData.customInstructions,
+        // Non-fiction specific fields
+        contentType: validatedData.contentType || "fiction",
+        nonFictionSubtype: validatedData.nonFictionSubtype,
+        nonFictionTopic: validatedData.nonFictionTopic,
+        targetAudience: validatedData.targetAudience,
+        excludedSources: validatedData.excludedSources,
       });
 
       // Increment user's novel count after successful creation
@@ -1046,19 +1052,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate outline (this runs in background)
       setImmediate(async () => {
         try {
-          const outline = await novelGenerationService.generateOutline(
-            novel.genre,
-            novel.plotIdea,
-            novel.title,
-            novel.targetWordCount || 65000,
-            novel.targetChapterCount || 25,
-            novel.targetChapterLength || 2600,
-            novel.writingStyle || "balanced",
-            novel.pointOfView || "third-person-limited",
-            novel.toneAndMood || "adventurous",
-            novel.contentRating || "pg-13",
-            novel.customInstructions || undefined
-          );
+          let outline;
+          
+          // Check if this is a non-fiction book and use appropriate generation method
+          if (novel.contentType === "non-fiction") {
+            console.log(`📚 Generating NON-FICTION outline for: ${novel.title}`);
+            outline = await novelGenerationService.generateNonFictionOutline(
+              novel.title,
+              novel.nonFictionTopic || novel.plotIdea,
+              novel.nonFictionSubtype || "self-help",
+              novel.targetAudience || "general readers",
+              novel.targetWordCount || 65000,
+              novel.targetChapterCount || 20,
+              novel.targetChapterLength || 3000,
+              novel.writingStyle || "balanced",
+              novel.toneAndMood || "informative",
+              novel.contentRating || "pg",
+              novel.customInstructions || undefined,
+              (novel.excludedSources as string[]) || ["wikipedia.org", "wiki", "reddit.com", "quora.com"]
+            );
+          } else {
+            console.log(`📖 Generating FICTION outline for: ${novel.title}`);
+            outline = await novelGenerationService.generateOutline(
+              novel.genre,
+              novel.plotIdea,
+              novel.title,
+              novel.targetWordCount || 65000,
+              novel.targetChapterCount || 25,
+              novel.targetChapterLength || 2600,
+              novel.writingStyle || "balanced",
+              novel.pointOfView || "third-person-limited",
+              novel.toneAndMood || "adventurous",
+              novel.contentRating || "pg-13",
+              novel.customInstructions || undefined
+            );
+          }
 
           await storage.updateNovel(id, {
             outline,
@@ -1101,8 +1129,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const chapters: string[] = [];
               let previousContent = "";
               const totalChapters = outline.chapters.length;
+              const isNonFiction = novel.contentType === "non-fiction";
+              const allCitations: Array<{claim: string; source: string; author?: string; title: string; publishDate?: string}> = [];
 
-              // Use the original novel generation service for consistent, full-length chapters
+              // Use appropriate generation method based on content type
               for (let i = 1; i <= totalChapters; i++) {
                 const chapterInfo = outline?.chapters?.[i-1];
                 if (!chapterInfo) {
@@ -1110,13 +1140,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   continue;
                 }
 
-                // Generate chapter using the full-strength original method
-                let chapterContent = await novelGenerationService.generateChapter(
-                  i,
-                  outline as any,
-                  previousContent,
-                  novel.targetChapterLength || 4000
-                );
+                let chapterContent: string;
+                
+                if (isNonFiction) {
+                  // Generate non-fiction chapter with citations
+                  console.log(`📚 Generating non-fiction chapter ${i}: "${chapterInfo.title}"`);
+                  const nonFictionResult = await novelGenerationService.generateNonFictionChapter(
+                    i,
+                    outline as any,
+                    previousContent,
+                    novel.targetChapterLength || 3000,
+                    (novel.excludedSources as string[]) || ["wikipedia.org", "wiki", "reddit.com", "quora.com"]
+                  );
+                  chapterContent = nonFictionResult.content;
+                  // Collect citations for bibliography
+                  if (nonFictionResult.citations && nonFictionResult.citations.length > 0) {
+                    allCitations.push(...nonFictionResult.citations);
+                  }
+                } else {
+                  // Generate fiction chapter
+                  console.log(`📖 Generating fiction chapter ${i}: "${chapterInfo.title}"`);
+                  chapterContent = await novelGenerationService.generateChapter(
+                    i,
+                    outline as any,
+                    previousContent,
+                    novel.targetChapterLength || 4000
+                  );
+                }
 
                 // Post-process for proper formatting
                 chapterContent = ensureProperFormatting(chapterContent);
@@ -1159,8 +1209,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               });
 
-              // Final quality pass on complete manuscript
-              let manuscript = await novelGenerationService.compileManuscript(novel.title, chapters);
+              // Final quality pass on complete manuscript - use appropriate compiler
+              let manuscript: string;
+              if (isNonFiction) {
+                // Convert citations to bibliography entries
+                const bibliographyEntries = allCitations.map((citation, index) => ({
+                  id: `cite-${index + 1}`,
+                  title: citation.title,
+                  author: citation.author,
+                  source: citation.source,
+                  publishDate: citation.publishDate,
+                  verified: true,
+                }));
+                manuscript = await novelGenerationService.compileNonFictionManuscript(novel.title, chapters, bibliographyEntries);
+                // Save bibliography to novel
+                await storage.updateNovel(id, { bibliography: bibliographyEntries });
+              } else {
+                manuscript = await novelGenerationService.compileManuscript(novel.title, chapters);
+              }
               const qualityService = new ContentQualityService();
               manuscript = await qualityService.fixCommonIssues(manuscript);
               
