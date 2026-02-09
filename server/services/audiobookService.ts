@@ -13,7 +13,7 @@ export type TtsVoice = DeepgramVoice | 'alloy' | 'echo' | 'fable' | 'onyx' | 'no
 export interface AudiobookOptions {
   ttsProvider: TtsProvider; // gemini (primary), deepgram, or openai
   voice: TtsVoice;
-  model: 'aura-2' | 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
+  model: 'aura-2' | 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts';
   speed: number; // 0.25 to 4.0
   format: 'mp3' | 'opus' | 'aac' | 'flac';
   backgroundMusic?: {
@@ -356,7 +356,7 @@ export class AudiobookService {
     try {
       const audioBuffer = await this.geminiTts.generateAudio(text, {
         voice: options.voice as GeminiVoice,
-        model: options.model as 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts',
+        model: options.model as 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts',
         speed: options.speed,
         useAudiobookProcessor,
         narrationPreset: 'audiobook',
@@ -1458,7 +1458,7 @@ export class AudiobookService {
           const geminiService = new GeminiTtsService();
           const audioBuffer = await geminiService.generateAudio(limitedText, {
             voice: options.voice as any,
-            model: (options.model === 'gemini-2.5-flash-preview-tts' || options.model === 'gemini-2.5-pro-preview-tts' ? options.model : 'gemini-2.5-flash-preview-tts') as any,
+            model: (options.model === 'gemini-2.5-flash-tts' || options.model === 'gemini-2.5-pro-tts' ? options.model : 'gemini-2.5-flash-tts') as any,
             speed: normalizedSpeed,
             language: 'en'
           });

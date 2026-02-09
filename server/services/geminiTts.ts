@@ -37,7 +37,7 @@ export interface TtsJobMeta {
 
 export interface GeminiTtsOptions {
   voice: GeminiVoice;
-  model: 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
+  model: 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts';
   speed: number;
   language?: string;
   styleHint?: string;
@@ -905,7 +905,7 @@ export class GeminiTtsService {
   }
 
   static getAvailableModels() {
-    return ['gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'] as const;
+    return ['gemini-2.5-flash-tts', 'gemini-2.5-pro-tts'] as const;
   }
 
   static cleanupCache(): void {

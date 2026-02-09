@@ -87,6 +87,6 @@ Each chapter starts on a new page.
 - **Payment Processing**: Stripe.
 - **Email Service**: Resend for transactional emails.
 - **TTS Services**:
-    - Gemini TTS (PRIMARY, 30 voices, 30 voices, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` models).
+    - Gemini TTS (PRIMARY, 30 voices, 30 voices, `gemini-2.5-flash-tts`, `gemini-2.5-pro-tts` models).
     - Deepgram Aura-2 (Fallback, 45+ voices).
     - OpenAI TTS (Final Fallback, `gpt-4o-mini-tts` model, 6 voices: alloy, echo, fable, onyx, nova, shimmer).

@@ -3852,7 +3852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const geminiTts = new GeminiTtsService();
         newJobId = geminiTts.createJob(payload.text, {
           voice: payload.voice || existingJob.voice || 'Kore',
-          model: payload.model || 'gemini-2.5-flash-preview-tts',
+          model: payload.model || 'gemini-2.5-flash-tts',
           format: payload.format || existingJob.format || 'mp3',
           speed: payload.speed || 1.0,
         });
@@ -3942,7 +3942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isGeminiVoice = geminiVoiceList.includes(voice);
       const ttsProvider = isDeepgramVoice ? 'deepgram' : isGeminiVoice ? 'gemini' : 'openai';
       // Auto-select correct model based on provider - always use valid model for each provider
-      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'gpt-4o-mini-tts';
+      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-tts' : 'gpt-4o-mini-tts';
 
       const audiobook = await storage.createAudiobook({
         novelId,
@@ -4142,7 +4142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           ttsProvider: previewProvider,
           voice: voice as any,
-          model: previewProvider === 'deepgram' ? 'aura-2' : previewProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'gpt-4o-mini-tts',
+          model: previewProvider === 'deepgram' ? 'aura-2' : previewProvider === 'gemini' ? 'gemini-2.5-flash-tts' : 'gpt-4o-mini-tts',
           speed: speed,
           format: 'mp3'
         }
@@ -4304,7 +4304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Auto-select correct model based on TTS provider to fix any incorrectly stored models
           const ttsProvider = audiobook.ttsProvider || 'openai';
-          const correctedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'gpt-4o-mini-tts';
+          const correctedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-tts' : 'gpt-4o-mini-tts';
           
           const audioFiles = await audiobookService.generateAudiobook(
             audiobook.novelId,
