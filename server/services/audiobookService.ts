@@ -13,7 +13,7 @@ export type TtsVoice = DeepgramVoice | 'alloy' | 'echo' | 'fable' | 'onyx' | 'no
 export interface AudiobookOptions {
   ttsProvider: TtsProvider; // gemini (primary), deepgram, or openai
   voice: TtsVoice;
-  model: 'aura-2' | 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts';
+  model: 'aura-2' | 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
   speed: number; // 0.25 to 4.0
   format: 'mp3' | 'opus' | 'aac' | 'flac';
   backgroundMusic?: {
@@ -250,18 +250,36 @@ export class AudiobookService {
     return audioFiles;
   }
 
+  private normalizeModelForProvider(options: AudiobookOptions): AudiobookOptions {
+    const provider = options.ttsProvider;
+    let model: string = options.model;
+    
+    if (provider === 'gemini') {
+      if (model === 'gemini-2.5-flash-tts') model = 'gemini-2.5-flash-preview-tts';
+      else if (model === 'gemini-2.5-pro-tts') model = 'gemini-2.5-pro-preview-tts';
+      else if (!model?.startsWith('gemini-')) model = 'gemini-2.5-flash-preview-tts';
+    } else if (provider === 'deepgram') {
+      if (!model || model !== 'aura-2') model = 'aura-2';
+    } else if (provider === 'openai') {
+      if (!['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd'].includes(model)) model = 'gpt-4o-mini-tts';
+    }
+    
+    return { ...options, model: model as AudiobookOptions['model'] };
+  }
+
   /**
    * Generate audio for a single chapter using selected TTS provider
    * Provider priority: gemini (primary) > deepgram > openai
    */
   private async generateChapterAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
-    if (options.ttsProvider === 'gemini') {
-      return this.generateGeminiAudio(text, options);
+    const normalizedOptions = this.normalizeModelForProvider(options);
+    if (normalizedOptions.ttsProvider === 'gemini') {
+      return this.generateGeminiAudio(text, normalizedOptions);
     }
-    if (options.ttsProvider === 'deepgram') {
-      return this.generateDeepgramAudio(text, options);
+    if (normalizedOptions.ttsProvider === 'deepgram') {
+      return this.generateDeepgramAudio(text, normalizedOptions);
     }
-    return this.generateOpenAIAudio(text, options);
+    return this.generateOpenAIAudio(text, normalizedOptions);
   }
 
   /**
@@ -289,9 +307,15 @@ export class AudiobookService {
       console.error('❌ Deepgram TTS API error:', error.message);
       console.warn('⚠️ Deepgram TTS failed. Falling back to OpenAI for audio generation...');
       
-      // Fallback to OpenAI when Deepgram fails
+      const openaiFallbackOptions: AudiobookOptions = {
+        ...options,
+        ttsProvider: 'openai',
+        voice: 'nova' as TtsVoice,
+        model: 'gpt-4o-mini-tts',
+      };
+      
       try {
-        return await this.generateOpenAIAudio(text, options);
+        return await this.generateOpenAIAudio(text, openaiFallbackOptions);
       } catch (fallbackError: any) {
         throw new Error(`Both Deepgram and OpenAI TTS failed. Deepgram: ${error.message}, OpenAI: ${fallbackError.message}`);
       }
@@ -356,7 +380,7 @@ export class AudiobookService {
     try {
       const audioBuffer = await this.geminiTts.generateAudio(text, {
         voice: options.voice as GeminiVoice,
-        model: options.model as 'gemini-2.5-flash-tts' | 'gemini-2.5-pro-tts',
+        model: options.model as 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts',
         speed: options.speed,
         useAudiobookProcessor,
         narrationPreset: 'audiobook',
@@ -369,14 +393,26 @@ export class AudiobookService {
       console.error('❌ Gemini TTS API error:', error.message);
       console.warn('⚠️ Gemini TTS failed. Falling back to Deepgram for audio generation...');
       
-      // Fallback to Deepgram when Gemini fails
+      const deepgramFallbackOptions: AudiobookOptions = {
+        ...options,
+        ttsProvider: 'deepgram',
+        voice: 'aura-2-athena-en' as TtsVoice,
+        model: 'aura-2',
+      };
+      
+      const openaiFallbackOptions: AudiobookOptions = {
+        ...options,
+        ttsProvider: 'openai',
+        voice: 'nova' as TtsVoice,
+        model: 'gpt-4o-mini-tts',
+      };
+      
       try {
-        return await this.generateDeepgramAudio(text, options);
+        return await this.generateDeepgramAudio(text, deepgramFallbackOptions);
       } catch (fallbackError: any) {
-        // If Deepgram also fails, try OpenAI as last resort
         console.warn('⚠️ Deepgram TTS also failed. Trying OpenAI as last resort...');
         try {
-          return await this.generateOpenAIAudio(text, options);
+          return await this.generateOpenAIAudio(text, openaiFallbackOptions);
         } catch (openaiError: any) {
           throw new Error(`All TTS providers failed. Gemini: ${error.message}, Deepgram: ${fallbackError.message}, OpenAI: ${openaiError.message}`);
         }
@@ -1458,7 +1494,7 @@ export class AudiobookService {
           const geminiService = new GeminiTtsService();
           const audioBuffer = await geminiService.generateAudio(limitedText, {
             voice: options.voice as any,
-            model: (options.model === 'gemini-2.5-flash-tts' || options.model === 'gemini-2.5-pro-tts' ? options.model : 'gemini-2.5-flash-tts') as any,
+            model: (options.model === 'gemini-2.5-flash-preview-tts' || options.model === 'gemini-2.5-pro-preview-tts' ? options.model : 'gemini-2.5-flash-preview-tts') as any,
             speed: normalizedSpeed,
             language: 'en'
           });
