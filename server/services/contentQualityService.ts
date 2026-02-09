@@ -198,7 +198,7 @@ Return ONLY the chapter content with strict paragraph formatting.`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_completion_tokens: 16000 // Increased for longer chapters

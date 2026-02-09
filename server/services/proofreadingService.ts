@@ -372,7 +372,7 @@ Provide analysis in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.2,
         max_tokens: 2000
@@ -460,7 +460,7 @@ Respond in JSON format:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         max_tokens: 2500

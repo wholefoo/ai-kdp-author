@@ -75,7 +75,7 @@ interface NonFictionChapterResult {
   }>;
 }
 
-// the newest OpenAI model is "gpt-5.1 which was released with the latest ChatGPT update. Updated per user request.
+// the newest OpenAI model is "gpt-5.2" which is the latest flagship model. GPT-4.1-mini is used as the budget fallback.
 export const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });

@@ -645,8 +645,8 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="tts-1">Standard Quality (Faster)</SelectItem>
-                  <SelectItem value="tts-1-hd">High Definition (Slower, Better Quality)</SelectItem>
+                  <SelectItem value="gpt-4o-mini-tts">High Quality (Latest)</SelectItem>
+                  <SelectItem value="tts-1">Standard Quality (Legacy)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -797,7 +797,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                 <span className="text-gray-600 dark:text-gray-400">Voice:</span> {activeGeneratingAudiobook.voice}
               </div>
               <div>
-                <span className="text-gray-600 dark:text-gray-400">Quality:</span> {activeGeneratingAudiobook.model === 'tts-1-hd' ? 'HD' : 'Standard'}
+                <span className="text-gray-600 dark:text-gray-400">Quality:</span> {activeGeneratingAudiobook.model === 'gpt-4o-mini-tts' ? 'High Quality' : activeGeneratingAudiobook.model === 'tts-1-hd' ? 'HD' : 'Standard'}
               </div>
               <div>
                 <span className="text-gray-600 dark:text-gray-400">Format:</span> {activeGeneratingAudiobook.format?.toUpperCase() || 'MP3'}

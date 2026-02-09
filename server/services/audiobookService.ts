@@ -13,7 +13,7 @@ export type TtsVoice = DeepgramVoice | 'alloy' | 'echo' | 'fable' | 'onyx' | 'no
 export interface AudiobookOptions {
   ttsProvider: TtsProvider; // gemini (primary), deepgram, or openai
   voice: TtsVoice;
-  model: 'aura-2' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
+  model: 'aura-2' | 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd' | 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts';
   speed: number; // 0.25 to 4.0
   format: 'mp3' | 'opus' | 'aac' | 'flac';
   backgroundMusic?: {
@@ -317,7 +317,7 @@ export class AudiobookService {
         console.log(`🎵 Processing OpenAI chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
         
         const response = await openai.audio.speech.create({
-          model: options.model as 'tts-1' | 'tts-1-hd',
+          model: options.model as 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd',
           voice: options.voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
           input: chunk,
           response_format: options.format as any,
@@ -1468,7 +1468,7 @@ export class AudiobookService {
           console.warn(`⚠️ Gemini preview failed: ${geminiError.message}. Falling back to OpenAI...`);
           // Fallback to OpenAI
           const response = await openai.audio.speech.create({
-            model: 'tts-1',
+            model: 'gpt-4o-mini-tts',
             voice: 'alloy' as any,
             input: limitedText,
             response_format: options.format as any,
@@ -1502,7 +1502,7 @@ export class AudiobookService {
         }
         // Fallback to OpenAI
         const response = await openai.audio.speech.create({
-          model: 'tts-1',
+          model: 'gpt-4o-mini-tts',
           voice: 'alloy' as any,
           input: limitedText,
           response_format: 'mp3',

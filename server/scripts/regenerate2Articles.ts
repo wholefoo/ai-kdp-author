@@ -8,7 +8,7 @@ async function generate1() {
   console.log("Generating: KDP Pricing Strategies...");
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "system",
@@ -28,7 +28,7 @@ async function generate1() {
   console.log(`Generated ${wordCount} words`);
   
   const excerptResp = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [{ role: "user", content: `Write a compelling 2-sentence excerpt (150-200 chars) for this post:\n\n${content.substring(0, 500)}` }],
     max_tokens: 100,
   });
@@ -55,7 +55,7 @@ async function generate2() {
   console.log("Generating: Keyword Research Mastery...");
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "system",
@@ -75,7 +75,7 @@ async function generate2() {
   console.log(`Generated ${wordCount} words`);
   
   const excerptResp = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [{ role: "user", content: `Write a compelling 2-sentence excerpt (150-200 chars) for this post:\n\n${content.substring(0, 500)}` }],
     max_tokens: 100,
   });

@@ -8,7 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   console.log("Generating Keyword Research article with 1000+ words...");
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "system",
@@ -33,7 +33,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }
   
   const excerptResp = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [{ 
       role: "user", 
       content: `Create a compelling 2-sentence excerpt (150-200 chars) for this blog post:\n\n${content.substring(0, 500)}` 

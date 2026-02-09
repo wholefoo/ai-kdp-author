@@ -39,7 +39,7 @@ const topics = [
 
 async function generate(t: typeof topics[0]) {
   const res = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       { role: "system", content: "You are a KDP publishing expert. Write engaging blog posts for self-published authors." },
       { role: "user", content: t.prompt }

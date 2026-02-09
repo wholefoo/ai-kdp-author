@@ -8,7 +8,7 @@ async function generateArticle9() {
   console.log("Generating article 9...");
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "system",
@@ -29,7 +29,7 @@ async function generateArticle9() {
   
   // Generate better excerpt using OpenAI
   const excerptCompletion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "user",
@@ -61,7 +61,7 @@ async function generateArticle10() {
   console.log("\nGenerating article 10...");
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "system",
@@ -82,7 +82,7 @@ async function generateArticle10() {
   
   // Generate better excerpt using OpenAI
   const excerptCompletion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "user",

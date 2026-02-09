@@ -70,7 +70,7 @@ async function generateArticle(topic: ArticleTopic): Promise<{
   console.log(`Generating: ${topic.title}...`);
   
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4.1-mini",
     messages: [
       {
         role: "system",

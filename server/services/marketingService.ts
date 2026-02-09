@@ -64,7 +64,7 @@ REQUIREMENTS:
 Generate the Amazon description now:`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 1500,
@@ -94,7 +94,7 @@ Return ONLY a JSON array of 7 keyword strings, no other text. Example format:
 ["keyword one", "keyword two", "keyword three", ...]`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 500,
@@ -127,7 +127,7 @@ Return ONLY a JSON array of 2-3 category strings. Example:
 ["Fiction > Science Fiction > Hard Science Fiction", "Fiction > Thrillers > Technothriller"]`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 300,
@@ -184,7 +184,7 @@ Return a JSON array with this structure:
 Generate the posts now:`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 2000,
@@ -217,7 +217,7 @@ REQUIREMENTS:
 Return ONLY a JSON array of 5 subject line strings:`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 500,
@@ -254,7 +254,7 @@ REQUIREMENTS:
 Format with clear sections and use **bold** and *italic* for emphasis. Keep it under 400 words.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 1500,
@@ -287,7 +287,7 @@ REQUIREMENTS:
 Format professionally with proper spacing.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.6,
       max_tokens: 1500,
@@ -313,7 +313,7 @@ REQUIREMENTS:
 Format clearly with headers for each version.`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 800,
@@ -342,7 +342,7 @@ REQUIREMENTS:
 Generate the blurb now:`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 500,
@@ -369,7 +369,7 @@ REQUIREMENTS:
 Generate the elevator pitch now:`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 200,
@@ -408,7 +408,7 @@ Return a JSON array with this structure:
 ]`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 1000,
@@ -457,7 +457,7 @@ Return a JSON array with this structure:
 ]`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       max_tokens: 1500,
@@ -496,7 +496,7 @@ Return a JSON array with this structure:
 ]`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 2000,
@@ -539,7 +539,7 @@ Return a JSON object with this structure:
 }`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.6,
       max_tokens: 800,

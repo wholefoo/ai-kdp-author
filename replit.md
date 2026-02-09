@@ -49,14 +49,14 @@ Each chapter starts on a new page.
 ### Core Features
 - **Fiction Generation**: Multi-step AI-driven process (outline, chapter-by-chapter generation, compilation) for novels across multiple genres.
 - **Non-Fiction Generation**: Fact-checked content with multi-source verification, automatic bibliography generation (APA-style), 17 categories, and excluded biased sources (Wikipedia, Reddit, Quora, etc.).
-- **AI Integration**: OpenAI GPT-5.2 for core generation and analysis tasks.
+- **AI Integration**: OpenAI GPT-5.2 for core generation and analysis tasks, GPT-4.1-mini for marketing and budget tasks.
 - **Character Development**: AI-powered Interview Mode, Emotional Journey Mapping, Character Growth Suggestions.
 - **Manuscript Analysis**: Advanced Grammar & Style Checker, Style and Tone Consistency Checker, Comprehensive Quality Analyzer.
 - **Audiobook Generation**: Triple TTS support (Gemini TTS primary, Deepgram Aura-2 fallback, OpenAI final fallback) with advanced text processing for natural narration, KDP compliance, and a unified job manager for persistence and resume capabilities.
 - **Customization**: Adjustable word count (30K-120K), chapter count (10-50), chapter length (1.5K-5K words).
 - **Export & Preview**: DOCX (native JS library), PDF, Markdown, TXT with customizable formatting.
 - **Development Workflow**: Monorepo structure with end-to-end TypeScript.
-- **Marketing & Promotion Module**: AI-powered toolkit for generating marketing content (descriptions, social media, emails, etc.) using GPT-4o.
+- **Marketing & Promotion Module**: AI-powered toolkit for generating marketing content (descriptions, social media, emails, etc.) using GPT-4.1-mini.
 
 ### UI/UX Decisions
 - **Design System**: Tailwind CSS with custom variables.
@@ -72,7 +72,7 @@ Each chapter starts on a new page.
 
 ### Core Technologies
 - **Database**: PostgreSQL (hosted on Neon Database).
-- **AI Service**: OpenAI API (GPT-5.2, GPT-4o).
+- **AI Service**: OpenAI API (GPT-5.2 primary, GPT-4.1-mini fallback/budget).
 - **Hosting Platform**: Replit.
 
 ### Key Libraries
@@ -89,4 +89,4 @@ Each chapter starts on a new page.
 - **TTS Services**:
     - Gemini TTS (PRIMARY, 30 voices, 30 voices, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` models).
     - Deepgram Aura-2 (Fallback, 45+ voices).
-    - OpenAI TTS (Final Fallback, 6 voices: alloy, echo, fable, onyx, nova, shimmer).
+    - OpenAI TTS (Final Fallback, `gpt-4o-mini-tts` model, 6 voices: alloy, echo, fable, onyx, nova, shimmer).

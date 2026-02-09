@@ -1,13 +1,13 @@
 import OpenAI from "openai";
 
-// AI service with GPT-5.2 primary and GPT-4o emergency fallback
+// AI service with GPT-5.2 primary and GPT-4.1-mini emergency fallback
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Model configuration
 const PRIMARY_MODEL = "gpt-5.2"; // OpenAI GPT-5.2 (primary)
-const FALLBACK_MODEL = "gpt-4o"; // OpenAI GPT-4o (emergency fallback only)
+const FALLBACK_MODEL = "gpt-4.1-mini"; // OpenAI GPT-4.1-mini (emergency fallback only)
 
 export interface AIRequest {
   messages: Array<{

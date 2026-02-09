@@ -251,7 +251,7 @@ RESPONSE FORMAT - Return valid JSON only:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Analyze Chapter ${index + 1}:\n\n${chapterText.slice(0, 4000)}` }
@@ -421,7 +421,7 @@ Return only valid JSON:
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Analyze this ${totalChapters}-chapter story structure:\n\n${sampleText.slice(0, 3000)}` }
@@ -554,7 +554,7 @@ ${genre ? `Consider typical ${genre} themes.` : ''}`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: "gpt-5.2",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Analyze themes in this story:\n\n${sampleText.slice(0, 3000)}` }

@@ -20,7 +20,7 @@ import ffmpegPath from 'ffmpeg-static';
 import { spawn } from 'node:child_process';
 
 export type OpenAIVoice = 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
-export type OpenAIModel = 'tts-1' | 'tts-1-hd';
+export type OpenAIModel = 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd';
 
 export interface OpenAITtsOptions {
   voice: OpenAIVoice;
@@ -58,7 +58,7 @@ export class OpenAITtsService {
 
   createJob(text: string, options: OpenAITtsOptions): string {
     const format = options.format || 'mp3';
-    const model = options.model || 'tts-1';
+    const model = options.model || 'gpt-4o-mini-tts';
     const jobId = createJob({
       provider: 'openai',
       voice: options.voice,
@@ -99,7 +99,7 @@ export class OpenAITtsService {
 
   private async generateAudioWithJobProgress(text: string, options: OpenAITtsOptions, jobId: string): Promise<Buffer> {
     const format = options.format || 'mp3';
-    const model = options.model || 'tts-1';
+    const model = options.model || 'gpt-4o-mini-tts';
     const chunks = this.splitTextIntoChunks(text, 3500);
     
     setJobProgress(jobId, { total: chunks.length, done: 0, pct: 0, message: 'Preparing chunks...' });
@@ -156,7 +156,7 @@ export class OpenAITtsService {
   }
 
   private async synthesizeChunkToPcm(text: string, options: OpenAITtsOptions): Promise<Buffer> {
-    const model = options.model || 'tts-1';
+    const model = options.model || 'gpt-4o-mini-tts';
     const voice = options.voice;
     const speed = options.speed || 1.0;
     
@@ -190,7 +190,7 @@ export class OpenAITtsService {
         console.log(`🎵 Processing OpenAI chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
         
         const response = await this.client.audio.speech.create({
-          model: options.model || 'tts-1',
+          model: options.model || 'gpt-4o-mini-tts',
           voice: options.voice,
           input: chunk,
           response_format: (options.format || 'mp3') as any,
