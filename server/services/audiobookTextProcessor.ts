@@ -298,9 +298,6 @@ export class AudiobookTextProcessor {
         const dialogueDetected = hasDialogue || this.containsDialogue(chunkText);
 
         let prefix = promptPrefix;
-        if (this.options.dialogueCues && dialogueDetected) {
-          prefix = this.getDialoguePrefix(chunkText) + '\n\n' + promptPrefix;
-        }
 
         chunks.push({
           text: chunkText,
