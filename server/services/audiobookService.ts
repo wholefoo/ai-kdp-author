@@ -384,6 +384,7 @@ export class AudiobookService {
         speed: options.speed,
         useAudiobookProcessor,
         narrationPreset: 'audiobook',
+        concurrency: 1,
       });
 
       console.log(`✅ Gemini TTS completed (${audioBuffer.length} bytes)`);

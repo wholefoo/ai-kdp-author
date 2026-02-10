@@ -674,9 +674,8 @@ export class GeminiTtsService {
           return { pcm: makeSilencePcm(chunk.pauseMsAfter), pauseMsAfter: 0 };
         }
         
-        const promptPrefix = chunk.promptPrefix || '';
-        const textForTts = promptPrefix ? `${promptPrefix}\n\n${chunk.text}` : chunk.text;
-        const chunkKey = buildChunkKey(options.voice, options.styleHint || promptPrefix, chunk.text, options.model);
+        const textForTts = chunk.text;
+        const chunkKey = buildChunkKey(options.voice, '', chunk.text, options.model);
         
         const cachedPcm = readPcmFromCache(chunkKey);
         if (cachedPcm) {
@@ -803,9 +802,8 @@ export class GeminiTtsService {
             return { pcm: makeSilencePcm(chunk.pauseMsAfter), pauseMsAfter: 0 };
           }
           
-          const promptPrefix = chunk.promptPrefix || '';
-          const textForTts = promptPrefix ? `${promptPrefix}\n\n${chunk.text}` : chunk.text;
-          const chunkKey = buildChunkKey(options.voice, options.styleHint || promptPrefix, chunk.text, options.model);
+          const textForTts = chunk.text;
+          const chunkKey = buildChunkKey(options.voice, '', chunk.text, options.model);
           
           const cachedPcm = readPcmFromCache(chunkKey);
           if (cachedPcm) {
@@ -861,9 +859,7 @@ export class GeminiTtsService {
 
   private async synthesizeChunkToPcm(textChunk: string, options: GeminiTtsOptions): Promise<Buffer> {
     try {
-      const prompt = options.styleHint?.trim()
-        ? `${options.styleHint.trim()}\n\n${textChunk.trim()}`
-        : textChunk.trim();
+      const prompt = textChunk.trim();
 
       const response = await this.client.models.generateContent({
         model: options.model,
