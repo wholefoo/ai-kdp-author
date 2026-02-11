@@ -296,9 +296,10 @@ function listFilesRecursive(dir: string): string[] {
 
 function buildChunkKey(voiceName: string, styleHint: string, chunkText: string, model: string): string {
   const obj = {
+    v: 2,
     model,
     voiceName,
-    styleHint: styleHint || '',
+    temp: 0.2,
     chunkText,
     pcm: { sampleRate: PCM_SAMPLE_RATE, channels: PCM_CHANNELS, fmt: 's16le' },
   };
@@ -313,16 +314,20 @@ function pcmPathForChunkKey(chunkKey: string): string {
 }
 
 function buildRequestKey(text: string, options: GeminiTtsOptions): string {
+  const effectiveMaxChars = options.useAudiobookProcessor 
+    ? Math.max(options.maxCharsPerChunk || 1400, 4000) 
+    : (options.maxCharsPerChunk || 1400);
   const keyObj = {
+    v: 2,
     model: options.model,
     voice: options.voice,
-    styleHint: options.styleHint || '',
+    temp: 0.2,
     format: options.format || 'mp3',
     bitrateKbps: options.bitrateKbps || 192,
     pauseMsShort: options.pauseMsShort ?? 120,
     pauseMsParagraph: options.pauseMsParagraph ?? 260,
     pauseMsHeading: options.pauseMsHeading ?? 420,
-    maxCharsPerChunk: options.maxCharsPerChunk || 1400,
+    maxCharsPerChunk: effectiveMaxChars,
     useAudiobookProcessor: options.useAudiobookProcessor || false,
     narrationPreset: options.narrationPreset || 'audiobook',
     pronunciationDict: options.pronunciationDictionary ? JSON.stringify(options.pronunciationDictionary) : '',
@@ -630,12 +635,13 @@ export class GeminiTtsService {
     
     let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
     
+    const audiobookMaxChars = Math.max(maxCharsPerChunk, 4000);
     if (options.useAudiobookProcessor) {
       const processor = new AudiobookTextProcessor({
         preset: options.narrationPreset || 'audiobook',
-        targetChunkChars: 1100,
-        minChunkChars: 350,
-        maxChunkChars: maxCharsPerChunk,
+        targetChunkChars: 3500,
+        minChunkChars: 1000,
+        maxChunkChars: audiobookMaxChars,
         pronunciationDictionary: options.pronunciationDictionary,
         expandAbbreviations: true,
         normalizeNumbers: true,
@@ -649,7 +655,7 @@ export class GeminiTtsService {
         promptPrefix: c.promptPrefix,
       }));
       
-      console.log(`📚 Audiobook processor: ${processedChunks.length} chunks with ${options.narrationPreset || 'audiobook'} preset`);
+      console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~3500 chars each) with ${options.narrationPreset || 'audiobook'} preset`);
     } else {
       const chunks = buildChunksWithPauses(text, {
         maxCharsPerChunk,
@@ -759,12 +765,13 @@ export class GeminiTtsService {
     try {
       let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
       
+      const audiobookMaxCharsInternal = Math.max(maxCharsPerChunk, 4000);
       if (options.useAudiobookProcessor) {
         const processor = new AudiobookTextProcessor({
           preset: options.narrationPreset || 'audiobook',
-          targetChunkChars: 1100,
-          minChunkChars: 350,
-          maxChunkChars: maxCharsPerChunk,
+          targetChunkChars: 3500,
+          minChunkChars: 1000,
+          maxChunkChars: audiobookMaxCharsInternal,
           pronunciationDictionary: options.pronunciationDictionary,
           expandAbbreviations: true,
           normalizeNumbers: true,
@@ -778,7 +785,7 @@ export class GeminiTtsService {
           promptPrefix: c.promptPrefix,
         }));
         
-        console.log(`📚 Audiobook processor: ${processedChunks.length} chunks with ${options.narrationPreset || 'audiobook'} preset`);
+        console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~3500 chars each) with ${options.narrationPreset || 'audiobook'} preset`);
       } else {
         const chunks = buildChunksWithPauses(text, {
           maxCharsPerChunk,
@@ -866,6 +873,8 @@ export class GeminiTtsService {
         contents: [{ parts: [{ text: prompt }] }],
         config: {
           responseModalities: ['AUDIO'],
+          temperature: 0.2,
+          systemInstruction: 'Read the following text exactly as written in a steady, consistent voice. Maintain the same vocal tone, pitch, pace, and energy level throughout. Do not add dramatic inflection or change your voice character.',
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
