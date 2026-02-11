@@ -10,6 +10,12 @@ import { isWrittenNumberChapterHeading } from '../utils/numberParser';
 export type TtsProvider = 'deepgram' | 'openai' | 'gemini';
 export type TtsVoice = DeepgramVoice | 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer' | GeminiVoice;
 
+const GEMINI_MALE_VOICES = new Set<string>([
+  'Puck', 'Charon', 'Fenrir', 'Orus', 'Achird', 'Algenib', 'Algieba',
+  'Alnilam', 'Enceladus', 'Iapetus', 'Rasalgethi', 'Sadachbia',
+  'Sadaltager', 'Schedar', 'Umbriel', 'Zubenelgenubi',
+]);
+
 export interface AudiobookOptions {
   ttsProvider: TtsProvider; // gemini (primary), deepgram, or openai
   voice: TtsVoice;
@@ -394,17 +400,22 @@ export class AudiobookService {
       console.error('❌ Gemini TTS API error:', error.message);
       console.warn('⚠️ Gemini TTS failed. Falling back to Deepgram for audio generation...');
       
+      const isMaleVoice = GEMINI_MALE_VOICES.has((options.voice as string) || '');
+      const deepgramVoice = isMaleVoice ? 'aura-2-orpheus-en' : 'aura-2-athena-en';
+      const openaiVoice = isMaleVoice ? 'onyx' : 'nova';
+      console.log(`🔄 Fallback voice mapping: ${options.voice} (${isMaleVoice ? 'male' : 'female'}) → Deepgram: ${deepgramVoice}, OpenAI: ${openaiVoice}`);
+      
       const deepgramFallbackOptions: AudiobookOptions = {
         ...options,
         ttsProvider: 'deepgram',
-        voice: 'aura-2-athena-en' as TtsVoice,
+        voice: deepgramVoice as TtsVoice,
         model: 'aura-2',
       };
       
       const openaiFallbackOptions: AudiobookOptions = {
         ...options,
         ttsProvider: 'openai',
-        voice: 'nova' as TtsVoice,
+        voice: openaiVoice as TtsVoice,
         model: 'gpt-4o-mini-tts',
       };
       

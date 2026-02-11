@@ -874,7 +874,6 @@ export class GeminiTtsService {
         config: {
           responseModalities: ['AUDIO'],
           temperature: 0.2,
-          systemInstruction: 'Read the following text exactly as written in a steady, consistent voice. Maintain the same vocal tone, pitch, pace, and energy level throughout. Do not add dramatic inflection or change your voice character.',
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
