@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 import ffmpegPath from 'ffmpeg-static';
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
@@ -296,7 +296,7 @@ function listFilesRecursive(dir: string): string[] {
 
 function buildChunkKey(voiceName: string, styleHint: string, chunkText: string, model: string): string {
   const obj = {
-    v: 2,
+    v: 3,
     model,
     voiceName,
     temp: 0.2,
@@ -315,10 +315,10 @@ function pcmPathForChunkKey(chunkKey: string): string {
 
 function buildRequestKey(text: string, options: GeminiTtsOptions): string {
   const effectiveMaxChars = options.useAudiobookProcessor 
-    ? 3000
+    ? 1200
     : (options.maxCharsPerChunk || 1400);
   const keyObj = {
-    v: 3,
+    v: 4,
     model: options.model,
     voice: options.voice,
     temp: 0.2,
@@ -635,12 +635,12 @@ export class GeminiTtsService {
     
     let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
     
-    const audiobookMaxChars = Math.max(maxCharsPerChunk, 4000);
+    const audiobookMaxChars = 1200;
     if (options.useAudiobookProcessor) {
       const processor = new AudiobookTextProcessor({
         preset: options.narrationPreset || 'audiobook',
-        targetChunkChars: 3500,
-        minChunkChars: 1000,
+        targetChunkChars: 800,
+        minChunkChars: 200,
         maxChunkChars: audiobookMaxChars,
         pronunciationDictionary: options.pronunciationDictionary,
         expandAbbreviations: true,
@@ -655,7 +655,7 @@ export class GeminiTtsService {
         promptPrefix: c.promptPrefix,
       }));
       
-      console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~3500 chars each) with ${options.narrationPreset || 'audiobook'} preset`);
+      console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~800 chars, max 1200) with ${options.narrationPreset || 'audiobook'} preset`);
     } else {
       const chunks = buildChunksWithPauses(text, {
         maxCharsPerChunk,
@@ -768,12 +768,12 @@ export class GeminiTtsService {
     try {
       let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
       
-      const audiobookMaxCharsInternal = 3000;
+      const audiobookMaxCharsInternal = 1200;
       if (options.useAudiobookProcessor) {
         const processor = new AudiobookTextProcessor({
           preset: options.narrationPreset || 'audiobook',
-          targetChunkChars: 2000,
-          minChunkChars: 500,
+          targetChunkChars: 800,
+          minChunkChars: 200,
           maxChunkChars: audiobookMaxCharsInternal,
           pronunciationDictionary: options.pronunciationDictionary,
           expandAbbreviations: true,
@@ -788,7 +788,7 @@ export class GeminiTtsService {
           promptPrefix: c.promptPrefix,
         }));
         
-        console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~2000 chars, max 3000) with ${options.narrationPreset || 'audiobook'} preset`);
+        console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~800 chars, max 1200) with ${options.narrationPreset || 'audiobook'} preset`);
       } else {
         const chunks = buildChunksWithPauses(text, {
           maxCharsPerChunk,
@@ -882,7 +882,7 @@ export class GeminiTtsService {
 
     for (let attempt = 1; attempt <= maxChunkRetries; attempt++) {
       try {
-        const response = await this.client.models.generateContent({
+        const apiCallPromise = this.client.models.generateContent({
           model: options.model,
           contents: [{ parts: [{ text: prompt }] }],
           config: {
@@ -894,9 +894,21 @@ export class GeminiTtsService {
                   voiceName: options.voice
                 }
               }
-            }
+            },
+            safetySettings: [
+              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            ],
           }
         });
+
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Gemini TTS API call timed out after 120s')), 120000)
+        );
+
+        const response = await Promise.race([apiCallPromise, timeoutPromise]);
 
         const candidate = response?.candidates?.[0];
         const finishReason = candidate?.finishReason;
@@ -904,8 +916,10 @@ export class GeminiTtsService {
 
         if (!b64) {
           const safetyRatings = candidate?.safetyRatings?.map((r: any) => `${r.category}:${r.probability}`).join(', ') || 'none';
-          const errorDetail = `No audio data returned. finishReason=${finishReason || 'unknown'}, safetyRatings=[${safetyRatings}], textLength=${prompt.length}`;
+          const partsInfo = candidate?.content?.parts?.map((p: any) => Object.keys(p)).join(',') || 'no-parts';
+          const errorDetail = `No audio data returned. finishReason=${finishReason || 'unknown'}, safetyRatings=[${safetyRatings}], parts=[${partsInfo}], textLength=${prompt.length}`;
           console.warn(`⚠️ Gemini chunk attempt ${attempt}/${maxChunkRetries}: ${errorDetail}`);
+          console.warn(`⚠️ Text preview: "${prompt.substring(0, 150)}..."`);
 
           if (attempt < maxChunkRetries) {
             const delay = attempt * 3000;
