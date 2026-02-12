@@ -3823,12 +3823,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing required field: text" });
       }
       
-      const provider = existingJob.provider || 'gemini';
+      const storedProvider = existingJob.provider || 'deepgram';
+      const provider = storedProvider === 'gemini' ? 'deepgram' : storedProvider;
       console.log(`🔄 Retrying ${provider} TTS job ${jobId} (status: ${existingJob.status})`);
       
       let newJobId: string;
       
-      // Route to appropriate provider
+      // Route to appropriate provider - Deepgram is primary
       if (provider === 'openai') {
         const { OpenAITtsService } = await import('./services/openaiTts');
         const openaiTts = new OpenAITtsService();
@@ -3838,21 +3839,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           format: payload.format || existingJob.format || 'mp3',
           speed: payload.speed || 1.0,
         });
-      } else if (provider === 'deepgram') {
+      } else {
         const { DeepgramTtsService } = await import('./services/deepgramTts');
         const deepgramTts = new DeepgramTtsService();
         newJobId = deepgramTts.createJob(payload.text, {
-          voice: payload.voice || existingJob.voice || 'aura-2-thalia-en',
-          format: payload.format || existingJob.format || 'mp3',
-          speed: payload.speed || 1.0,
-        });
-      } else {
-        // Default to Gemini
-        const { GeminiTtsService } = await import('./services/geminiTts');
-        const geminiTts = new GeminiTtsService();
-        newJobId = geminiTts.createJob(payload.text, {
-          voice: payload.voice || existingJob.voice || 'Kore',
-          model: payload.model || 'gemini-2.5-flash-preview-tts',
+          voice: payload.voice || existingJob.voice || 'aura-2-orion-en',
           format: payload.format || existingJob.format || 'mp3',
           speed: payload.speed || 1.0,
         });
@@ -3936,20 +3927,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `${novel.title} (Chapters ${selectedChapterIndices.map(i => i + 1).join(', ')})` 
         : novel.title;
         
-      // Determine TTS provider from voice choice - Deepgram is primary
+      // Determine TTS provider - Deepgram Aura-2 is the primary provider
       const geminiVoiceList = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'];
-      const isDeepgramVoice = voice.startsWith('aura-') || voice.startsWith('aura2-');
       const isGeminiVoice = geminiVoiceList.includes(voice);
-      const ttsProvider = isDeepgramVoice ? 'deepgram' : isGeminiVoice ? 'gemini' : 'openai';
-      // Auto-select correct model based on provider - always use valid model for each provider
-      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'gpt-4o-mini-tts';
+      const isOpenAIVoice = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'].includes(voice);
+      const ttsProvider = isOpenAIVoice ? 'openai' : 'deepgram';
+      const geminiToDeepgramMap: Record<string, string> = {
+        'Charon': 'aura-2-orion-en', 'Zephyr': 'aura-2-apollo-en', 'Puck': 'aura-2-hermes-en',
+        'Kore': 'aura-2-athena-en', 'Fenrir': 'aura-2-zeus-en', 'Leda': 'aura-2-luna-en',
+        'Orus': 'aura-2-hyperion-en', 'Aoede': 'aura-2-aurora-en', 'Callirrhoe': 'aura-2-callista-en',
+        'Autonoe': 'aura-2-helena-en', 'Enceladus': 'aura-2-mars-en', 'Iapetus': 'aura-2-jupiter-en',
+        'Umbriel': 'aura-2-neptune-en', 'Algieba': 'aura-2-saturn-en', 'Despina': 'aura-2-selene-en',
+        'Erinome': 'aura-2-pandora-en', 'Algenib': 'aura-2-draco-en', 'Laomedeia': 'aura-2-cora-en',
+        'Achernar': 'aura-2-pluto-en', 'Alnilam': 'aura-2-odysseus-en', 'Schedar': 'aura-2-janus-en',
+        'Gacrux': 'aura-2-atlas-en', 'Pulcherrima': 'aura-2-electra-en', 'Achird': 'aura-2-theia-en',
+        'Zubenelgenubi': 'aura-2-vesta-en', 'Rasalgethi': 'aura-2-orpheus-en', 'Sadachbia': 'aura-2-iris-en',
+        'Sadaltager': 'aura-2-harmonia-en', 'Sulafat': 'aura-2-phoebe-en', 'Vindemiatrix': 'aura-2-minerva-en',
+      };
+      const effectiveVoice = isGeminiVoice ? (geminiToDeepgramMap[voice] || 'aura-2-orion-en') : voice;
+      const selectedModel = ttsProvider === 'deepgram' ? 'aura-2' : 'gpt-4o-mini-tts';
 
       const audiobook = await storage.createAudiobook({
         novelId,
         userId,
         title: audiobookTitle,
         ttsProvider,
-        voice: voice as any,
+        voice: effectiveVoice as any,
         model: selectedModel as any,
         speed,
         format: format as any,
@@ -4130,19 +4133,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { AudiobookService } = await import('./services/audiobookService');
       const audiobookService = new AudiobookService();
-      // Determine TTS provider from voice choice - Deepgram is primary
-      const geminiVoices = ['Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina', 'Erinome', 'Algenib', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Rasalgethi', 'Sadachbia', 'Sadaltager', 'Sulafat', 'Vindemiatrix'];
+      // Determine TTS provider - Deepgram is primary for all voices
       const openaiVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
-      const isDeepgramVoice = voice.startsWith('aura-') || voice.startsWith('aura2-');
-      const isGeminiVoice = geminiVoices.includes(voice);
-      const previewProvider = isDeepgramVoice ? 'deepgram' : isGeminiVoice ? 'gemini' : 'openai';
+      const isOpenAIVoice = openaiVoices.includes(voice);
+      const previewProvider = isOpenAIVoice ? 'openai' : 'deepgram';
 
       const audioBuffer = await audiobookService.generateVoicePreview(
         sampleText,
         {
           ttsProvider: previewProvider,
           voice: voice as any,
-          model: previewProvider === 'deepgram' ? 'aura-2' : previewProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'gpt-4o-mini-tts',
+          model: previewProvider === 'deepgram' ? 'aura-2' : 'gpt-4o-mini-tts',
           speed: speed,
           format: 'mp3'
         }
@@ -4302,9 +4303,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             content: typeof chapter === 'string' ? chapter : chapter.content || '',
           }));
 
-          // Auto-select correct model based on TTS provider to fix any incorrectly stored models
-          const ttsProvider = audiobook.ttsProvider || 'openai';
-          const correctedModel = ttsProvider === 'deepgram' ? 'aura-2' : ttsProvider === 'gemini' ? 'gemini-2.5-flash-preview-tts' : 'gpt-4o-mini-tts';
+          // Auto-select correct model - Deepgram is primary, Gemini voices are mapped to Deepgram
+          const storedProvider = audiobook.ttsProvider || 'deepgram';
+          const ttsProvider = storedProvider === 'gemini' ? 'deepgram' : storedProvider;
+          const correctedModel = ttsProvider === 'deepgram' ? 'aura-2' : 'gpt-4o-mini-tts';
           
           const audioFiles = await audiobookService.generateAudiobook(
             audiobook.novelId,
