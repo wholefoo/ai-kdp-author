@@ -741,11 +741,13 @@ export class GeminiTtsService {
       }
     }
 
-    const generatePromise = this.generateAudioInternal(text, options, requestKey);
+    const generatePromise = this.generateAudioInternal(text, options, requestKey)
+      .finally(() => {
+        inFlightByKey.delete(requestKey);
+      });
     
     if (!options.skipCache) {
       inFlightByKey.set(requestKey, generatePromise);
-      generatePromise.finally(() => inFlightByKey.delete(requestKey));
     }
 
     return generatePromise;
@@ -755,12 +757,13 @@ export class GeminiTtsService {
     const format = options.format || 'mp3';
     const bitrateKbps = options.bitrateKbps || 192;
     const maxCharsPerChunk = options.maxCharsPerChunk || 1400;
-    const concurrency = options.concurrency || 3;
+    const isAudiobook = !!options.narrationPreset;
+    const concurrency = options.concurrency || (isAudiobook ? 1 : 2);
     const pauseMsShort = options.pauseMsShort ?? 120;
     const pauseMsParagraph = options.pauseMsParagraph ?? 260;
     const pauseMsHeading = options.pauseMsHeading ?? 420;
     
-    console.log(`🎙️ Generating audio with Gemini TTS using voice: ${options.voice}`);
+    console.log(`🎙️ Generating audio with Gemini TTS using voice: ${options.voice} (concurrency: ${concurrency})`);
     
     try {
       let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
@@ -865,38 +868,74 @@ export class GeminiTtsService {
   }
 
   private async synthesizeChunkToPcm(textChunk: string, options: GeminiTtsOptions): Promise<Buffer> {
-    try {
-      const prompt = textChunk.trim();
+    const maxChunkRetries = 4;
+    const prompt = textChunk.trim();
 
-      const response = await this.client.models.generateContent({
-        model: options.model,
-        contents: [{ parts: [{ text: prompt }] }],
-        config: {
-          responseModalities: ['AUDIO'],
-          temperature: 0.2,
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: options.voice
+    for (let attempt = 1; attempt <= maxChunkRetries; attempt++) {
+      try {
+        const response = await this.client.models.generateContent({
+          model: options.model,
+          contents: [{ parts: [{ text: prompt }] }],
+          config: {
+            responseModalities: ['AUDIO'],
+            temperature: 0.2,
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: {
+                  voiceName: options.voice
+                }
               }
             }
           }
+        });
+
+        const candidate = response?.candidates?.[0];
+        const finishReason = candidate?.finishReason;
+        const b64 = candidate?.content?.parts?.[0]?.inlineData?.data;
+
+        if (!b64) {
+          const safetyRatings = candidate?.safetyRatings?.map((r: any) => `${r.category}:${r.probability}`).join(', ') || 'none';
+          const errorDetail = `No audio data returned. finishReason=${finishReason || 'unknown'}, safetyRatings=[${safetyRatings}], textLength=${prompt.length}`;
+          console.warn(`⚠️ Gemini chunk attempt ${attempt}/${maxChunkRetries}: ${errorDetail}`);
+
+          if (attempt < maxChunkRetries) {
+            const delay = attempt * 3000;
+            console.log(`⏳ Retrying chunk in ${delay / 1000}s...`);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+          throw new Error(`No audio returned from Gemini after ${maxChunkRetries} attempts (finishReason=${finishReason || 'unknown'})`);
         }
-      });
 
-      const b64 = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!b64) {
-        throw new Error('No audio returned from Gemini for chunk');
+        return Buffer.from(b64, 'base64');
+      } catch (error: any) {
+        if (error.message?.includes('No audio returned from Gemini after')) {
+          throw error;
+        }
+        console.error(`Error synthesizing chunk with Gemini (attempt ${attempt}/${maxChunkRetries}):`, error.message);
+        if (error.message?.includes('401') || error.message?.includes('UNAUTHENTICATED')) {
+          console.error('❌ Authentication failed - GEMINI_API_KEY may be invalid');
+          throw error;
+        }
+        if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+          console.warn('⚠️ Rate limited by Gemini API');
+          if (attempt < maxChunkRetries) {
+            const delay = attempt * 5000;
+            console.log(`⏳ Rate limited, retrying chunk in ${delay / 1000}s...`);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+        }
+        if (attempt < maxChunkRetries) {
+          const delay = attempt * 3000;
+          console.log(`⏳ Retrying chunk in ${delay / 1000}s...`);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        throw error;
       }
-
-      return Buffer.from(b64, 'base64');
-    } catch (error: any) {
-      console.error('Error synthesizing chunk with Gemini:', error.message);
-      if (error.message?.includes('401') || error.message?.includes('UNAUTHENTICATED')) {
-        console.error('❌ Authentication failed - GEMINI_API_KEY may be invalid');
-      }
-      throw error;
     }
+    throw new Error('Gemini chunk synthesis exhausted all retries');
   }
 
   static getAvailableVoices(): GeminiVoice[] {

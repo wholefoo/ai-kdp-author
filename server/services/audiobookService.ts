@@ -368,36 +368,23 @@ export class AudiobookService {
       throw new Error('Gemini TTS service is not available. Please check your GEMINI_API_KEY configuration.');
     }
 
-    const maxRetries = 3;
-    let lastError: Error | null = null;
+    try {
+      const audioBuffer = await this.geminiTts.generateAudio(text, {
+        voice: options.voice as GeminiVoice,
+        model: options.model as 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts',
+        speed: options.speed,
+        useAudiobookProcessor,
+        narrationPreset: 'audiobook',
+        concurrency: 1,
+      });
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const audioBuffer = await this.geminiTts.generateAudio(text, {
-          voice: options.voice as GeminiVoice,
-          model: options.model as 'gemini-2.5-flash-preview-tts' | 'gemini-2.5-pro-preview-tts',
-          speed: options.speed,
-          useAudiobookProcessor,
-          narrationPreset: 'audiobook',
-          concurrency: 1,
-        });
+      console.log(`✅ Gemini TTS completed (${audioBuffer.length} bytes)`);
+      return audioBuffer;
 
-        console.log(`✅ Gemini TTS completed (${audioBuffer.length} bytes)`);
-        return audioBuffer;
-
-      } catch (error: any) {
-        lastError = error;
-        console.error(`❌ Gemini TTS attempt ${attempt}/${maxRetries} failed:`, error.message);
-        
-        if (attempt < maxRetries) {
-          const delayMs = attempt * 5000;
-          console.log(`⏳ Retrying Gemini TTS in ${delayMs / 1000}s...`);
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-        }
-      }
+    } catch (error: any) {
+      console.error(`❌ Gemini TTS failed:`, error.message);
+      throw new Error(`Gemini TTS failed: ${error.message}`);
     }
-
-    throw new Error(`Gemini TTS failed after ${maxRetries} attempts: ${lastError?.message}`);
   }
 
   /**
