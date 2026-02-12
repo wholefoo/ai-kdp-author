@@ -296,10 +296,10 @@ function listFilesRecursive(dir: string): string[] {
 
 function buildChunkKey(voiceName: string, styleHint: string, chunkText: string, model: string): string {
   const obj = {
-    v: 3,
+    v: 4,
     model,
     voiceName,
-    temp: 0.2,
+    temp: 1.0,
     chunkText,
     pcm: { sampleRate: PCM_SAMPLE_RATE, channels: PCM_CHANNELS, fmt: 's16le' },
   };
@@ -318,10 +318,10 @@ function buildRequestKey(text: string, options: GeminiTtsOptions): string {
     ? 1200
     : (options.maxCharsPerChunk || 1400);
   const keyObj = {
-    v: 4,
+    v: 5,
     model: options.model,
     voice: options.voice,
-    temp: 0.2,
+    temp: 1.0,
     format: options.format || 'mp3',
     bitrateKbps: options.bitrateKbps || 192,
     pauseMsShort: options.pauseMsShort ?? 120,
@@ -868,7 +868,7 @@ export class GeminiTtsService {
   }
 
   private async synthesizeChunkToPcm(textChunk: string, options: GeminiTtsOptions): Promise<Buffer> {
-    const maxChunkRetries = 4;
+    const maxChunkRetries = 8;
     let prompt = textChunk.trim();
 
     const byteLength = Buffer.byteLength(prompt, 'utf-8');
@@ -887,7 +887,7 @@ export class GeminiTtsService {
           contents: [{ parts: [{ text: prompt }] }],
           config: {
             responseModalities: ['AUDIO'],
-            temperature: 0.2,
+            temperature: 1.0,
             speechConfig: {
               voiceConfig: {
                 prebuiltVoiceConfig: {
@@ -922,14 +922,17 @@ export class GeminiTtsService {
           console.warn(`⚠️ Text preview: "${prompt.substring(0, 150)}..."`);
 
           if (attempt < maxChunkRetries) {
-            const delay = attempt * 3000;
-            console.log(`⏳ Retrying chunk in ${delay / 1000}s...`);
+            const delay = Math.min(attempt * 4000, 30000);
+            console.log(`⏳ Retrying chunk in ${delay / 1000}s (attempt ${attempt + 1}/${maxChunkRetries})...`);
             await new Promise(r => setTimeout(r, delay));
             continue;
           }
           throw new Error(`No audio returned from Gemini after ${maxChunkRetries} attempts (finishReason=${finishReason || 'unknown'})`);
         }
 
+        if (attempt > 1) {
+          console.log(`✅ Chunk succeeded on attempt ${attempt}/${maxChunkRetries}`);
+        }
         return Buffer.from(b64, 'base64');
       } catch (error: any) {
         if (error.message?.includes('No audio returned from Gemini after')) {
@@ -943,14 +946,14 @@ export class GeminiTtsService {
         if (error.message?.includes('429') || error.message?.includes('RESOURCE_EXHAUSTED')) {
           console.warn('⚠️ Rate limited by Gemini API');
           if (attempt < maxChunkRetries) {
-            const delay = attempt * 5000;
+            const delay = Math.min(attempt * 8000, 60000);
             console.log(`⏳ Rate limited, retrying chunk in ${delay / 1000}s...`);
             await new Promise(r => setTimeout(r, delay));
             continue;
           }
         }
         if (attempt < maxChunkRetries) {
-          const delay = attempt * 3000;
+          const delay = Math.min(attempt * 4000, 30000);
           console.log(`⏳ Retrying chunk in ${delay / 1000}s...`);
           await new Promise(r => setTimeout(r, delay));
           continue;

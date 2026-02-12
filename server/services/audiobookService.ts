@@ -383,8 +383,37 @@ export class AudiobookService {
 
     } catch (error: any) {
       console.error(`❌ Gemini TTS failed:`, error.message);
+      
+      if (this.deepgramTts) {
+        console.log(`🔄 Falling back to Deepgram TTS for this chapter...`);
+        try {
+          const deepgramVoice = this.mapToDeepgramVoice(options.voice);
+          const deepgramBuffer = await this.deepgramTts.generateAudio(text, {
+            voice: deepgramVoice as any,
+          });
+          console.log(`✅ Deepgram fallback TTS completed (${deepgramBuffer.length} bytes)`);
+          return deepgramBuffer;
+        } catch (deepgramError: any) {
+          console.error(`❌ Deepgram fallback also failed:`, deepgramError.message);
+        }
+      }
+      
       throw new Error(`Gemini TTS failed: ${error.message}`);
     }
+  }
+
+  private mapToDeepgramVoice(geminiVoice: string): string {
+    const voiceMap: Record<string, string> = {
+      'Charon': 'aura-2-orion-en',
+      'Zephyr': 'aura-2-apollo-en',
+      'Puck': 'aura-2-hermes-en',
+      'Kore': 'aura-2-athena-en',
+      'Fenrir': 'aura-2-zeus-en',
+      'Leda': 'aura-2-luna-en',
+      'Orus': 'aura-2-hyperion-en',
+      'Aoede': 'aura-2-aurora-en',
+    };
+    return voiceMap[geminiVoice] || 'aura-2-orion-en';
   }
 
   /**
