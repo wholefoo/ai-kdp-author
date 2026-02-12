@@ -315,10 +315,10 @@ function pcmPathForChunkKey(chunkKey: string): string {
 
 function buildRequestKey(text: string, options: GeminiTtsOptions): string {
   const effectiveMaxChars = options.useAudiobookProcessor 
-    ? Math.max(options.maxCharsPerChunk || 1400, 4000) 
+    ? 3000
     : (options.maxCharsPerChunk || 1400);
   const keyObj = {
-    v: 2,
+    v: 3,
     model: options.model,
     voice: options.voice,
     temp: 0.2,
@@ -768,12 +768,12 @@ export class GeminiTtsService {
     try {
       let processedChunks: Array<{ text: string; pauseMsAfter: number; promptPrefix?: string }>;
       
-      const audiobookMaxCharsInternal = Math.max(maxCharsPerChunk, 4000);
+      const audiobookMaxCharsInternal = 3000;
       if (options.useAudiobookProcessor) {
         const processor = new AudiobookTextProcessor({
           preset: options.narrationPreset || 'audiobook',
-          targetChunkChars: 3500,
-          minChunkChars: 1000,
+          targetChunkChars: 2000,
+          minChunkChars: 500,
           maxChunkChars: audiobookMaxCharsInternal,
           pronunciationDictionary: options.pronunciationDictionary,
           expandAbbreviations: true,
@@ -788,7 +788,7 @@ export class GeminiTtsService {
           promptPrefix: c.promptPrefix,
         }));
         
-        console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~3500 chars each) with ${options.narrationPreset || 'audiobook'} preset`);
+        console.log(`📚 Audiobook processor: ${processedChunks.length} chunks (target ~2000 chars, max 3000) with ${options.narrationPreset || 'audiobook'} preset`);
       } else {
         const chunks = buildChunksWithPauses(text, {
           maxCharsPerChunk,
@@ -869,7 +869,16 @@ export class GeminiTtsService {
 
   private async synthesizeChunkToPcm(textChunk: string, options: GeminiTtsOptions): Promise<Buffer> {
     const maxChunkRetries = 4;
-    const prompt = textChunk.trim();
+    let prompt = textChunk.trim();
+
+    const byteLength = Buffer.byteLength(prompt, 'utf-8');
+    if (byteLength > 3800) {
+      console.warn(`⚠️ Chunk too large (${byteLength} bytes, ${prompt.length} chars). Truncating to ~3500 bytes.`);
+      const truncated = Buffer.from(prompt, 'utf-8').subarray(0, 3500).toString('utf-8');
+      const lastSpace = truncated.lastIndexOf(' ');
+      prompt = lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated;
+      console.log(`📝 Truncated to ${prompt.length} chars (${Buffer.byteLength(prompt, 'utf-8')} bytes)`);
+    }
 
     for (let attempt = 1; attempt <= maxChunkRetries; attempt++) {
       try {
