@@ -3929,86 +3929,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { AudiobookService } = await import('./services/audiobookService');
       const audiobookService = new AudiobookService();
 
-      // Start generation in background
+      const MAX_GENERATION_RETRIES = 3;
+      const GENERATION_RETRY_DELAY_MS = 30000;
+
       const generateAudiobook = async () => {
-        try {
-          await storage.updateAudiobook(audiobook.id, { status: 'generating' });
-
-          const audioFiles = await audiobookService.generateAudiobook(
-            novelId,
-            novel.title,
-            audiobookChapters,
-            {
-              ttsProvider: 'deepgram',
-              voice: effectiveVoice as any,
-              model: 'aura-2' as any,
-              speed: speed / 100, // Convert percentage to decimal
-              format: format as any,
-              backgroundMusic: req.body.backgroundMusic ? {
-                enabled: Boolean(req.body.backgroundMusic.enabled),
-                musicType: typeof req.body.backgroundMusic.musicType === 'string' ? req.body.backgroundMusic.musicType : 'ambient',
-                volume: typeof req.body.backgroundMusic.volume === 'number' && req.body.backgroundMusic.volume >= 0.1 && req.body.backgroundMusic.volume <= 0.5 ? req.body.backgroundMusic.volume : 0.2,
-                fadeInOut: req.body.backgroundMusic.fadeInOut ?? true, // Fix: Use nullish coalescing to allow explicit false
-                customMusicUrl: typeof req.body.backgroundMusic.customMusicUrl === 'string' ? req.body.backgroundMusic.customMusicUrl : undefined
-              } : undefined
-            },
-            audiobook.id, // Pass the database audiobook ID
-            async (progress) => {
-              // Update progress in database
-              console.log(`📊 Progress update for audiobook ${audiobook.id}:`, progress);
-              try {
-                await storage.updateAudiobook(audiobook.id, {
-                  progress: progress,
-                  chapterCount: audiobookChapters.length,
-                });
-                console.log(`✅ Progress saved to database successfully`);
-              } catch (error) {
-                console.error(`❌ Failed to save progress to database:`, error);
-              }
-            }
-          );
-
-          // Calculate total duration from completed chapters
-          const totalDuration = audiobookChapters.reduce((total, chapter: any) => total + (chapter.duration || 0), 0);
-
-          // Update audiobook as completed
-          await storage.updateAudiobook(audiobook.id, {
-            status: 'completed',
-            chapters: audiobookChapters, // Save the chapters with audioPath properties
-            audioFiles: audioFiles,
-            totalDuration,
-            chapterCount: audiobookChapters.length,
-            metadata: {
-              generatedAt: new Date().toISOString(),
-              totalChapters: audiobookChapters.length,
-              voice: effectiveVoice,
-              model: 'aura-2',
-              speed,
-            },
-          });
-
-          console.log(`🎉 Audiobook "${novel.title}" generation completed!`);
-
-          // Generate pre-made chunks for faster downloads (background task)
+        for (let generationAttempt = 1; generationAttempt <= MAX_GENERATION_RETRIES; generationAttempt++) {
           try {
-            console.log(`🚀 Starting background chunk generation for audiobook ${audiobook.id}`);
-            audiobookService.generatePreMadeChunks(audiobook.id, 20).catch(error => {
-              console.error(`❌ Background chunk generation failed for audiobook ${audiobook.id}:`, error);
-            });
-          } catch (error) {
-            console.error(`❌ Failed to start chunk generation for audiobook ${audiobook.id}:`, error);
-          }
+            await storage.updateAudiobook(audiobook.id, { status: 'generating' });
 
-        } catch (error) {
-          console.error(`❌ Audiobook generation failed for "${novel.title}":`, error);
-          await storage.updateAudiobook(audiobook.id, {
-            status: 'failed',
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
+            const audioFiles = await audiobookService.generateAudiobook(
+              novelId,
+              novel.title,
+              audiobookChapters,
+              {
+                ttsProvider: 'deepgram',
+                voice: effectiveVoice as any,
+                model: 'aura-2' as any,
+                speed: speed / 100,
+                format: format as any,
+                backgroundMusic: req.body.backgroundMusic ? {
+                  enabled: Boolean(req.body.backgroundMusic.enabled),
+                  musicType: typeof req.body.backgroundMusic.musicType === 'string' ? req.body.backgroundMusic.musicType : 'ambient',
+                  volume: typeof req.body.backgroundMusic.volume === 'number' && req.body.backgroundMusic.volume >= 0.1 && req.body.backgroundMusic.volume <= 0.5 ? req.body.backgroundMusic.volume : 0.2,
+                  fadeInOut: req.body.backgroundMusic.fadeInOut ?? true,
+                  customMusicUrl: typeof req.body.backgroundMusic.customMusicUrl === 'string' ? req.body.backgroundMusic.customMusicUrl : undefined
+                } : undefined
+              },
+              audiobook.id,
+              async (progress) => {
+                console.log(`📊 Progress update for audiobook ${audiobook.id}:`, progress);
+                try {
+                  await storage.updateAudiobook(audiobook.id, {
+                    progress: progress,
+                    chapterCount: audiobookChapters.length,
+                  });
+                  console.log(`✅ Progress saved to database successfully`);
+                } catch (error) {
+                  console.error(`❌ Failed to save progress to database:`, error);
+                }
+              }
+            );
+
+            const totalDuration = audiobookChapters.reduce((total, chapter: any) => total + (chapter.duration || 0), 0);
+
+            await storage.updateAudiobook(audiobook.id, {
+              status: 'completed',
+              chapters: audiobookChapters,
+              audioFiles: audioFiles,
+              totalDuration,
+              chapterCount: audiobookChapters.length,
+              metadata: {
+                generatedAt: new Date().toISOString(),
+                totalChapters: audiobookChapters.length,
+                voice: effectiveVoice,
+                model: 'aura-2',
+                speed,
+              },
+            });
+
+            console.log(`🎉 Audiobook "${novel.title}" generation completed!`);
+
+            try {
+              console.log(`🚀 Starting background chunk generation for audiobook ${audiobook.id}`);
+              audiobookService.generatePreMadeChunks(audiobook.id, 20).catch(error => {
+                console.error(`❌ Background chunk generation failed for audiobook ${audiobook.id}:`, error);
+              });
+            } catch (error) {
+              console.error(`❌ Failed to start chunk generation for audiobook ${audiobook.id}:`, error);
+            }
+
+            return;
+
+          } catch (error) {
+            console.error(`❌ Audiobook generation attempt ${generationAttempt}/${MAX_GENERATION_RETRIES} failed for "${novel.title}":`, error);
+            
+            if (generationAttempt < MAX_GENERATION_RETRIES) {
+              const delay = GENERATION_RETRY_DELAY_MS * generationAttempt;
+              console.log(`🔄 Auto-retrying audiobook generation in ${delay / 1000}s (attempt ${generationAttempt + 1}/${MAX_GENERATION_RETRIES})... Completed chapters will be skipped.`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+              console.error(`❌ All ${MAX_GENERATION_RETRIES} generation attempts exhausted for "${novel.title}"`);
+              await storage.updateAudiobook(audiobook.id, {
+                status: 'failed',
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+            }
+          }
         }
       };
 
-      // Start generation without blocking response
       generateAudiobook();
 
       res.json({
@@ -4253,100 +4262,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`🔄 Resuming audiobook generation for "${novel.title}"`);
 
-      // Start resume generation in background
+      const MAX_RESUME_RETRIES = 3;
+      const RESUME_RETRY_DELAY_MS = 30000;
+
       const resumeGeneration = async () => {
-        try {
-          await storage.updateAudiobook(audiobookId, { status: 'generating' });
+        for (let resumeAttempt = 1; resumeAttempt <= MAX_RESUME_RETRIES; resumeAttempt++) {
+          try {
+            await storage.updateAudiobook(audiobookId, { status: 'generating' });
 
-          const { AudiobookService } = await import('./services/audiobookService');
-          const audiobookService = new AudiobookService();
+            const { AudiobookService } = await import('./services/audiobookService');
+            const audiobookService = new AudiobookService();
 
-          // Convert novel chapters to audiobook format
-          const chapters = Array.isArray(novel.chapters) ? novel.chapters : [];
-          const audiobookChapters = chapters.map((chapter, index) => ({
-            chapterNumber: index + 1,
-            title: `Chapter ${index + 1}`,
-            content: typeof chapter === 'string' ? chapter : chapter.content || '',
-          }));
+            const chapters = Array.isArray(novel.chapters) ? novel.chapters : [];
+            const audiobookChapters = chapters.map((chapter, index) => ({
+              chapterNumber: index + 1,
+              title: `Chapter ${index + 1}`,
+              content: typeof chapter === 'string' ? chapter : chapter.content || '',
+            }));
 
-          const effectiveVoice = (audiobook.voice && (audiobook.voice as string).startsWith('aura-2-')) 
-            ? audiobook.voice 
-            : 'aura-2-athena-en';
-          
-          const audioFiles = await audiobookService.generateAudiobook(
-            audiobook.novelId,
-            novel.title,
-            audiobookChapters,
-            {
-              ttsProvider: 'deepgram',
-              voice: effectiveVoice as any,
-              model: 'aura-2' as any,
-              speed: (audiobook.speed || 100) / 100,
-              format: audiobook.format as any,
-            },
-            audiobookId,
-            async (progress) => {
+            const effectiveVoice = (audiobook.voice && (audiobook.voice as string).startsWith('aura-2-')) 
+              ? audiobook.voice 
+              : 'aura-2-athena-en';
+            
+            const audioFiles = await audiobookService.generateAudiobook(
+              audiobook.novelId,
+              novel.title,
+              audiobookChapters,
+              {
+                ttsProvider: 'deepgram',
+                voice: effectiveVoice as any,
+                model: 'aura-2' as any,
+                speed: (audiobook.speed || 100) / 100,
+                format: audiobook.format as any,
+              },
+              audiobookId,
+              async (progress) => {
+                await storage.updateAudiobook(audiobookId, { 
+                  status: progress.status,
+                  progress: progress
+                });
+              }
+            );
+
+            const totalDuration = audiobookChapters.reduce((total, chapter: any) => total + (chapter.duration || 0), 0);
+
+            await storage.updateAudiobook(audiobookId, { 
+              status: 'completed',
+              chapters: audiobookChapters,
+              audioFiles: audioFiles,
+              totalDuration,
+              chapterCount: audiobookChapters.length,
+              metadata: {
+                generatedAt: new Date().toISOString(),
+                totalChapters: audiobookChapters.length,
+                voice: audiobook.voice,
+                model: audiobook.model,
+                speed: audiobook.speed || 100,
+              }
+            });
+
+            console.log(`✅ Audiobook resume completed for "${novel.title}"`);
+            
+            if (audiobook.userId) {
+              const user = await storage.getUser(audiobook.userId);
+              if (user?.email) {
+                const userName = user.firstName || user.email.split('@')[0];
+                const hours = Math.floor(totalDuration / 3600);
+                const minutes = Math.floor((totalDuration % 3600) / 60);
+                const durationString = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                emailService.sendAudiobookReadyEmail(
+                  user.email,
+                  userName,
+                  novel.title,
+                  audiobookId,
+                  durationString
+                ).catch(err => console.error('Failed to send audiobook ready email:', err));
+              }
+            }
+
+            try {
+              console.log(`🚀 Starting background chunk generation for resumed audiobook ${audiobookId}`);
+              audiobookService.generatePreMadeChunks(audiobookId, 20).catch(error => {
+                console.error(`❌ Background chunk generation failed for audiobook ${audiobookId}:`, error);
+              });
+            } catch (error) {
+              console.error(`❌ Failed to start chunk generation for audiobook ${audiobookId}:`, error);
+            }
+
+            return;
+
+          } catch (error) {
+            console.error(`❌ Audiobook resume attempt ${resumeAttempt}/${MAX_RESUME_RETRIES} failed for "${novel.title}":`, error);
+            
+            if (resumeAttempt < MAX_RESUME_RETRIES) {
+              const delay = RESUME_RETRY_DELAY_MS * resumeAttempt;
+              console.log(`🔄 Auto-retrying resume in ${delay / 1000}s (attempt ${resumeAttempt + 1}/${MAX_RESUME_RETRIES})... Completed chapters will be skipped.`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+              console.error(`❌ All ${MAX_RESUME_RETRIES} resume attempts exhausted for "${novel.title}"`);
               await storage.updateAudiobook(audiobookId, { 
-                status: progress.status,
-                progress: progress
+                status: 'failed',
+                error: error instanceof Error ? error.message : "Unknown error"
               });
             }
-          );
-
-          // Calculate total duration from completed chapters
-          const totalDuration = audiobookChapters.reduce((total, chapter: any) => total + (chapter.duration || 0), 0);
-
-          await storage.updateAudiobook(audiobookId, { 
-            status: 'completed',
-            chapters: audiobookChapters, // Save the chapters with audioPath properties
-            audioFiles: audioFiles,
-            totalDuration,
-            chapterCount: audiobookChapters.length,
-            metadata: {
-              generatedAt: new Date().toISOString(),
-              totalChapters: audiobookChapters.length,
-              voice: audiobook.voice,
-              model: audiobook.model,
-              speed: audiobook.speed || 100,
-            }
-          });
-
-          console.log(`✅ Audiobook resume completed for "${novel.title}"`);
-          
-          // Send audiobook ready email
-          if (audiobook.userId) {
-            const user = await storage.getUser(audiobook.userId);
-            if (user?.email) {
-              const userName = user.firstName || user.email.split('@')[0];
-              const hours = Math.floor(totalDuration / 3600);
-              const minutes = Math.floor((totalDuration % 3600) / 60);
-              const durationString = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-              emailService.sendAudiobookReadyEmail(
-                user.email,
-                userName,
-                novel.title,
-                audiobookId,
-                durationString
-              ).catch(err => console.error('Failed to send audiobook ready email:', err));
-            }
           }
-
-          // Generate pre-made chunks for faster downloads (background task)
-          try {
-            console.log(`🚀 Starting background chunk generation for resumed audiobook ${audiobookId}`);
-            audiobookService.generatePreMadeChunks(audiobookId, 20).catch(error => {
-              console.error(`❌ Background chunk generation failed for audiobook ${audiobookId}:`, error);
-            });
-          } catch (error) {
-            console.error(`❌ Failed to start chunk generation for audiobook ${audiobookId}:`, error);
-          }
-
-        } catch (error) {
-          console.error(`❌ Audiobook resume failed for "${novel.title}":`, error);
-          await storage.updateAudiobook(audiobookId, { 
-            status: 'failed',
-            error: error instanceof Error ? error.message : "Unknown error"
-          });
         }
       };
 

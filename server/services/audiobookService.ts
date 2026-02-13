@@ -150,12 +150,26 @@ export class AudiobookService {
       console.log(`🔄 Resuming audiobook generation from Chapter ${startFromChapter + 1} (${chapters.length - startFromChapter} remaining)`);
     }
 
+    const MAX_CHAPTER_RETRIES = 3;
+    const RETRY_BASE_DELAY_MS = 15000;
+
     for (let i = startFromChapter; i < chapters.length; i++) {
       const chapter = chapters[i];
       const startTime = Date.now();
+      let chapterSuccess = false;
 
-      // Heartbeat to prevent frontend stall detection during long chunk processing
-      const heartbeatInterval = setInterval(async () => {
+      for (let attempt = 1; attempt <= MAX_CHAPTER_RETRIES; attempt++) {
+        const heartbeatInterval = setInterval(async () => {
+          try {
+            onProgress?.({
+              currentChapter: i + 1,
+              totalChapters: chapters.length,
+              completedChapters: startFromChapter + (i - startFromChapter),
+              status: 'generating'
+            });
+          } catch {}
+        }, 60000);
+
         try {
           onProgress?.({
             currentChapter: i + 1,
@@ -163,46 +177,57 @@ export class AudiobookService {
             completedChapters: startFromChapter + (i - startFromChapter),
             status: 'generating'
           });
-        } catch {}
-      }, 60000);
 
-      try {
-        onProgress?.({
-          currentChapter: i + 1,
-          totalChapters: chapters.length,
-          completedChapters: startFromChapter + (i - startFromChapter),
-          status: 'generating'
-        });
+          if (attempt > 1) {
+            console.log(`🔄 Retry attempt ${attempt}/${MAX_CHAPTER_RETRIES} for Chapter ${chapter.chapterNumber}: ${chapter.title}`);
+          } else {
+            console.log(`🎙️ Generating audio for Chapter ${chapter.chapterNumber}: ${chapter.title}`);
+          }
 
-        console.log(`🎙️ Generating audio for Chapter ${chapter.chapterNumber}: ${chapter.title}`);
+          const chapterText = this.prepareChapterText(chapter);
+          
+          const normalizedSpeed = options.speed > 4 ? options.speed / 100 : options.speed;
+          const audioOptions = { ...options, speed: normalizedSpeed };
+          if (attempt === 1) {
+            console.log(`🔧 Speed conversion: ${options.speed} → ${normalizedSpeed}`);
+          }
+          let audioBuffer = await this.generateChapterAudio(chapterText, audioOptions);
+          
+          console.log(`🔄 Processing Chapter ${chapter.chapterNumber} for KDP compliance (44.1kHz, 192kbps, stereo, loudness normalization, silence padding)...`);
+          audioBuffer = await this.processForKDPCompliance(audioBuffer, options.format);
+          
+          const audioFileName = `chapter_${String(chapter.chapterNumber).padStart(2, '0')}.${options.format}`;
+          const objectPath = `${this.objectStorage.getPrivateObjectDir()}/audiobooks/${audiobookId}/${audioFileName}`;
+          const contentType = this.getContentType(options.format);
+          
+          await this.objectStorage.uploadBuffer(audioBuffer, objectPath, contentType);
+          
+          const audioPath = objectPath;
+          audioFiles.push(audioPath);
+          
+          const duration = Date.now() - startTime;
+          console.log(`✅ Chapter ${chapter.chapterNumber} completed in ${duration}ms${attempt > 1 ? ` (attempt ${attempt})` : ''}`);
 
-        const chapterText = this.prepareChapterText(chapter);
-        
-        const normalizedSpeed = options.speed > 4 ? options.speed / 100 : options.speed;
-        const audioOptions = { ...options, speed: normalizedSpeed };
-        console.log(`🔧 Speed conversion: ${options.speed} → ${normalizedSpeed}`);
-        let audioBuffer = await this.generateChapterAudio(chapterText, audioOptions);
-        
-        console.log(`🔄 Processing Chapter ${chapter.chapterNumber} for KDP compliance (44.1kHz, 192kbps, stereo, loudness normalization, silence padding)...`);
-        audioBuffer = await this.processForKDPCompliance(audioBuffer, options.format);
-        
-        const audioFileName = `chapter_${String(chapter.chapterNumber).padStart(2, '0')}.${options.format}`;
-        const objectPath = `${this.objectStorage.getPrivateObjectDir()}/audiobooks/${audiobookId}/${audioFileName}`;
-        const contentType = this.getContentType(options.format);
-        
-        await this.objectStorage.uploadBuffer(audioBuffer, objectPath, contentType);
-        
-        const audioPath = objectPath;
-        audioFiles.push(audioPath);
-        
-        const duration = Date.now() - startTime;
-        console.log(`✅ Chapter ${chapter.chapterNumber} completed in ${duration}ms`);
+          chapter.audioPath = audioPath;
+          chapter.duration = this.estimateAudioDuration(chapterText, options.speed);
+          chapterSuccess = true;
+          break;
 
-        chapter.audioPath = audioPath;
-        chapter.duration = this.estimateAudioDuration(chapterText, options.speed);
+        } catch (error) {
+          console.error(`❌ Attempt ${attempt}/${MAX_CHAPTER_RETRIES} failed for Chapter ${chapter.chapterNumber}:`, error);
+          
+          if (attempt < MAX_CHAPTER_RETRIES) {
+            const delay = RETRY_BASE_DELAY_MS * attempt;
+            console.log(`⏳ Waiting ${delay / 1000}s before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        } finally {
+          clearInterval(heartbeatInterval);
+        }
+      }
 
-      } catch (error) {
-        console.error(`❌ Failed to generate audio for Chapter ${chapter.chapterNumber}:`, error);
+      if (!chapterSuccess) {
+        console.error(`❌ All ${MAX_CHAPTER_RETRIES} attempts failed for Chapter ${chapter.chapterNumber}`);
         
         const completedChapters = startFromChapter + (i - startFromChapter);
         
@@ -213,9 +238,7 @@ export class AudiobookService {
           status: completedChapters > 0 ? 'partial_completed' : 'failed'
         });
         
-        throw new Error(`Failed to generate audio for Chapter ${chapter.chapterNumber}: ${error}`);
-      } finally {
-        clearInterval(heartbeatInterval);
+        throw new Error(`Failed to generate audio for Chapter ${chapter.chapterNumber} after ${MAX_CHAPTER_RETRIES} attempts`);
       }
     }
 

@@ -112,25 +112,64 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
   const novel = novelData;
   const chapters = Array.isArray(novel?.chapters) ? novel.chapters : [];
 
-  // Stall detection: Track last progress and detect when generation is stuck
+  const [autoResumeAttempted, setAutoResumeAttempted] = useState<Set<string>>(new Set());
+  const [autoResumeInProgress, setAutoResumeInProgress] = useState<string | null>(null);
+
   const detectStallWarning = (audiobook: any) => {
     if (audiobook.status !== 'generating') return null;
     
     const now = new Date().getTime();
     const lastUpdated = new Date(audiobook.updatedAt).getTime();
-    const stallThresholdMinutes = 25; // Consider stuck after 25 minutes (each chapter can take ~20 min with Deepgram)
+    const stallThresholdMinutes = 25;
     const minutesSinceUpdate = (now - lastUpdated) / (1000 * 60);
     
     if (minutesSinceUpdate > stallThresholdMinutes) {
       return {
         isStalled: true,
         minutesStalled: Math.floor(minutesSinceUpdate),
-        message: `Generation appears stuck for ${Math.floor(minutesSinceUpdate)} minutes. Consider using Resume Generation.`
+        message: `Generation appears stuck for ${Math.floor(minutesSinceUpdate)} minutes.`
       };
     }
     
     return null;
   };
+
+  useEffect(() => {
+    const stalledAudiobook = audiobooks.find(ab => {
+      if (ab.status !== 'generating') return false;
+      const stall = detectStallWarning(ab);
+      return stall?.isStalled && !autoResumeAttempted.has(ab.id) && autoResumeInProgress !== ab.id;
+    });
+
+    if (stalledAudiobook) {
+      const performAutoResume = async () => {
+        setAutoResumeInProgress(stalledAudiobook.id);
+        setAutoResumeAttempted(prev => new Set(prev).add(stalledAudiobook.id));
+        console.log(`Auto-resuming stalled audiobook ${stalledAudiobook.id}`);
+
+        try {
+          const response = await fetch(`/api/audiobook/${stalledAudiobook.id}/resume`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          if (response.ok) {
+            toast({
+              title: "Auto-resumed",
+              description: `Generation was stalled and has been automatically resumed. Completed chapters are preserved.`,
+            });
+            refetchAudiobooks();
+          }
+        } catch (error) {
+          console.error('Auto-resume failed:', error);
+        } finally {
+          setAutoResumeInProgress(null);
+        }
+      };
+      performAutoResume();
+    }
+  }, [audiobooks, autoResumeAttempted, autoResumeInProgress]);
 
   // Initialize all chapters as selected by default
   useEffect(() => {
@@ -858,16 +897,29 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                     </div>
                   )}
 
-                  {/* Stall Warning */}
+                  {/* Stall Warning with Auto-Resume */}
                   {(() => {
                     const stallWarning = detectStallWarning(audiobook);
-                    return stallWarning && (
-                      <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                    if (!stallWarning) return null;
+                    const isAutoResuming = autoResumeInProgress === audiobook.id;
+                    const wasAutoResumed = autoResumeAttempted.has(audiobook.id);
+                    return (
+                      <div className={`text-sm border p-3 rounded-lg ${isAutoResuming ? 'text-blue-700 bg-blue-50 border-blue-200' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
                         <div className="flex items-start gap-2">
-                          <div className="text-amber-600">⚠️</div>
+                          <div>{isAutoResuming ? '🔄' : '⚠️'}</div>
                           <div>
-                            <strong>Generation Stalled:</strong> {stallWarning.message}
-                            <div className="mt-1 text-xs text-amber-600">
+                            {isAutoResuming ? (
+                              <strong>Auto-resuming generation...</strong>
+                            ) : wasAutoResumed ? (
+                              <>
+                                <strong>Stall detected:</strong> Auto-resume was attempted. If still stuck, use Resume below.
+                              </>
+                            ) : (
+                              <>
+                                <strong>Stall detected:</strong> {stallWarning.message} Auto-resume will trigger shortly.
+                              </>
+                            )}
+                            <div className="mt-1 text-xs opacity-75">
                               Last activity: {stallWarning.minutesStalled} minutes ago
                             </div>
                           </div>
