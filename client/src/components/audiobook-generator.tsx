@@ -28,7 +28,7 @@ interface Voice {
   recommended: boolean;
   characteristics: string[];
   bestFor: string;
-  provider: 'deepgram' | 'openai' | 'gemini';
+  provider: 'deepgram';
 }
 
 interface Audiobook {
@@ -55,7 +55,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedVoice, setSelectedVoice] = useState('aura-2-athena-en');
-  const [selectedModel, setSelectedModel] = useState('aura-2');
+  const selectedModel = 'aura-2';
   const [selectedSpeed, setSelectedSpeed] = useState(100);
   const [selectedFormat, setSelectedFormat] = useState('mp3');
   
@@ -645,27 +645,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
             <h3 className="text-lg font-semibold mb-4">Audiobook Settings</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            {/* Quality Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="model">Quality</Label>
-              <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger data-testid="select-quality">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="gpt-4o-mini-tts">High Quality (Latest)</SelectItem>
-                  <SelectItem value="tts-1">Standard Quality (Legacy)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Spacer - Speed is now in VoicePreviewSelector */}
-            <div className="space-y-2">
-              <Label htmlFor="spacer" className="text-transparent">Spacer</Label>
-              <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md">
-                Speed control moved to Voice Preview section above
-              </div>
-            </div>
+            {/* Speed is in VoicePreviewSelector */}
 
             {/* Format Selection */}
             <div className="space-y-2">
@@ -805,7 +785,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                 <span className="text-gray-600 dark:text-gray-400">Voice:</span> {activeGeneratingAudiobook.voice}
               </div>
               <div>
-                <span className="text-gray-600 dark:text-gray-400">Quality:</span> {activeGeneratingAudiobook.model === 'gpt-4o-mini-tts' ? 'High Quality' : activeGeneratingAudiobook.model === 'tts-1-hd' ? 'HD' : 'Standard'}
+                <span className="text-gray-600 dark:text-gray-400">Quality:</span> Deepgram Aura-2
               </div>
               <div>
                 <span className="text-gray-600 dark:text-gray-400">Format:</span> {activeGeneratingAudiobook.format?.toUpperCase() || 'MP3'}

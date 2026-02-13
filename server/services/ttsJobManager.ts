@@ -4,7 +4,7 @@ import path from 'node:path';
 import ffmpegPath from 'ffmpeg-static';
 import { spawn } from 'node:child_process';
 
-export type TtsProvider = 'gemini' | 'openai' | 'deepgram';
+export type TtsProvider = 'deepgram';
 export type OutputFormat = 'mp3' | 'wav' | 'aac' | 'opus';
 export type TtsJobStatus = 'queued' | 'running' | 'done' | 'error' | 'interrupted';
 

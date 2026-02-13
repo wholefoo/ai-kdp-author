@@ -52,7 +52,7 @@ Each chapter starts on a new page.
 - **AI Integration**: OpenAI GPT-5.2 for core generation and analysis tasks, GPT-4.1-mini for marketing and budget tasks.
 - **Character Development**: AI-powered Interview Mode, Emotional Journey Mapping, Character Growth Suggestions.
 - **Manuscript Analysis**: Advanced Grammar & Style Checker, Style and Tone Consistency Checker, Comprehensive Quality Analyzer.
-- **Audiobook Generation**: Deepgram Aura-2 primary TTS provider (45+ voices), OpenAI TTS secondary option, with advanced text processing for natural narration, KDP compliance, and a unified job manager for persistence and resume capabilities.
+- **Audiobook Generation**: Deepgram Aura-2 as sole TTS provider (45+ voices), with advanced text processing for natural narration, KDP compliance, and a unified job manager for persistence and resume capabilities.
 - **Customization**: Adjustable word count (30K-120K), chapter count (10-50), chapter length (1.5K-5K words).
 - **Export & Preview**: DOCX (native JS library), PDF, Markdown, TXT with customizable formatting.
 - **Development Workflow**: Monorepo structure with end-to-end TypeScript.
@@ -87,5 +87,4 @@ Each chapter starts on a new page.
 - **Payment Processing**: Stripe.
 - **Email Service**: Resend for transactional emails.
 - **TTS Services**:
-    - Deepgram Aura-2 (PRIMARY, 45+ voices).
-    - OpenAI TTS (Fallback, `gpt-4o-mini-tts` model, 6 voices: alloy, echo, fable, onyx, nova, shimmer).
+    - Deepgram Aura-2 (sole provider, 45+ voices).

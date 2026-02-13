@@ -19,7 +19,7 @@ interface Voice {
   recommended: boolean;
   characteristics: string[];
   bestFor: string;
-  provider: 'deepgram' | 'openai' | 'gemini';
+  provider: 'deepgram';
 }
 
 interface SampleText {
@@ -181,7 +181,7 @@ export function VoicePreviewSelector({
                             {voice.gender}
                           </Badge>
                           <Badge variant="outline" className="text-xs capitalize">
-                            {voice.provider === 'deepgram' ? '🎧 Deepgram' : voice.provider === 'openai' ? '🎤 OpenAI' : '✨ Gemini'}
+                            🎧 Deepgram Aura-2
                           </Badge>
                         </div>
                       </div>

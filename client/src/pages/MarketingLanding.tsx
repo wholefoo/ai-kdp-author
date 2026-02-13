@@ -38,9 +38,9 @@ export default function MarketingLanding() {
     {
       icon: Headphones,
       title: "Professional Audiobook Creation",
-      description: "Transform your books into high-quality audiobooks with 80+ AI voices, smart narration processing, and KDP-compliant audio formats.",
+      description: "Transform your books into high-quality audiobooks with 45+ Deepgram Aura-2 AI voices, smart narration processing, and KDP-compliant audio formats.",
       details: [
-        "80+ premium voices across 3 TTS providers (Gemini, Deepgram, OpenAI)",
+        "45+ premium Deepgram Aura-2 voices for professional narration",
         "Smart text processor with dialogue detection and natural pauses",
         "5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)",
         "Per-chunk caching with job persistence and resume capability"
@@ -158,7 +158,7 @@ export default function MarketingLanding() {
     },
     {
       question: "How does the audiobook generation work?",
-      answer: "AI KDP Author uses a triple-provider TTS system with 80+ professional AI voices. Gemini TTS serves as the primary provider (30 voices), with Deepgram Aura-2 (45+ voices) and OpenAI TTS (6 voices) as fallbacks. Our smart text processor includes dialogue detection, natural pause insertion, and 5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)."
+      answer: "AI KDP Author uses Deepgram Aura-2 with 45+ professional AI voices for audiobook narration. Our smart text processor includes dialogue detection, natural pause insertion, and 5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)."
     },
     {
       question: "What word count and chapter options are available?",
@@ -701,7 +701,7 @@ export default function MarketingLanding() {
             <div className="flex flex-col md:flex-row justify-between items-center text-sm">
               <p>&copy; 2025 AI KDP Author. All rights reserved.</p>
               <p className="mt-2 md:mt-0 text-gray-500">
-                Powered by GPT-5.2 | Gemini TTS | Deepgram Aura-2 | OpenAI TTS
+                Powered by GPT-5.2 | Deepgram Aura-2
               </p>
             </div>
           </div>

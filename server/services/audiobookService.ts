@@ -1,4 +1,3 @@
-import { openai } from './openai';
 import { DeepgramTtsService, DeepgramVoice } from './deepgramTts';
 import { promises as fs } from 'fs';
 import { join } from 'path';
@@ -6,13 +5,13 @@ import ffmpeg from 'fluent-ffmpeg';
 import { ObjectStorageService } from '../objectStorage';
 import { isWrittenNumberChapterHeading } from '../utils/numberParser';
 
-export type TtsProvider = 'deepgram' | 'openai';
-export type TtsVoice = DeepgramVoice | 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+export type TtsProvider = 'deepgram';
+export type TtsVoice = DeepgramVoice;
 
 export interface AudiobookOptions {
-  ttsProvider: TtsProvider; // deepgram (primary) or openai
+  ttsProvider: TtsProvider;
   voice: TtsVoice;
-  model: 'aura-2' | 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd';
+  model: 'aura-2';
   speed: number; // 0.25 to 4.0
   format: 'mp3' | 'opus' | 'aac' | 'flac';
   backgroundMusic?: {
@@ -234,35 +233,10 @@ export class AudiobookService {
     return audioFiles;
   }
 
-  private normalizeModelForProvider(options: AudiobookOptions): AudiobookOptions {
-    const provider = options.ttsProvider;
-    let model: string = options.model;
-    
-    if (provider === 'deepgram') {
-      if (!model || model !== 'aura-2') model = 'aura-2';
-    } else if (provider === 'openai') {
-      if (!['gpt-4o-mini-tts', 'tts-1', 'tts-1-hd'].includes(model)) model = 'gpt-4o-mini-tts';
-    }
-    
-    return { ...options, model: model as AudiobookOptions['model'] };
-  }
-
   /**
-   * Generate audio for a single chapter using selected TTS provider
-   * Provider priority: deepgram (primary) > openai
+   * Generate audio for a single chapter using Deepgram Aura-2 TTS
    */
   private async generateChapterAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
-    const normalizedOptions = this.normalizeModelForProvider(options);
-    if (normalizedOptions.ttsProvider === 'openai') {
-      return this.generateOpenAIAudio(text, normalizedOptions);
-    }
-    return this.generateDeepgramAudio(text, normalizedOptions);
-  }
-
-  /**
-   * Generate audio using Deepgram Aura TTS
-   */
-  private async generateDeepgramAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
     console.log(`🔧 Starting Deepgram TTS generation. Text length: ${text.length} characters`);
     
     if (!this.deepgramTts) {
@@ -282,49 +256,6 @@ export class AudiobookService {
     } catch (error: any) {
       console.error('❌ Deepgram TTS API error:', error.message);
       throw new Error(`Deepgram TTS failed: ${error.message}`);
-    }
-  }
-
-  /**
-   * Generate audio using OpenAI TTS
-   */
-  private async generateOpenAIAudio(text: string, options: AudiobookOptions): Promise<Buffer> {
-    console.log(`🔧 Starting OpenAI TTS generation. Text length: ${text.length} characters`);
-    
-    try {
-      // OpenAI TTS API has a strict 4096 character limit per request
-      // Use 3500 to leave safe margin
-      const chunks = this.splitTextIntoChunks(text, 3500);
-      console.log(`📝 Split into ${chunks.length} chunks for OpenAI processing`);
-      
-      const audioBuffers: Buffer[] = [];
-      
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        console.log(`🎵 Processing OpenAI chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
-        
-        const response = await openai.audio.speech.create({
-          model: options.model as 'gpt-4o-mini-tts' | 'tts-1' | 'tts-1-hd',
-          voice: options.voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
-          input: chunk,
-          response_format: options.format as any,
-          speed: options.speed,
-        });
-
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        audioBuffers.push(buffer);
-        console.log(`✅ OpenAI chunk ${i + 1} completed (${buffer.length} bytes)`);
-      }
-      
-      const finalBuffer = Buffer.concat(audioBuffers);
-      console.log(`✅ OpenAI TTS completed with ${chunks.length} chunks (${finalBuffer.length} bytes total)`);
-      
-      return finalBuffer;
-      
-    } catch (error: any) {
-      console.error('❌ OpenAI TTS API error:', error);
-      throw new Error(`Failed to generate audio: ${error.message}`);
     }
   }
 
@@ -958,7 +889,7 @@ export class AudiobookService {
     recommended: boolean,
     characteristics: string[],
     bestFor: string,
-    provider: 'deepgram' | 'openai'
+    provider: 'deepgram'
   }> {
     return [
       // DEEPGRAM VOICES (PRIMARY - Aura-2)
@@ -1008,68 +939,6 @@ export class AudiobookService {
       { voice: 'aura-2-estrella-es', name: 'Estrella (Spanish)', description: 'Approachable, natural, calm - Mexican', gender: 'female', recommended: false, characteristics: ['Approachable', 'Natural', 'Calm'], bestFor: 'Spanish casual chat', provider: 'deepgram' },
       { voice: 'aura-2-nestor-es', name: 'Nestor (Spanish)', description: 'Calm, professional - Peninsular', gender: 'male', recommended: false, characteristics: ['Calm', 'Professional', 'Approachable'], bestFor: 'Spanish customer service', provider: 'deepgram' },
       { voice: 'aura-2-javier-es', name: 'Javier (Spanish)', description: 'Approachable, professional - Mexican', gender: 'male', recommended: false, characteristics: ['Approachable', 'Professional', 'Friendly'], bestFor: 'Spanish storytelling', provider: 'deepgram' },
-      
-      // OpenAI voices (fallback)
-      { 
-        voice: 'alloy', 
-        name: 'Alloy',
-        description: 'Neutral, balanced voice', 
-        gender: 'neutral', 
-        recommended: false,
-        characteristics: ['Neutral', 'Clear', 'Versatile'],
-        bestFor: 'General fiction and non-fiction',
-        provider: 'openai'
-      },
-      { 
-        voice: 'echo', 
-        name: 'Echo',
-        description: 'Male voice, clear and professional', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Articulate', 'Professional', 'Crisp'],
-        bestFor: 'Educational content and documentaries',
-        provider: 'openai'
-      },
-      { 
-        voice: 'fable', 
-        name: 'Fable',
-        description: 'British accent, sophisticated', 
-        gender: 'male', 
-        recommended: false,
-        characteristics: ['Warm', 'Engaging', 'Narrative'],
-        bestFor: 'Fantasy and adventure stories',
-        provider: 'openai'
-      },
-      { 
-        voice: 'onyx', 
-        name: 'Onyx',
-        description: 'Deep male voice, authoritative', 
-        gender: 'male', 
-        recommended: true,
-        characteristics: ['Deep', 'Authoritative', 'Powerful'],
-        bestFor: 'Thrillers and mystery novels',
-        provider: 'openai'
-      },
-      { 
-        voice: 'nova', 
-        name: 'Nova',
-        description: 'Female voice, warm and engaging', 
-        gender: 'female', 
-        recommended: true,
-        characteristics: ['Bright', 'Energetic', 'Youthful'],
-        bestFor: 'Young adult and contemporary fiction',
-        provider: 'openai'
-      },
-      { 
-        voice: 'shimmer', 
-        name: 'Shimmer',
-        description: 'Female voice, gentle and soothing', 
-        gender: 'female', 
-        recommended: false,
-        characteristics: ['Gentle', 'Soothing', 'Calming'],
-        bestFor: 'Romance and literary fiction',
-        provider: 'openai'
-      }
     ];
   }
 
@@ -1081,7 +950,7 @@ export class AudiobookService {
     options: AudiobookOptions
   ): Promise<Buffer> {
     try {
-      console.log(`🎤 Generating voice preview with ${options.voice} voice (${options.ttsProvider})`);
+      console.log(`🎤 Generating voice preview with ${options.voice} voice`);
       console.log(`📝 Sample text length: ${sampleText.length} characters`);
       
       const limitedText = sampleText.length > 500 
@@ -1090,54 +959,17 @@ export class AudiobookService {
 
       const normalizedSpeed = options.speed > 4 ? options.speed / 100 : options.speed;
       
-      console.log(`🎤 Voice preview request - Original speed: ${options.speed}, Normalized: ${normalizedSpeed}`);
-      
-      if (options.ttsProvider === 'deepgram') {
-        console.log(`🔀 Routing to Deepgram TTS for preview`);
-        try {
-          const { DeepgramTtsService } = await import('./deepgramTts');
-          const deepgramService = new DeepgramTtsService();
-          if (deepgramService.isAvailable()) {
-            const audioBuffer = await deepgramService.generateAudio(limitedText, {
-              voice: options.voice as any,
-              speed: normalizedSpeed,
-              encoding: 'mp3'
-            });
-            console.log(`✅ Voice preview generated successfully with Deepgram (${audioBuffer.length} bytes)`);
-            return audioBuffer;
-          } else {
-            console.warn(`⚠️ Deepgram not available. Falling back to OpenAI...`);
-          }
-        } catch (deepgramError: any) {
-          console.warn(`⚠️ Deepgram preview failed: ${deepgramError.message}. Falling back to OpenAI...`);
-        }
-        // Fallback to OpenAI
-        const response = await openai.audio.speech.create({
-          model: 'gpt-4o-mini-tts',
-          voice: 'alloy' as any,
-          input: limitedText,
-          response_format: 'mp3',
-          speed: normalizedSpeed
-        });
-        const arrayBuffer = await response.arrayBuffer();
-        return Buffer.from(arrayBuffer);
+      if (!this.deepgramTts) {
+        throw new Error('Deepgram TTS service is not available. Please check your DEEPGRAM_API_KEY configuration.');
       }
-      
-      // Use OpenAI for preview (fallback)
-      console.log(`🔀 Routing to OpenAI TTS for preview`);
-      const response = await openai.audio.speech.create({
-        model: options.model,
-        voice: options.voice as any,
-        input: limitedText,
-        response_format: options.format as any,
-        speed: normalizedSpeed,
-      });
 
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      
-      console.log(`✅ Voice preview generated successfully with OpenAI (${buffer.length} bytes)`);
-      return buffer;
+      const audioBuffer = await this.deepgramTts.generateAudio(limitedText, {
+        voice: options.voice as any,
+        speed: normalizedSpeed,
+        encoding: 'mp3'
+      });
+      console.log(`✅ Voice preview generated successfully with Deepgram (${audioBuffer.length} bytes)`);
+      return audioBuffer;
       
     } catch (error: any) {
       console.error('❌ Voice preview generation failed:', error);

@@ -62,7 +62,7 @@ export default function Docs() {
       description: "Transform your books into professional audiobooks.",
       guides: [
         "Select a completed book from your library",
-        "Choose from 80+ premium AI voices (Gemini TTS, Deepgram, OpenAI)",
+        "Choose from 45+ premium Deepgram Aura-2 AI voices",
         "Adjust narration speed (25%-400%)",
         "Select audio format (MP3, Opus, AAC, FLAC)",
         "Generate chapter-by-chapter or complete audiobook",
@@ -150,7 +150,7 @@ export default function Docs() {
     },
     {
       question: "What AI model powers the book generation?",
-      answer: "We primarily use OpenAI GPT-5.2 for fiction and non-fiction generation, character development, and analysis. For audiobooks, we support 80+ voices from Gemini TTS, Deepgram Aura-2, and OpenAI."
+      answer: "We primarily use OpenAI GPT-5.2 for fiction and non-fiction generation, character development, and analysis. For audiobooks, we use Deepgram Aura-2 with 45+ professional AI voices."
     },
     {
       question: "Can I cancel my subscription anytime?",
