@@ -155,8 +155,19 @@ export class AudiobookService {
       const chapter = chapters[i];
       const startTime = Date.now();
 
+      // Heartbeat to prevent frontend stall detection during long chunk processing
+      const heartbeatInterval = setInterval(async () => {
+        try {
+          onProgress?.({
+            currentChapter: i + 1,
+            totalChapters: chapters.length,
+            completedChapters: startFromChapter + (i - startFromChapter),
+            status: 'generating'
+          });
+        } catch {}
+      }, 60000);
+
       try {
-        // Update progress
         onProgress?.({
           currentChapter: i + 1,
           totalChapters: chapters.length,
@@ -166,46 +177,29 @@ export class AudiobookService {
 
         console.log(`🎙️ Generating audio for Chapter ${chapter.chapterNumber}: ${chapter.title}`);
 
-        // Prepare chapter text with title
         const chapterText = this.prepareChapterText(chapter);
         
-        // Generate audio using OpenAI TTS
         const normalizedSpeed = options.speed > 4 ? options.speed / 100 : options.speed;
-        const audioOptions = {
-          ...options,
-          speed: normalizedSpeed
-        };
+        const audioOptions = { ...options, speed: normalizedSpeed };
         console.log(`🔧 Speed conversion: ${options.speed} → ${normalizedSpeed}`);
         let audioBuffer = await this.generateChapterAudio(chapterText, audioOptions);
         
-        // Process audio to meet all KDP audiobook requirements
         console.log(`🔄 Processing Chapter ${chapter.chapterNumber} for KDP compliance (44.1kHz, 192kbps, stereo, loudness normalization, silence padding)...`);
         audioBuffer = await this.processForKDPCompliance(audioBuffer, options.format);
         
-        // Save audio file to object storage
         const audioFileName = `chapter_${String(chapter.chapterNumber).padStart(2, '0')}.${options.format}`;
-        
-        // Use object storage instead of local filesystem
         const objectPath = `${this.objectStorage.getPrivateObjectDir()}/audiobooks/${audiobookId}/${audioFileName}`;
         const contentType = this.getContentType(options.format);
         
         await this.objectStorage.uploadBuffer(audioBuffer, objectPath, contentType);
         
-        // Store object storage path
         const audioPath = objectPath;
         audioFiles.push(audioPath);
-
+        
         const duration = Date.now() - startTime;
         console.log(`✅ Chapter ${chapter.chapterNumber} completed in ${duration}ms`);
 
-        // Apply background music if enabled (temporarily disabled for object storage migration)
-        if (options.backgroundMusic?.enabled) {
-          console.log(`🎵 Background music temporarily disabled during object storage migration`);
-          chapter.audioPath = audioPath;
-        } else {
-          chapter.audioPath = audioPath;
-        }
-
+        chapter.audioPath = audioPath;
         chapter.duration = this.estimateAudioDuration(chapterText, options.speed);
 
       } catch (error) {
@@ -221,6 +215,8 @@ export class AudiobookService {
         });
         
         throw new Error(`Failed to generate audio for Chapter ${chapter.chapterNumber}: ${error}`);
+      } finally {
+        clearInterval(heartbeatInterval);
       }
     }
 

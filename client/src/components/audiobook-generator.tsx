@@ -118,7 +118,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
     
     const now = new Date().getTime();
     const lastUpdated = new Date(audiobook.updatedAt).getTime();
-    const stallThresholdMinutes = 10; // Consider stuck after 10 minutes
+    const stallThresholdMinutes = 25; // Consider stuck after 25 minutes (each chapter can take ~20 min with Deepgram)
     const minutesSinceUpdate = (now - lastUpdated) / (1000 * 60);
     
     if (minutesSinceUpdate > stallThresholdMinutes) {
@@ -455,6 +455,14 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
           'Content-Type': 'application/json',
         },
       });
+
+      if (response.status === 409) {
+        toast({
+          title: "Generation still in progress",
+          description: "The audiobook is still being generated. Each chapter can take up to 20 minutes. Please wait for it to finish.",
+        });
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Resume failed');
