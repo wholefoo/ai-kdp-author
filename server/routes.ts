@@ -4279,6 +4279,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
+      // Prevent concurrent generation - if already generating, don't start another
+      if (audiobook.status === 'generating') {
+        return res.status(409).json({ error: "Audiobook generation is already in progress. Please wait for it to complete or fail before resuming." });
+      }
+
       // Get the novel
       const novel = await storage.getNovel(audiobook.novelId);
       if (!novel) {

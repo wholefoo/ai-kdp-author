@@ -122,7 +122,7 @@ export class DeepgramTtsService {
 
   private async generateAudioWithJobProgress(text: string, options: DeepgramTtsOptions, jobId: string): Promise<Buffer> {
     const format = options.format || 'mp3';
-    const chunks = this.splitTextIntoChunks(text, 2000);
+    const chunks = this.splitTextIntoChunks(text, 1800);
     
     setJobProgress(jobId, { total: chunks.length, done: 0, pct: 0, message: 'Preparing chunks...' });
     
@@ -190,7 +190,7 @@ export class DeepgramTtsService {
     console.log(`🎙️ Generating audio with Deepgram TTS using voice: ${options.voice}`);
     
     try {
-      const chunks = this.splitTextIntoChunks(text, 2000);
+      const chunks = this.splitTextIntoChunks(text, 1800);
       console.log(`📝 Split text into ${chunks.length} chunks for Deepgram TTS processing`);
       
       const audioBuffers: Buffer[] = [];
