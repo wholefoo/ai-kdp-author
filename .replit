@@ -10,6 +10,7 @@ packages = ["ffmpeg"]
 run = ["node", "--enable-source-maps", "dist/index.js"]
 deploymentTarget = "cloudrun"
 build = ["bash", "deploy.sh"]
+publicDir = "dist/public"
 
 [[ports]]
 localPort = 5000
