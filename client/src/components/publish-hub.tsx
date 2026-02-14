@@ -19,7 +19,7 @@ export default function PublishHub({ novel }: PublishHubProps) {
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold text-slate-900">Publish Your Work</h2>
         <p className="text-slate-600 max-w-2xl mx-auto">
-          Export your finished novels in professional formats ready for Amazon KDP, audiobooks, and more.
+          Export your finished novels in professional formats ready for Amazon KDP and more.
         </p>
       </div>
 

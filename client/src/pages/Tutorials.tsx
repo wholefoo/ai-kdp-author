@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowLeft, BookOpen, Headphones, Sparkles, PenTool, Download, Target, PlayCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Sparkles, PenTool, Download, Target, PlayCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Helmet } from "react-helmet-async";
@@ -40,37 +40,6 @@ export default function Tutorials() {
           duration: "35 min",
           level: "Intermediate",
           link: "#editing-content"
-        }
-      ]
-    },
-    {
-      icon: Headphones,
-      title: "Audiobook Creation Tutorials",
-      description: "Learn to create professional audiobooks",
-      lessons: [
-        { 
-          name: "Creating Your First Audiobook",
-          duration: "20 min",
-          level: "Beginner",
-          link: "#first-audiobook"
-        },
-        { 
-          name: "Voice Selection & Customization",
-          duration: "15 min",
-          level: "Beginner",
-          link: "#voice-selection"
-        },
-        { 
-          name: "Audio Format & Quality Optimization",
-          duration: "25 min",
-          level: "Intermediate",
-          link: "#audio-quality"
-        },
-        { 
-          name: "Publishing to Audible & ACX",
-          duration: "30 min",
-          level: "Advanced",
-          link: "#audible-acx"
         }
       ]
     },
@@ -223,7 +192,7 @@ export default function Tutorials() {
     <>
       <Helmet>
         <title>Tutorials - AI KDP Author | Step-by-Step Guides</title>
-        <meta name="description" content="Comprehensive video tutorials and step-by-step guides for AI KDP Author. Learn novel generation, audiobook creation, manuscript analysis, character development, and publishing strategies." />
+        <meta name="description" content="Comprehensive video tutorials and step-by-step guides for AI KDP Author. Learn novel generation, manuscript analysis, character development, and publishing strategies." />
         <link rel="canonical" href="https://aikdpauthor.com/tutorials" />
         <meta property="og:title" content="Tutorials - AI KDP Author | Step-by-Step Guides" />
         <meta property="og:description" content="Master AI KDP Author with our comprehensive tutorial library. Step-by-step guides for all skill levels." />

@@ -15,7 +15,13 @@ import { CharacterConsistencyAnalyzer } from "@/components/character-consistency
 import { NarrativeArcVisualization } from "@/components/narrative-arc-visualization";
 import { AudiobookGenerator } from "@/components/audiobook-generator";
 
+function useIsAdmin() {
+  const { data } = useQuery<any>({ queryKey: ['/api/subscription/status'] });
+  return data?.isAdmin === true;
+}
+
 export default function Library() {
+  const isAdmin = useIsAdmin();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedNovel, setSelectedNovel] = useState<Novel | null>(null);
@@ -544,6 +550,7 @@ export default function Library() {
                               Analyze
                             </Button>
                           
+                            {isAdmin && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -557,6 +564,7 @@ export default function Library() {
                               <Headphones className="h-3 w-3 mr-1" />
                               Audiobook
                             </Button>
+                            )}
 
                             <Button
                               size="sm"

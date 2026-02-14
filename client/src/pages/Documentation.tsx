@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowLeft, BookOpen, Headphones, Sparkles, PenTool, Download, Target, BarChart3, FileText, Wand2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Sparkles, PenTool, Download, Target, BarChart3, FileText, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Helmet } from "react-helmet-async";
@@ -38,16 +38,6 @@ export default function Documentation() {
       ]
     },
     {
-      icon: Headphones,
-      title: "Audiobook Creation",
-      description: "Professional audiobook generation from your books",
-      topics: [
-        { name: "Voice Selection & Preview", link: "/docs/voice-selection" },
-        { name: "Audio Quality & Settings", link: "/docs/audio-settings" },
-        { name: "Background Music Integration", link: "/docs/background-music" }
-      ]
-    },
-    {
       icon: Download,
       title: "Export & Publishing",
       description: "Format and export your books for publishing",
@@ -64,7 +54,7 @@ export default function Documentation() {
     <>
       <Helmet>
         <title>Feature Documentation - AI KDP Author | Technical Reference</title>
-        <meta name="description" content="Comprehensive technical documentation for all AI KDP Author features. Learn about fiction and non-fiction book generation, audiobook creation, manuscript analysis, character development, and publishing tools." />
+        <meta name="description" content="Comprehensive technical documentation for all AI KDP Author features. Learn about fiction and non-fiction book generation, manuscript analysis, character development, and publishing tools." />
         <link rel="canonical" href="https://aikdpauthor.com/documentation" />
         <meta property="og:title" content="Feature Documentation - AI KDP Author | Technical Reference" />
         <meta property="og:description" content="Complete technical reference for AI KDP Author's fiction and non-fiction book generation, analysis, and publishing features." />

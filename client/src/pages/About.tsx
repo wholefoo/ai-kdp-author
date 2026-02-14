@@ -45,7 +45,7 @@ export default function About() {
               Generate complete, publishable fiction and non-fiction books for Amazon KDP
             </p>
             <p className="text-base text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-              From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word books, audiobooks, and comprehensive analysis tools - all powered by advanced AI.
+              From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word books and comprehensive analysis tools - all powered by advanced AI.
             </p>
           </div>
         </div>

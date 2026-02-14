@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Lock, BookOpen, Headphones, Sparkles } from "lucide-react";
+import { Crown, Lock, BookOpen, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -107,10 +107,10 @@ export default function SubscriptionGuard({ children, feature, requiresPro = tru
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg">
-                <Headphones className="h-6 w-6 text-purple-600" />
+                <Sparkles className="h-6 w-6 text-purple-600" />
                 <div>
-                  <h4 className="font-medium text-purple-800">Audiobooks</h4>
-                  <p className="text-sm text-purple-600">Professional quality</p>
+                  <h4 className="font-medium text-purple-800">Publishing Tools</h4>
+                  <p className="text-sm text-purple-600">KDP-ready formats</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">

@@ -3846,8 +3846,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Audiobook generation routes
+  // Admin-only audiobook check helper
+  const requireAdminForAudiobook = async (req: any, res: any): Promise<boolean> => {
+    const userId = req.user?.claims?.sub;
+    if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return false; }
+    const dbUser = await storage.getUser(userId);
+    if (!dbUser?.isAdmin) { res.status(403).json({ error: 'Admin access required' }); return false; }
+    return true;
+  };
+
+  // Audiobook generation routes (admin-only)
   app.post("/api/audiobook/generate", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const { novelId, voice = 'aura-2-athena-en', speed = 100, format = 'mp3', selectedChapters } = req.body;
 
@@ -4036,6 +4046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get audiobooks for a specific novel
   app.get("/api/novel/:novelId/audiobooks", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const { novelId } = req.params;
       if (!novelId || typeof novelId !== 'string') {
@@ -4095,6 +4106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Generate voice preview sample
   app.post("/api/audiobook/voice-preview", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const { voice, sampleText, speed = 100 } = req.body;
       
@@ -4139,6 +4151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Download audiobook as ZIP file
   app.get("/api/audiobook/:id/download", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobookId = req.params.id;
       if (!audiobookId || typeof audiobookId !== 'string') {
@@ -4184,6 +4197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Preview first chapter of audiobook
   app.get("/api/audiobook/:id/preview", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobook = await storage.getAudiobook(req.params.id);
       if (!audiobook) {
@@ -4208,6 +4222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get audiobook status and details
   app.get("/api/audiobook/:id", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobook = await storage.getAudiobook(req.params.id);
       if (!audiobook) {
@@ -4222,6 +4237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get user's audiobooks
   app.get("/api/audiobooks", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const userId = req.user?.claims?.sub;
       const audiobooks = await storage.getUserAudiobooks(userId);
@@ -4234,6 +4250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Resume audiobook generation
   app.post("/api/audiobook/:id/resume", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobookId = req.params.id;
       const userId = req.user?.claims?.sub;
@@ -4397,6 +4414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Download sample chapters (first 10 chapters for testing)
   app.get("/api/audiobook/:id/download-sample", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobookId = req.params.id;
       const userId = req.user?.claims?.sub;
@@ -4444,6 +4462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Download partial audiobook (completed chapters only)
   app.get("/api/audiobook/:id/download-partial", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobookId = req.params.id;
       const userId = req.user?.claims?.sub;
@@ -4516,6 +4535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Download audiobook in chunks (production-friendly)
   app.get("/api/audiobook/:id/download-chunked", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobookId = req.params.id;
       const userId = req.user?.claims?.sub;
@@ -4594,6 +4614,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get audiobook chunk info
   app.get("/api/audiobook/:id/chunks", isAuthenticated, async (req: any, res) => {
+    if (!(await requireAdminForAudiobook(req, res))) return;
     try {
       const audiobookId = req.params.id;
       const userId = req.user?.claims?.sub;

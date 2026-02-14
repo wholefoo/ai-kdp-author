@@ -5,7 +5,7 @@ import { Helmet } from "react-helmet-async";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { 
   BookOpen, 
-  Headphones, 
+  FileText, 
   Sparkles, 
   Zap, 
   Check, 
@@ -36,14 +36,14 @@ export default function MarketingLanding() {
       ]
     },
     {
-      icon: Headphones,
-      title: "Professional Audiobook Creation",
-      description: "Transform your books into high-quality audiobooks with 45+ Deepgram Aura-2 AI voices, smart narration processing, and KDP-compliant audio formats.",
+      icon: FileText,
+      title: "Professional Manuscript Formatting",
+      description: "Format your manuscripts to professional publishing standards with automated layout, typography, and export options for multiple platforms.",
       details: [
-        "45+ premium Deepgram Aura-2 voices for professional narration",
-        "Smart text processor with dialogue detection and natural pauses",
-        "5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)",
-        "Per-chunk caching with job persistence and resume capability"
+        "Industry-standard formatting with proper margins and typography",
+        "Automated front matter, chapter headings, and page breaks",
+        "Non-fiction bibliography with APA-style citations",
+        "Multiple format exports optimized for different platforms"
       ]
     },
     {
@@ -110,9 +110,9 @@ export default function MarketingLanding() {
       steps: ["Choose fiction or non-fiction", "Set word count and style preferences", "Generate outline and review", "Create chapters automatically", "Export for publishing"]
     },
     {
-      title: "Creating Professional Audiobooks",
-      description: "Transform your written books into engaging audiobooks with professional-quality narration and audio formatting.",
-      steps: ["Select completed book", "Choose voice and speed settings", "Configure audio format", "Generate audiobook chapters", "Download complete audiobook"]
+      title: "Publishing to Amazon KDP",
+      description: "Prepare and format your completed manuscript for successful publication on Amazon Kindle Direct Publishing.",
+      steps: ["Format manuscript to KDP standards", "Generate front matter and table of contents", "Export as KDP-ready DOCX", "Create marketing description and metadata", "Upload to Amazon KDP"]
     },
     {
       title: "Character Development Workshop",
@@ -129,7 +129,7 @@ export default function MarketingLanding() {
   const pricing = {
     monthly: 29,
     features: [
-      "Complete audiobook creation",
+      "Professional manuscript formatting",
       "Advanced AI analysis tools",
       "Character development workshop",
       "Plot inspiration vault",
@@ -157,8 +157,8 @@ export default function MarketingLanding() {
       answer: "AI KDP Author supports all major fiction genres including Romance, Mystery/Thriller, Science Fiction, Fantasy, Horror, Literary Fiction, Historical Fiction, Young Adult, and more. Each genre uses specialized AI prompts to ensure authentic genre conventions, tropes, and reader expectations are met."
     },
     {
-      question: "How does the audiobook generation work?",
-      answer: "AI KDP Author uses Deepgram Aura-2 with 45+ professional AI voices for audiobook narration. Our smart text processor includes dialogue detection, natural pause insertion, and 5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)."
+      question: "How does the manuscript formatting work?",
+      answer: "AI KDP Author automatically formats your manuscript to professional publishing standards. This includes proper margins, typography, chapter headings, page breaks, front matter, and table of contents — all optimized for Amazon KDP submission."
     },
     {
       question: "What word count and chapter options are available?",
@@ -166,7 +166,7 @@ export default function MarketingLanding() {
     },
     {
       question: "Is there a free trial available?",
-      answer: "Trial users can access the Manuscript Quality Analyzer feature to test our analysis capabilities. The full novel generation, audiobook creation, and export features require a Pro subscription at $29/month. We offer a 30-day money-back guarantee on all subscriptions."
+      answer: "Trial users can access the Manuscript Quality Analyzer feature to test our analysis capabilities. The full novel generation and export features require a Pro subscription at $29/month. We offer a 30-day money-back guarantee on all subscriptions."
     },
     {
       question: "What AI models power the novel generation?",
@@ -203,14 +203,13 @@ export default function MarketingLanding() {
     "name": "AI KDP Author",
     "applicationCategory": "Writing Assistant",
     "operatingSystem": "Web Browser",
-    "description": "AI-powered novel generation platform that creates complete 50,000-80,000 word novels with 20-30 chapters, professional audiobook narration with 80+ voices, and KDP-ready formatting.",
+    "description": "AI-powered novel generation platform that creates complete 50,000-80,000 word novels with 20-30 chapters, professional manuscript formatting, and KDP-ready exports.",
     "featureList": [
       "Complete novel generation (50,000-80,000 words)",
       "20-30 professionally structured chapters",
-      "80+ AI voices for audiobook creation",
-      "5 narration presets (audiobook, conversational, documentary, bedtime, dramatic)",
       "GPT-5.2 powered content generation",
       "KDP-ready DOCX, PDF, TXT, Markdown exports",
+      "Professional manuscript formatting",
       "Character consistency analyzer",
       "Narrative arc visualization",
       "AI-powered marketing content generation"
@@ -241,16 +240,16 @@ export default function MarketingLanding() {
     <div className="min-h-screen bg-white">
       <Helmet>
         <title>AI KDP Author - Generate Complete Novels for Amazon KDP Publishing</title>
-        <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with GPT-5.2. Generate complete manuscripts with 20-30 chapters, audiobooks with 80+ AI voices, and marketing content. Perfect for Amazon KDP publishing." />
+        <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with GPT-5.2. Generate complete manuscripts with 20-30 chapters, professional formatting, and marketing content. Perfect for Amazon KDP publishing." />
         <link rel="canonical" href="https://aikdpauthor.com/home" />
         <meta property="og:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP Publishing" />
-        <meta property="og:description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts, audiobooks with 80+ voices, and get quality analysis tools." />
+        <meta property="og:description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts with professional formatting and quality analysis tools." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aikdpauthor.com/home" />
         <meta property="og:site_name" content="AI KDP Author" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP" />
-        <meta name="twitter:description" content="Create 50,000-80,000 word novels with GPT-5.2. 80+ AI voices for audiobooks. KDP-ready formatting." />
+        <meta name="twitter:description" content="Create 50,000-80,000 word novels with GPT-5.2. Professional manuscript formatting. KDP-ready exports." />
         <script type="application/ld+json">{JSON.stringify(jsonLdOrganization)}</script>
         <script type="application/ld+json">{JSON.stringify(jsonLdWebsite)}</script>
         <script type="application/ld+json">{JSON.stringify(jsonLdSoftwareApplication)}</script>
@@ -278,7 +277,7 @@ export default function MarketingLanding() {
           </p>
           
           <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
-            From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word novels, audiobooks with 80+ AI voices, and marketing content - all powered by GPT-5.2.
+            From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word novels with professional formatting and marketing content - all powered by GPT-5.2.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -332,8 +331,8 @@ export default function MarketingLanding() {
               <div className="text-sm text-gray-600">Chapters generated</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-green-600">80+</div>
-              <div className="text-sm text-gray-600">AI voice options</div>
+              <div className="text-3xl font-bold text-green-600">17+</div>
+              <div className="text-sm text-gray-600">Genre categories</div>
             </div>
             <div className="space-y-2">
               <div className="text-3xl font-bold text-orange-600">Multiple</div>
@@ -577,7 +576,7 @@ export default function MarketingLanding() {
             <div className="text-center">
               <div className="bg-orange-100 text-orange-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">4</div>
               <h3 className="font-semibold text-lg mb-2">Export & Publish</h3>
-              <p className="text-gray-600 text-sm">Download KDP-ready DOCX, create audiobooks with 80+ voices, and use AI marketing tools to launch your book.</p>
+              <p className="text-gray-600 text-sm">Download KDP-ready DOCX with professional formatting and use AI marketing tools to launch your book.</p>
             </div>
           </div>
         </div>
@@ -629,7 +628,7 @@ export default function MarketingLanding() {
                 <span className="text-xl font-bold text-white">AI KDP Author</span>
               </div>
               <p className="text-sm leading-relaxed mb-4">
-                Professional AI-powered novel generation and publishing tools for Amazon KDP authors. Create complete 50,000-80,000 word novels with 80+ AI voices for audiobooks.
+                Professional AI-powered novel generation and publishing tools for Amazon KDP authors. Create complete 50,000-80,000 word novels with professional formatting.
               </p>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
@@ -647,7 +646,7 @@ export default function MarketingLanding() {
               <h4 className="text-white font-semibold mb-4">Features</h4>
               <div className="space-y-2 text-sm">
                 <div>Novel Generation (30K-120K words)</div>
-                <div>Audiobook Creation (80+ voices)</div>
+                <div>Manuscript Formatting</div>
                 <div>Character Development</div>
                 <div>Quality Analysis</div>
                 <div>Marketing Tools</div>
@@ -701,7 +700,7 @@ export default function MarketingLanding() {
             <div className="flex flex-col md:flex-row justify-between items-center text-sm">
               <p>&copy; 2025 AI KDP Author. All rights reserved.</p>
               <p className="mt-2 md:mt-0 text-gray-500">
-                Powered by GPT-5.2 | Deepgram Aura-2
+                Powered by GPT-5.2
               </p>
             </div>
           </div>

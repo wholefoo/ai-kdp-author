@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowLeft, BookOpen, Headphones, Sparkles, PenTool, Download, Target, BarChart3, CheckCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Sparkles, PenTool, Download, Target, BarChart3, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Helmet } from "react-helmet-async";
@@ -54,19 +54,6 @@ export default function Docs() {
         "Set chapter count from 10-50 chapters",
         "Non-fiction includes automatic source verification and bibliography",
         "Review and edit AI-generated outlines before full generation"
-      ]
-    },
-    {
-      icon: Headphones,
-      title: "Audiobook Creation",
-      description: "Transform your books into professional audiobooks.",
-      guides: [
-        "Select a completed book from your library",
-        "Choose from 45+ premium Deepgram Aura-2 AI voices",
-        "Adjust narration speed (25%-400%)",
-        "Select audio format (MP3, Opus, AAC, FLAC)",
-        "Generate chapter-by-chapter or complete audiobook",
-        "Download with metadata and chapter markers"
       ]
     },
     {
@@ -145,12 +132,8 @@ export default function Docs() {
       answer: "Yes! You can upload existing DOCX manuscripts to use our analysis tools, including character consistency checking, style analysis, and quality scoring."
     },
     {
-      question: "Are the audiobooks royalty-free?",
-      answer: "All content generated through AI KDP Author is yours to use commercially. You can publish audiobooks on Audible, ACX, or any other platform."
-    },
-    {
       question: "What AI model powers the book generation?",
-      answer: "We primarily use OpenAI GPT-5.2 for fiction and non-fiction generation, character development, and analysis. For audiobooks, we use Deepgram Aura-2 with 45+ professional AI voices."
+      answer: "We primarily use OpenAI GPT-5.2 for fiction and non-fiction generation, character development, and analysis."
     },
     {
       question: "Can I cancel my subscription anytime?",
@@ -162,10 +145,10 @@ export default function Docs() {
     <>
       <Helmet>
         <title>Documentation - AI KDP Author | Complete User Guide</title>
-        <meta name="description" content="Complete documentation for AI KDP Author. Learn how to generate fiction and non-fiction books, create audiobooks, analyze manuscripts, and publish to Amazon KDP with our comprehensive guides and tutorials." />
+        <meta name="description" content="Complete documentation for AI KDP Author. Learn how to generate fiction and non-fiction books, analyze manuscripts, and publish to Amazon KDP with our comprehensive guides and tutorials." />
         <link rel="canonical" href="https://aikdpauthor.com/docs" />
         <meta property="og:title" content="Documentation - AI KDP Author | Complete User Guide" />
-        <meta property="og:description" content="Master AI KDP Author with our complete documentation. Step-by-step guides for fiction and non-fiction book generation, audiobook creation, and Amazon KDP publishing." />
+        <meta property="og:description" content="Master AI KDP Author with our complete documentation. Step-by-step guides for fiction and non-fiction book generation and Amazon KDP publishing." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aikdpauthor.com/docs" />
       </Helmet>

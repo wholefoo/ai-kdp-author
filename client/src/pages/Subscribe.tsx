@@ -4,7 +4,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Zap, BookOpen, Headphones, Sparkles, Star, Infinity, Heart, Users, Rocket } from "lucide-react";
+import { Check, Crown, Zap, BookOpen, Sparkles, Star, Infinity, Heart, Users, Rocket } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,7 +57,6 @@ const subscriptionTiers: SubscriptionTier[] = [
     features: [
       '20 books per month (fiction & non-fiction)',
       'Everything in Basic',
-      'Advanced audiobook generation',
       'Priority AI processing',
       'Advanced style customization',
       'Batch manuscript processing',
