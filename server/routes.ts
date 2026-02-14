@@ -4249,9 +4249,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Prevent concurrent generation - if already generating, don't start another
       if (audiobook.status === 'generating') {
-        return res.status(409).json({ error: "Audiobook generation is already in progress. Please wait for it to complete or fail before resuming." });
+        const updatedAt = audiobook.updatedAt ? new Date(audiobook.updatedAt).getTime() : 0;
+        const minutesSinceUpdate = (Date.now() - updatedAt) / (1000 * 60);
+        const ZOMBIE_THRESHOLD_MINUTES = 30;
+
+        if (minutesSinceUpdate < ZOMBIE_THRESHOLD_MINUTES) {
+          return res.status(409).json({ error: "Audiobook generation is already in progress. Please wait for it to complete or fail before resuming." });
+        }
+
+        console.log(`⚠️ Audiobook ${audiobookId} has been "generating" for ${Math.floor(minutesSinceUpdate)} minutes with no updates. Treating as stale and allowing resume.`);
+        await storage.updateAudiobook(audiobookId, { status: 'partial_completed' });
       }
 
       // Get the novel
