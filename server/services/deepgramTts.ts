@@ -194,14 +194,39 @@ export class DeepgramTtsService {
       console.log(`📝 Split text into ${chunks.length} chunks for Deepgram TTS processing`);
       
       const audioBuffers: Buffer[] = [];
+      const MAX_CHUNK_RETRIES = 3;
+      const CHUNK_RETRY_DELAY_MS = 5000;
       
       for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        console.log(`🎵 Processing Deepgram chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
-        
-        const audioBuffer = await this.synthesizeChunk(chunk, options);
-        audioBuffers.push(audioBuffer);
-        console.log(`✅ Deepgram chunk ${i + 1} completed (${audioBuffer.length} bytes)`);
+        let chunkBuffer: Buffer | null = null;
+
+        for (let attempt = 1; attempt <= MAX_CHUNK_RETRIES; attempt++) {
+          try {
+            if (attempt > 1) {
+              console.log(`🔄 Retrying Deepgram chunk ${i + 1}/${chunks.length} (attempt ${attempt}/${MAX_CHUNK_RETRIES})`);
+            } else {
+              console.log(`🎵 Processing Deepgram chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
+            }
+            
+            chunkBuffer = await this.synthesizeChunk(chunk, options);
+            console.log(`✅ Deepgram chunk ${i + 1} completed (${chunkBuffer.length} bytes)${attempt > 1 ? ` (attempt ${attempt})` : ''}`);
+            break;
+          } catch (error: any) {
+            console.error(`❌ Deepgram chunk ${i + 1} attempt ${attempt}/${MAX_CHUNK_RETRIES} failed: ${error.message}`);
+            if (attempt < MAX_CHUNK_RETRIES) {
+              const delay = CHUNK_RETRY_DELAY_MS * attempt;
+              console.log(`⏳ Waiting ${delay / 1000}s before chunk retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+              throw error;
+            }
+          }
+        }
+
+        if (chunkBuffer) {
+          audioBuffers.push(chunkBuffer);
+        }
       }
       
       const finalBuffer = Buffer.concat(audioBuffers);
@@ -217,6 +242,12 @@ export class DeepgramTtsService {
   private async synthesizeChunk(text: string, options: DeepgramTtsOptions): Promise<Buffer> {
     const encoding = options.encoding || 'mp3';
     const url = `${this.baseUrl}?model=${options.voice}&encoding=${encoding}`;
+    const HARD_TIMEOUT_MS = 90000;
+    
+    const controller = new AbortController();
+    const hardTimeout = setTimeout(() => {
+      controller.abort();
+    }, HARD_TIMEOUT_MS);
     
     try {
       const response = await axios.post(
@@ -229,11 +260,16 @@ export class DeepgramTtsService {
           },
           responseType: 'arraybuffer',
           timeout: 60000,
+          signal: controller.signal,
         }
       );
 
       return Buffer.from(response.data);
     } catch (error: any) {
+      if (error.code === 'ERR_CANCELED' || error.name === 'CanceledError' || error.message?.includes('aborted')) {
+        console.error(`❌ Deepgram request timed out after ${HARD_TIMEOUT_MS / 1000}s (hard timeout)`);
+        throw new Error(`Deepgram request timed out after ${HARD_TIMEOUT_MS / 1000}s`);
+      }
       if (error.response?.status === 401) {
         console.error('❌ Authentication failed - Deepgram API key may be invalid');
         throw new Error('Invalid Deepgram API key');
@@ -243,6 +279,8 @@ export class DeepgramTtsService {
         throw new Error('Text too large for single request');
       }
       throw error;
+    } finally {
+      clearTimeout(hardTimeout);
     }
   }
 
