@@ -58,6 +58,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
   const selectedModel = 'aura-2';
   const [selectedSpeed, setSelectedSpeed] = useState(100);
   const [selectedFormat, setSelectedFormat] = useState('mp3');
+  const [highQuality, setHighQuality] = useState(true);
   
   // Chapter selection state
   const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
@@ -261,6 +262,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
       model: string;
       speed: number;
       format: string;
+      highQuality?: boolean;
       selectedChapters?: number[];
       backgroundMusic?: {
         enabled: boolean;
@@ -295,6 +297,7 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
       model: selectedModel,
       speed: selectedSpeed,
       format: selectedFormat,
+      highQuality,
       selectedChapters: selectedChapters.length === chapters.length ? undefined : selectedChapters, // Only send selectedChapters if partial selection
       backgroundMusic: backgroundMusicEnabled ? {
         enabled: true,
@@ -700,6 +703,26 @@ export function AudiobookGenerator({ novelId, novelTitle, onClose }: AudiobookGe
                   <SelectItem value="flac">FLAC (Lossless)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Audio Quality */}
+            <div className="space-y-2 p-4 border rounded-lg bg-accent/10">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="high-quality" className="text-sm font-medium">High Quality Audio</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {highQuality 
+                      ? "PCM encoding at 192 kbps CBR — larger files, professional quality" 
+                      : "Standard Deepgram encoding — smaller files, good quality"}
+                  </p>
+                </div>
+                <Switch
+                  id="high-quality"
+                  checked={highQuality}
+                  onCheckedChange={setHighQuality}
+                  data-testid="switch-high-quality"
+                />
+              </div>
             </div>
 
             {/* Background Music */}

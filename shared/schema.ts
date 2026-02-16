@@ -316,6 +316,7 @@ export const audiobooks = pgTable("audiobooks", {
   model: varchar("model").notNull().default("aura-2"),
   speed: integer("speed").default(100), // 25-400 (stored as percentage)
   format: varchar("format").default("mp3"), // mp3, opus, aac, flac
+  highQuality: boolean("high_quality").default(false),
   status: text("status").notNull().default("pending"), // pending, generating, completed, failed, partial_completed
   progress: jsonb("progress").default({}),
   chapters: jsonb("chapters").default([]), // Array of chapter information with audioPath
@@ -338,6 +339,7 @@ export const insertAudiobookSchema = createInsertSchema(audiobooks).pick({
   model: true,
   speed: true,
   format: true,
+  highQuality: true,
   selectedChapters: true,
 });
 

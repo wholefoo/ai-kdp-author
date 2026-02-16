@@ -182,6 +182,73 @@ export class DeepgramTtsService {
     return audioBuffer;
   }
 
+  async generateHighQualityAudio(text: string, options: DeepgramTtsOptions): Promise<Buffer> {
+    if (!this.apiKey) {
+      throw new Error('DEEPGRAM_API_KEY environment variable is not set');
+    }
+
+    const format = options.format || 'mp3';
+    console.log(`🎙️ Generating HIGH QUALITY audio with Deepgram TTS (PCM → ${format} @ 192kbps) using voice: ${options.voice}`);
+
+    try {
+      const chunks = this.splitTextIntoChunks(text, 1800);
+      console.log(`📝 Split text into ${chunks.length} chunks for high-quality processing`);
+
+      const pcmBuffers: Buffer[] = [];
+      const MAX_CHUNK_RETRIES = 3;
+      const CHUNK_RETRY_DELAY_MS = 5000;
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        let pcm: Buffer | null = null;
+
+        for (let attempt = 1; attempt <= MAX_CHUNK_RETRIES; attempt++) {
+          try {
+            if (attempt > 1) {
+              console.log(`🔄 Retrying HQ chunk ${i + 1}/${chunks.length} (attempt ${attempt}/${MAX_CHUNK_RETRIES})`);
+            } else {
+              console.log(`🎵 Processing HQ chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
+            }
+
+            pcm = await this.synthesizeChunkToPcm(chunk, options);
+            console.log(`✅ HQ chunk ${i + 1} completed (${pcm.length} bytes PCM)${attempt > 1 ? ` (attempt ${attempt})` : ''}`);
+            break;
+          } catch (error: any) {
+            console.error(`❌ HQ chunk ${i + 1} attempt ${attempt}/${MAX_CHUNK_RETRIES} failed: ${error.message}`);
+            if (attempt < MAX_CHUNK_RETRIES) {
+              const delay = CHUNK_RETRY_DELAY_MS * attempt;
+              console.log(`⏳ Waiting ${delay / 1000}s before chunk retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+              throw error;
+            }
+          }
+        }
+
+        if (pcm) {
+          pcmBuffers.push(pcm);
+        }
+      }
+
+      const assembled: Buffer[] = [];
+      for (let i = 0; i < pcmBuffers.length; i++) {
+        assembled.push(pcmBuffers[i]);
+        if (i < pcmBuffers.length - 1) {
+          assembled.push(makeSilencePcm(120));
+        }
+      }
+
+      const fullPcm = Buffer.concat(assembled);
+      const outputBuffer = await pcmToFormatBuffer(fullPcm, { format, bitrateKbps: 192 });
+
+      console.log(`✅ High-quality audio completed: ${pcmBuffers.length} chunks → ${outputBuffer.length} bytes (${format} @ 192kbps)`);
+      return outputBuffer;
+    } catch (error: any) {
+      console.error('❌ High-quality Deepgram TTS error:', error.message);
+      throw new Error(`Failed to generate high-quality audio: ${error.message}`);
+    }
+  }
+
   async generateAudio(text: string, options: DeepgramTtsOptions): Promise<Buffer> {
     if (!this.apiKey) {
       throw new Error('DEEPGRAM_API_KEY environment variable is not set');

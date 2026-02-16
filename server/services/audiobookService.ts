@@ -14,6 +14,7 @@ export interface AudiobookOptions {
   model: 'aura-2';
   speed: number; // 0.25 to 4.0
   format: 'mp3' | 'opus' | 'aac' | 'flac';
+  highQuality?: boolean;
   backgroundMusic?: {
     enabled: boolean;
     musicType: 'ambient' | 'classical' | 'cinematic' | 'nature' | 'fantasy' | 'mystery' | 'custom';
@@ -267,13 +268,23 @@ export class AudiobookService {
     }
 
     try {
-      const audioBuffer = await this.deepgramTts.generateAudio(text, {
+      const resolvedFormat = options.format === 'flac' ? 'wav' as const : options.format;
+      const ttsOptions = {
         voice: options.voice as DeepgramVoice,
         speed: options.speed,
-        encoding: options.format === 'mp3' ? 'mp3' : options.format === 'aac' ? 'aac' : options.format === 'opus' ? 'opus' : 'mp3',
-      });
+        encoding: (resolvedFormat === 'mp3' ? 'mp3' : resolvedFormat === 'aac' ? 'aac' : resolvedFormat === 'opus' ? 'opus' : 'mp3') as 'mp3' | 'aac' | 'opus',
+        format: resolvedFormat as 'mp3' | 'wav' | 'aac' | 'opus',
+      };
 
-      console.log(`✅ Deepgram TTS completed (${audioBuffer.length} bytes)`);
+      let audioBuffer: Buffer;
+      if (options.highQuality) {
+        console.log(`🔊 Using HIGH QUALITY mode (PCM → ${options.format} @ 192kbps)`);
+        audioBuffer = await this.deepgramTts.generateHighQualityAudio(text, ttsOptions);
+      } else {
+        audioBuffer = await this.deepgramTts.generateAudio(text, ttsOptions);
+      }
+
+      console.log(`✅ Deepgram TTS completed (${audioBuffer.length} bytes, quality: ${options.highQuality ? 'high' : 'standard'})`);
       return audioBuffer;
 
     } catch (error: any) {

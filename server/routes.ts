@@ -3859,7 +3859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/audiobook/generate", isAuthenticated, async (req: any, res) => {
     if (!(await requireAdminForAudiobook(req, res))) return;
     try {
-      const { novelId, voice = 'aura-2-athena-en', speed = 100, format = 'mp3', selectedChapters } = req.body;
+      const { novelId, voice = 'aura-2-athena-en', speed = 100, format = 'mp3', selectedChapters, highQuality = false } = req.body;
 
       if (!novelId) {
         return res.status(400).json({ error: "Novel ID is required" });
@@ -3932,6 +3932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         model: 'aura-2' as any,
         speed,
         format: format as any,
+        highQuality: highQuality === true,
         selectedChapters: selectedChapterIndices,
       });
 
@@ -3957,6 +3958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 model: 'aura-2' as any,
                 speed: speed / 100,
                 format: format as any,
+                highQuality: highQuality === true,
                 backgroundMusic: req.body.backgroundMusic ? {
                   enabled: Boolean(req.body.backgroundMusic.enabled),
                   musicType: typeof req.body.backgroundMusic.musicType === 'string' ? req.body.backgroundMusic.musicType : 'ambient',
@@ -4319,6 +4321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 model: 'aura-2' as any,
                 speed: (audiobook.speed || 100) / 100,
                 format: audiobook.format as any,
+                highQuality: audiobook.highQuality === true,
               },
               audiobookId,
               async (progress) => {
