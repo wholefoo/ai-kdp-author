@@ -9,6 +9,7 @@ Manuscript formatting preference: Aptos font instead of Times New Roman for DOCX
 Download preferences: Remove unformatted DOCX download option from manuscripts (only TXT and MD needed).
 Library preferences: Completely removed manuscript library - only book library should be used for all functionality.
 Subscription model preference: Trial users get only "Refine (Analyze & improve)" feature, while "Create (Generate your book)" and "Publish (Export & share)" require Pro subscription.
+Subscription plans: Only 2 plans — Pro ($49/month, 1 book/month) and Founders ($2,500 one-time, 5 books/month, lifetime access). Basic and Premium plans removed.
 Content types: Both fiction (novels) and non-fiction are supported with dedicated generation flows.
 Paragraph indentation: No paragraph indentation in DOCX exports (clean left-aligned text).
 
