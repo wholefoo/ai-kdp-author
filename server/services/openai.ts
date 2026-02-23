@@ -77,7 +77,7 @@ interface NonFictionChapterResult {
 
 // the newest OpenAI model is "gpt-5.2" which is the latest flagship model. GPT-4.1-mini is used as the budget fallback.
 export const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder",
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 

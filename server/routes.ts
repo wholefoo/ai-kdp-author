@@ -388,7 +388,7 @@ function inferGenre(content: string): string {
 
 // Initialize OpenAI for manuscript analysis
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder",
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
@@ -5693,7 +5693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Topic is required' });
       }
 
-      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY, baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
+      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder", baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
       
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -5725,7 +5725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Topic is required' });
       }
 
-      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY, baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
+      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder", baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
       
       const systemPrompt = `You are a professional content writer specializing in Amazon KDP and self-publishing. Write comprehensive, SEO-optimized blog content in markdown format for the category: ${category || 'General'}.`;
       
@@ -5774,12 +5774,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Topic is required' });
       }
 
-      if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
-        console.error('Error: AI_INTEGRATIONS_OPENAI_API_KEY not found');
+      if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY && !process.env.OPENAI_API_KEY) {
+        console.error('Error: AI_INTEGRATIONS_OPENAI_API_KEY or OPENAI_API_KEY not found');
         return res.status(500).json({ error: 'OpenAI API key not configured' });
       }
 
-      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY, baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
+      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder", baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
       
       const systemPrompt = `You are a professional content writer and SEO specialist for Amazon KDP and self-publishing. Generate a complete, publication-ready blog post with title, excerpt, content, and tags.`;
       
@@ -5842,7 +5842,7 @@ Return ONLY valid JSON, no additional text.`;
         return res.status(400).json({ error: 'Content is required' });
       }
 
-      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY, baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
+      const openai = new OpenAI({ apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder", baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL });
       
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",

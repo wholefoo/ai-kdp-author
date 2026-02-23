@@ -3,7 +3,7 @@ import { aiService } from "./aiService";
 
 // Updated to use unified AI service with GPT-5.1 primary and GPT-4o fallback
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "placeholder",
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
