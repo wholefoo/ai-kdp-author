@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 import type { Novel, MarketingCampaign, UpdateMarketingCampaign } from "@shared/schema";
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
+const openai = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
 export interface SocialMediaPost {

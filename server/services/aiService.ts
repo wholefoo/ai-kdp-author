@@ -2,7 +2,8 @@ import OpenAI from "openai";
 
 // AI service with GPT-5.2 primary and GPT-4.1-mini emergency fallback
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
 // Model configuration
@@ -32,7 +33,7 @@ export interface AIResponse {
 export class UnifiedAIService {
   private async callOpenAI(request: AIRequest, modelName: string = PRIMARY_MODEL): Promise<AIResponse> {
     // Check API key availability
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
       throw new Error("OpenAI API key not configured");
     }
 
