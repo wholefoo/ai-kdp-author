@@ -131,7 +131,7 @@ export default function SubscriptionGuard({ children, feature, requiresPro = tru
                 <div className="flex flex-wrap justify-center gap-2 text-sm">
                   <Badge variant="secondary">30-day guarantee</Badge>
                   <Badge variant="secondary">Cancel anytime</Badge>
-                  <Badge variant="secondary">Unlimited novels</Badge>
+                  <Badge variant="secondary">1 book per month</Badge>
                 </div>
               </div>
               

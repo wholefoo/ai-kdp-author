@@ -127,15 +127,17 @@ export default function MarketingLanding() {
   ];
 
   const pricing = {
-    monthly: 29,
+    monthly: 49,
     features: [
-      "Professional manuscript formatting",
-      "Advanced AI analysis tools",
-      "Character development workshop",
-      "Plot inspiration vault",
-      "Publishing-ready exports",
-      "Quality control analytics",
-      "Premium support"
+      "1 book per month (fiction & non-fiction)",
+      "Complete 50K-80K word manuscripts",
+      "Amazon KDP-ready formatting",
+      "Character development tools",
+      "Quality analysis tools",
+      "Professional exports (DOCX, PDF)",
+      "Priority AI processing",
+      "Advanced style customization",
+      "Priority support"
     ]
   };
 
@@ -166,7 +168,7 @@ export default function MarketingLanding() {
     },
     {
       question: "Is there a free trial available?",
-      answer: "Trial users can access the Manuscript Quality Analyzer feature to test our analysis capabilities. The full novel generation and export features require a Pro subscription at $29/month. We offer a 30-day money-back guarantee on all subscriptions."
+      answer: "Trial users can access the Manuscript Quality Analyzer feature to test our analysis capabilities. The full novel generation and export features require a Pro subscription at $49/month. We offer a 30-day money-back guarantee on all subscriptions."
     },
     {
       question: "What AI models power the novel generation?",
@@ -288,7 +290,7 @@ export default function MarketingLanding() {
               data-testid="button-start-trial"
             >
               <Crown className="h-5 w-5 mr-2" />
-              Start Creating Novels - $29/month
+              Start Creating Novels - $49/month
             </Button>
             <Button 
               size="lg" 
@@ -475,7 +477,7 @@ export default function MarketingLanding() {
                 data-testid="button-subscribe"
               >
                 <Crown className="h-5 w-5 mr-2" />
-                Start Creating Novels Now
+                Start Creating Novels - $49/month
               </Button>
               
               <div className="mt-6 pt-6 border-t">
@@ -660,7 +662,7 @@ export default function MarketingLanding() {
                   <a href="/api/login" className="hover:text-white transition-colors" data-testid="link-footer-login">Login</a>
                 </div>
                 <div>
-                  <a href="/subscribe" className="hover:text-white transition-colors" data-testid="link-footer-subscribe">Subscribe ($29/mo)</a>
+                  <a href="/subscribe" className="hover:text-white transition-colors" data-testid="link-footer-subscribe">Subscribe ($49/mo)</a>
                 </div>
                 <div>
                   <a href="#faq" className="hover:text-white transition-colors" data-testid="link-footer-faq">FAQ</a>

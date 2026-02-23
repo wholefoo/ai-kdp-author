@@ -30,33 +30,20 @@ type SubscriptionTier = {
 
 const subscriptionTiers: SubscriptionTier[] = [
   {
-    id: 'basic',
-    name: 'Basic',
-    price: 29,
-    novelLimit: 5,
-    description: 'Perfect for occasional writers',
-    icon: BookOpen,
+    id: 'pro',
+    name: 'Pro',
+    price: 49,
+    novelLimit: 1,
+    description: 'Everything you need to create and publish',
+    icon: Star,
+    popular: true,
     features: [
-      '5 books per month (fiction & non-fiction)',
+      '1 book per month (fiction & non-fiction)',
       'Complete 50K-80K word manuscripts',
       'Amazon KDP-ready formatting',
       'Character development tools',
       'Quality analysis tools',
       'Professional exports (DOCX, PDF)',
-      'Email support'
-    ]
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 49,
-    novelLimit: 20,
-    description: 'Ideal for serious authors',
-    icon: Star,
-    popular: true,
-    features: [
-      '20 books per month (fiction & non-fiction)',
-      'Everything in Basic',
       'Priority AI processing',
       'Advanced style customization',
       'Batch manuscript processing',
@@ -64,34 +51,22 @@ const subscriptionTiers: SubscriptionTier[] = [
     ]
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: 99,
-    novelLimit: 50,
-    description: 'For professional publishers',
-    icon: Crown,
-    features: [
-      '50 books per month (fiction & non-fiction)',
-      'Everything in Pro',
-      'AI cover creation (coming soon)',
-      'Automated KDP publishing (coming soon)',
-      'White-label licensing',
-      'Custom AI model training',
-      'Dedicated account manager'
-    ]
-  },
-  {
     id: 'founders',
     name: 'Founders',
     price: 2500,
-    novelLimit: 100,
+    novelLimit: 5,
     description: 'Support platform development • Lifetime access',
     icon: Rocket,
     features: [
       '🎯 Limited to 100 members',
       '💫 Lifetime access (one-time payment)',
-      '100 books per month (fiction & non-fiction)',
+      '5 books per month (fiction & non-fiction)',
       'Everything in Pro',
+      'AI cover creation (coming soon)',
+      'Automated KDP publishing (coming soon)',
+      'White-label licensing',
+      'Custom AI model training',
+      'Dedicated account manager',
       'Early access to new features',
       'Direct feedback channel',
       'Founders badge & recognition',
@@ -445,7 +420,7 @@ export default function Subscribe() {
         </div>
 
         {/* Pricing Tiers */}
-        <div className="grid md:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {subscriptionTiers.map((tier) => {
             const IconComponent = tier.icon;
             const isFounders = tier.id === 'founders';
@@ -527,6 +502,175 @@ export default function Subscribe() {
               </Card>
             );
           })}
+        </div>
+
+        {/* Value Proposition Comparison Chart */}
+        <div className="mt-20 max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold mb-4">Why AI KDP Author?</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See how our plans compare to the traditional cost of writing and publishing a book
+            </p>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="text-left p-4 border-b-2 border-primary/20 font-semibold text-lg"></th>
+                  <th className="text-center p-4 border-b-2 border-primary bg-primary/5 font-semibold text-lg">
+                    <div className="flex flex-col items-center gap-1">
+                      <Star className="h-6 w-6 text-primary" />
+                      <span>Pro</span>
+                      <span className="text-sm font-normal text-muted-foreground">$49/month</span>
+                    </div>
+                  </th>
+                  <th className="text-center p-4 border-b-2 border-amber-400 bg-amber-50 font-semibold text-lg">
+                    <div className="flex flex-col items-center gap-1">
+                      <Rocket className="h-6 w-6 text-amber-500" />
+                      <span>Founders</span>
+                      <span className="text-sm font-normal text-muted-foreground">$2,500 one-time</span>
+                    </div>
+                  </th>
+                  <th className="text-center p-4 border-b-2 border-gray-300 font-semibold text-lg">
+                    <div className="flex flex-col items-center gap-1">
+                      <BookOpen className="h-6 w-6 text-gray-500" />
+                      <span>Traditional</span>
+                      <span className="text-sm font-normal text-muted-foreground">Industry Average</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">Cost per book</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <span className="text-lg font-bold text-green-600">$49</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <span className="text-lg font-bold text-green-600">~$42/mo*</span>
+                    <div className="text-xs text-muted-foreground">*amortized over 5 years</div>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-lg font-bold text-red-500">$2,000 - $10,000+</span>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">Time to complete manuscript</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <span className="font-semibold text-green-600">Minutes to hours</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <span className="font-semibold text-green-600">Minutes to hours</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="font-semibold text-red-500">6 - 18 months</span>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">Books per month</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <span className="font-semibold">1</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <span className="font-semibold">5</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="font-semibold text-muted-foreground">~1 per year</span>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">Professional editing</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">AI-powered</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">AI-powered</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-sm text-muted-foreground">$1,500 - $5,000 extra</span>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">KDP-ready formatting</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">Included</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">Included</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-sm text-muted-foreground">$500 - $2,000 extra</span>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">Marketing content</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">AI-generated</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">AI-generated</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-sm text-muted-foreground">$500 - $3,000 extra</span>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">Character development</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">AI workshop</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-muted-foreground">AI workshop</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-sm text-muted-foreground">Manual process</span>
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium">Lifetime access</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <span className="text-sm text-muted-foreground">Monthly subscription</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <Check className="h-5 w-5 text-green-600 mx-auto" />
+                    <span className="text-xs text-green-600 font-medium">One-time payment</span>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-sm text-muted-foreground">N/A</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-medium">Annual cost (1 book/mo)</td>
+                  <td className="p-4 text-center bg-primary/5">
+                    <span className="text-lg font-bold text-green-600">$588/year</span>
+                  </td>
+                  <td className="p-4 text-center bg-amber-50">
+                    <span className="text-lg font-bold text-green-600">$0/year*</span>
+                    <div className="text-xs text-muted-foreground">*after one-time payment</div>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="text-lg font-bold text-red-500">$4,500 - $20,000+</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-6 p-4 bg-muted/50 rounded-lg text-center">
+            <p className="text-sm text-muted-foreground">
+              Traditional publishing costs include ghostwriting ($2,000-$10,000), professional editing ($1,500-$5,000), 
+              formatting ($500-$2,000), and marketing ($500-$3,000). With AI KDP Author, everything is included in one plan.
+            </p>
+          </div>
         </div>
 
         {/* Footer */}
