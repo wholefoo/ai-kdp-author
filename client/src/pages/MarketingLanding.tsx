@@ -148,32 +148,72 @@ export default function MarketingLanding() {
       answer: "Yes, AI-generated content can be published on Amazon KDP. According to Amazon's content guidelines, you must have the rights to publish the content and it must meet their quality standards. AI KDP Author generates original content that you own full rights to publish. We recommend reviewing Amazon's latest KDP Content Guidelines before publishing."
     },
     {
-      question: "How long does it take to generate a 50,000-80,000 word novel?",
-      answer: "AI KDP Author generates complete novels in approximately 15-45 minutes depending on the word count and chapter complexity. A typical 60,000-word novel with 25 chapters takes about 25-30 minutes. The process includes outline generation, chapter-by-chapter writing with character consistency, and professional formatting."
+      question: "How long does it take to generate a complete book?",
+      answer: "AI KDP Author generates complete books in approximately 15-45 minutes depending on the word count and chapter complexity. A typical 60,000-word novel with 25 chapters takes about 25-30 minutes. The process includes outline generation, chapter-by-chapter writing with character consistency, and professional formatting — all fully automated."
     },
     {
-      question: "Does AI KDP Author format manuscripts to KDP standards?",
-      answer: "Yes, all exports are formatted specifically for Amazon KDP publishing. Our DOCX exports use industry-standard Aptos font, proper margins, chapter headings, page breaks, and front matter formatting. We also support PDF, TXT, and Markdown exports for different publishing needs."
-    },
-    {
-      question: "What genres does AI KDP Author support?",
-      answer: "AI KDP Author supports all major fiction genres including Romance, Mystery/Thriller, Science Fiction, Fantasy, Horror, Literary Fiction, Historical Fiction, Young Adult, and more. Each genre uses specialized AI prompts to ensure authentic genre conventions, tropes, and reader expectations are met."
-    },
-    {
-      question: "How does the manuscript formatting work?",
-      answer: "AI KDP Author automatically formats your manuscript to professional publishing standards. This includes proper margins, typography, chapter headings, page breaks, front matter, and table of contents — all optimized for Amazon KDP submission."
+      question: "What types of books can I create — fiction and non-fiction?",
+      answer: "AI KDP Author supports both fiction and non-fiction. For fiction, you can create novels across all major genres including Romance, Mystery/Thriller, Science Fiction, Fantasy, Horror, Literary Fiction, Historical Fiction, Young Adult, and more. For non-fiction, we support 17+ categories including self-help, business, health, history, science, and technology. Non-fiction books include multi-source fact verification, automatic APA-style bibliography generation, and exclusion of unreliable sources like Wikipedia and Reddit."
     },
     {
       question: "What word count and chapter options are available?",
-      answer: "You can customize word count from 30,000 to 120,000 words, and chapter count from 10 to 50 chapters. Individual chapter lengths range from 1,500 to 5,000 words. The default settings (50,000-80,000 words, 20-30 chapters) are optimized for typical novel lengths on Amazon KDP."
+      answer: "You have full control over your book's structure. Adjust word count from 30,000 to 120,000 words, chapter count from 10 to 50 chapters, and individual chapter length from 1,500 to 5,000 words. The default settings (50,000-80,000 words, 20-30 chapters) are optimized for typical book lengths on Amazon KDP."
+    },
+    {
+      question: "How does the manuscript formatting work?",
+      answer: "Every book is automatically formatted to professional publishing standards. DOCX exports follow a trade paperback format (6×9 inches) with Aptos 11pt font, proper margins, and clean left-aligned text. Front matter includes a title page, copyright page, dedication, acknowledgements, and table of contents. Each chapter starts on a new page with a formatted heading like 'Chapter 1: Title Name'. We also offer PDF, TXT, and Markdown exports."
+    },
+    {
+      question: "What is the Character Development Workshop?",
+      answer: "The Character Development Workshop is an interactive suite of AI-powered tools for building compelling characters. It includes an AI Interview Mode where you can have a conversation with AI to flesh out your characters, Emotional Journey Mapping to visualize how your characters evolve through the story, and Character Growth Suggestions that offer ideas for deepening character arcs. These tools help ensure your characters are well-rounded and consistent throughout the novel."
+    },
+    {
+      question: "How does the Manuscript Quality Analyzer work?",
+      answer: "The Manuscript Quality Analyzer is a comprehensive review tool that evaluates your book across multiple dimensions. It includes an Advanced Grammar & Style Checker, a Style and Tone Consistency Checker to ensure your voice stays uniform throughout the book, a Readability Scorer with improvement tips, and a Content Quality Validator. You receive actionable feedback and suggestions to bring your manuscript to a professional standard. Trial users can access this feature for free."
+    },
+    {
+      question: "What is the Plot Inspiration Vault?",
+      answer: "The Plot Inspiration Vault is a tool that helps you discover and develop book ideas. You can explore plot concepts by genre, save ideas you like, and use them as the starting point for full book generation. It's great for overcoming writer's block or finding fresh angles for your next project."
+    },
+    {
+      question: "What marketing and promotion tools are included?",
+      answer: "Every subscription includes a full AI-powered marketing toolkit. You can generate professional book descriptions and blurbs, create social media posts tailored for platforms like Instagram, Twitter, and Facebook, write email newsletters and launch announcements, and develop a complete promotional strategy — all with a single click. Marketing content is generated using GPT-4.1-mini to keep costs efficient."
+    },
+    {
+      question: "How does non-fiction source verification work?",
+      answer: "For non-fiction books, AI KDP Author uses multi-source fact verification to ensure accuracy. The system cross-references claims against credible sources like academic papers, official publications, and reputable news outlets. Unreliable sources such as Wikipedia, Reddit, Quora, and Yahoo Answers are automatically excluded. Each chapter references multiple credible sources, and a complete APA-style bibliography is generated at the end of the book."
+    },
+    {
+      question: "Can I customize the writing style and tone?",
+      answer: "Yes, you have extensive control over how your book reads. You can set the writing style (literary, conversational, formal, etc.), tone and mood (dark, humorous, inspirational, etc.), and content rating (clean, moderate, mature). You can also provide custom instructions to guide the AI's approach. For fiction, you can select your genre to ensure the writing follows genre-specific conventions and reader expectations."
+    },
+    {
+      question: "What are the subscription plans and pricing?",
+      answer: "We offer two plans. Pro is $49/month and includes 1 book per month, full generation for fiction and non-fiction, all analysis and formatting tools, marketing content generation, character development tools, and professional exports. Founders is a one-time payment of $2,500 for lifetime access with 5 books per month — ideal for power users and publishing businesses. Both plans include a 30-day money-back guarantee."
     },
     {
       question: "Is there a free trial available?",
-      answer: "Trial users can access the Manuscript Quality Analyzer feature to test our analysis capabilities. The full novel generation and export features require a Pro subscription at $49/month. We offer a 30-day money-back guarantee on all subscriptions."
+      answer: "Trial users can access the Refine feature, which includes the Manuscript Quality Analyzer, to test our analysis capabilities for free. The full book generation (Create) and export/sharing features (Publish) require a Pro or Founders subscription. We offer a 30-day money-back guarantee so you can try the full experience risk-free."
     },
     {
-      question: "What AI models power the novel generation?",
-      answer: "AI KDP Author uses OpenAI's GPT-5.2 as the primary model for novel generation, with GPT-4o as a fallback. These advanced language models ensure high-quality, coherent storytelling with consistent characters, plot development, and genre-appropriate writing styles."
+      question: "What AI models power the book generation?",
+      answer: "AI KDP Author uses OpenAI's GPT-5.2 as the primary model for all book generation and analysis tasks, delivering the highest quality output. GPT-4.1-mini is used as a cost-efficient model for marketing content and lighter tasks. These advanced models ensure high-quality, coherent writing with consistent characters, accurate facts, and genre-appropriate styles."
+    },
+    {
+      question: "What export formats are available?",
+      answer: "You can export your completed books in multiple formats: DOCX (formatted for Amazon KDP with professional layout, front matter, and chapter formatting), PDF (for review and other publishing platforms), TXT (plain text), and Markdown (for flexible digital use). The DOCX format follows a professional 6×9 trade paperback layout with Aptos font, proper margins, and all front matter included."
+    },
+    {
+      question: "Do I own the rights to my generated books?",
+      answer: "Yes, you retain full ownership and rights to all content generated through AI KDP Author. You are free to publish, sell, and distribute your books on Amazon KDP or any other platform. The content is original and created specifically for you."
+    },
+    {
+      question: "How does the Narrative Arc Visualization tool work?",
+      answer: "The Narrative Arc Visualization tool creates a visual chart of your story's emotional journey across all chapters. It maps the tension, conflict, and resolution points so you can see at a glance whether your story has a satisfying dramatic shape. This helps you identify pacing issues or flat spots before publishing."
+    },
+    {
+      question: "Can I revise individual chapters after generation?",
+      answer: "Yes, AI KDP Author includes AI-powered chapter revision tools. After your book is generated, you can select any chapter and request targeted revisions — such as adjusting tone, adding more detail, strengthening dialogue, or improving pacing. The AI applies your requested changes while maintaining consistency with the rest of the book."
     }
   ];
 
@@ -219,9 +259,9 @@ export default function MarketingLanding() {
     ],
     "offers": {
       "@type": "Offer",
-      "price": "29.00",
+      "price": "49.00",
       "priceCurrency": "USD",
-      "priceValidUntil": "2025-12-31",
+      "priceValidUntil": "2026-12-31",
       "availability": "https://schema.org/InStock"
     }
   };
