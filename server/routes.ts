@@ -6096,6 +6096,133 @@ Return ONLY valid JSON, no additional text.`;
     }
   });
 
+  // ============================================================
+  // RESEARCH ROUTES
+  // ============================================================
+  const { researchService } = await import("./services/researchService");
+
+  // GET /api/research — list user's research sessions
+  app.get("/api/research", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const sessions = await storage.getUserResearchSessions(userId);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch research sessions" });
+    }
+  });
+
+  // GET /api/research/:id — get a single research session
+  app.get("/api/research/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const session = await storage.getResearchSession(req.params.id);
+      if (!session) return res.status(404).json({ error: "Research session not found" });
+      res.json(session);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch research session" });
+    }
+  });
+
+  // POST /api/research — conduct new research on a topic
+  app.post("/api/research", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { topic, contentType, genre } = req.body;
+
+      if (!topic || typeof topic !== "string" || topic.trim().length < 3) {
+        return res.status(400).json({ error: "A valid topic is required (at least 3 characters)" });
+      }
+
+      const session = await storage.createResearchSession({
+        userId,
+        topic: topic.trim(),
+        contentType: contentType || "fiction",
+        genre: genre || null,
+      });
+
+      res.json(session);
+
+      // Run research in the background and update the record
+      setImmediate(async () => {
+        try {
+          const researchData = await researchService.conductResearch(
+            topic.trim(),
+            contentType || "fiction",
+            genre
+          );
+          await storage.updateResearchSession(session.id, {
+            researchData,
+            status: "completed",
+          });
+        } catch (err: any) {
+          await storage.updateResearchSession(session.id, {
+            status: "error",
+          });
+          console.error("Research error:", err);
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to start research" });
+    }
+  });
+
+  // POST /api/research/:id/generate-fiction-plot — convert research to a fiction plot
+  app.post("/api/research/:id/generate-fiction-plot", isAuthenticated, async (req: any, res) => {
+    try {
+      const session = await storage.getResearchSession(req.params.id);
+      if (!session) return res.status(404).json({ error: "Research session not found" });
+      if (session.status !== "completed" || !session.researchData) {
+        return res.status(400).json({ error: "Research must be completed before generating a plot" });
+      }
+
+      const { genre, additionalContext } = req.body;
+      const fictionPlot = await researchService.generateFictionPlot(
+        session.researchData as any,
+        genre || session.genre || "fiction",
+        additionalContext
+      );
+
+      const updated = await storage.updateResearchSession(session.id, { fictionPlot });
+      res.json({ fictionPlot, session: updated });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to generate fiction plot" });
+    }
+  });
+
+  // POST /api/research/:id/generate-nonfiction-outline — convert research to a non-fiction outline
+  app.post("/api/research/:id/generate-nonfiction-outline", isAuthenticated, async (req: any, res) => {
+    try {
+      const session = await storage.getResearchSession(req.params.id);
+      if (!session) return res.status(404).json({ error: "Research session not found" });
+      if (session.status !== "completed" || !session.researchData) {
+        return res.status(400).json({ error: "Research must be completed before generating an outline" });
+      }
+
+      const { subtype, targetAudience, additionalContext } = req.body;
+      const nonfictionOutline = await researchService.generateNonfictionOutline(
+        session.researchData as any,
+        subtype || "non-fiction",
+        targetAudience,
+        additionalContext
+      );
+
+      const updated = await storage.updateResearchSession(session.id, { nonfictionOutline });
+      res.json({ nonfictionOutline, session: updated });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to generate non-fiction outline" });
+    }
+  });
+
+  // DELETE /api/research/:id — delete a research session
+  app.delete("/api/research/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteResearchSession(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to delete research session" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -518,3 +518,28 @@ export const updateMarketingCampaignSchema = createInsertSchema(marketingCampaig
 export type InsertMarketingCampaign = z.infer<typeof insertMarketingCampaignSchema>;
 export type UpdateMarketingCampaign = z.infer<typeof updateMarketingCampaignSchema>;
 export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
+
+// Research Sessions — subject matter research for fiction & non-fiction
+export const researchSessions = pgTable("research_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  topic: text("topic").notNull(),
+  contentType: varchar("content_type").default("fiction"), // fiction | non-fiction
+  genre: text("genre"), // for fiction research
+  researchData: jsonb("research_data"), // full structured research output
+  fictionPlot: jsonb("fiction_plot"), // generated fiction plot from research
+  nonfictionOutline: jsonb("nonfiction_outline"), // generated non-fiction outline
+  status: varchar("status").default("pending"), // pending | completed | error
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertResearchSessionSchema = createInsertSchema(researchSessions).pick({
+  userId: true,
+  topic: true,
+  contentType: true,
+  genre: true,
+});
+
+export type InsertResearchSession = z.infer<typeof insertResearchSessionSchema>;
+export type ResearchSession = typeof researchSessions.$inferSelect;

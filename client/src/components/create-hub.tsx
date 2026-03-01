@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wand2, BookOpen, Users, FileEdit, Lightbulb } from "lucide-react";
+import { Wand2, BookOpen, Users, FileEdit, Lightbulb, FlaskConical } from "lucide-react";
 import NovelGenerator from "./novel-generator";
 import GenreWizard from "./genre-wizard";
 import PlotInspirationVault from "./plot-inspiration-vault";
 import CharacterWorkshop from "./character-workshop";
 import { NovelComposer } from "./novel-composer";
-import type { Novel } from "@shared/schema";
+import ResearchHub from "./research-hub";
+import type { Novel, NovelGenerationRequest } from "@shared/schema";
 
 interface CreateHubProps {
   novel?: Novel;
@@ -24,10 +25,39 @@ export default function CreateHub({
   onNovelCreated 
 }: CreateHubProps) {
   const [selectedPlot, setSelectedPlot] = useState<{title: string; premise: string; genre: string} | null>(null);
+  const [activeTab, setActiveTab] = useState("generator");
+  const [generatorKey, setGeneratorKey] = useState(0);
+  const [prefilledGeneratorData, setPrefilledGeneratorData] = useState<Partial<NovelGenerationRequest> | undefined>(undefined);
 
   const handleSelectPlot = (plot: { title: string; premise: string; genre: string }) => {
     setSelectedPlot(plot);
-    // Switch to the generator tab with pre-filled data
+  };
+
+  const handleUseResearchForFiction = (plot: any, topic: string) => {
+    const prefill: Partial<NovelGenerationRequest> = {
+      contentType: "fiction",
+      title: plot.title || "",
+      genre: plot.genre || "Fiction",
+      plotIdea: `${plot.premise}\n\n${plot.plotSummary || ""}`.trim(),
+      customInstructions: `This story is inspired by research on "${topic}". ${plot.researchTies || ""}`,
+    };
+    setPrefilledGeneratorData(prefill);
+    setGeneratorKey(k => k + 1);
+    setActiveTab("generator");
+  };
+
+  const handleUseResearchForNonfiction = (outline: any, topic: string) => {
+    const prefill: Partial<NovelGenerationRequest> = {
+      contentType: "non-fiction",
+      title: `${outline.title}${outline.subtitle ? `: ${outline.subtitle}` : ""}`,
+      nonFictionTopic: topic,
+      plotIdea: outline.premise || "",
+      targetAudience: outline.targetAudience || "",
+      customInstructions: `Unique angle: ${outline.uniqueAngle || ""}. Learning objectives: ${(outline.learningObjectives || []).slice(0, 3).join("; ")}`,
+    };
+    setPrefilledGeneratorData(prefill);
+    setGeneratorKey(k => k + 1);
+    setActiveTab("generator");
   };
 
   return (
@@ -39,11 +69,15 @@ export default function CreateHub({
         </p>
       </div>
 
-      <Tabs defaultValue="generator" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="generator" className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
             Generate
+          </TabsTrigger>
+          <TabsTrigger value="research" className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4" />
+            Research
           </TabsTrigger>
           <TabsTrigger value="wizard" className="flex items-center gap-2">
             <Lightbulb className="h-4 w-4" />
@@ -75,9 +109,31 @@ export default function CreateHub({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <NovelGenerator 
+              <NovelGenerator
+                key={generatorKey}
                 onStartGeneration={onStartGeneration}
                 isGenerating={isGenerating}
+                prefilledData={prefilledGeneratorData}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="research" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FlaskConical className="h-5 w-5" />
+                Research
+              </CardTitle>
+              <CardDescription>
+                Conduct thorough subject matter research from credible academic and journalistic sources, then use it to build a fiction plot or non-fiction book structure
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResearchHub
+                onUseForFiction={handleUseResearchForFiction}
+                onUseForNonfiction={handleUseResearchForNonfiction}
               />
             </CardContent>
           </Card>

@@ -8,6 +8,7 @@ import {
   aboutPage,
   blogPosts,
   marketingCampaigns,
+  researchSessions,
   type Novel, 
   type InsertNovel, 
   type UpdateNovel, 
@@ -29,7 +30,9 @@ import {
   type UpdateBlogPost,
   type MarketingCampaign,
   type InsertMarketingCampaign,
-  type UpdateMarketingCampaign
+  type UpdateMarketingCampaign,
+  type ResearchSession,
+  type InsertResearchSession,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -122,6 +125,13 @@ export interface IStorage {
   updateMarketingCampaign(id: string, updates: UpdateMarketingCampaign): Promise<MarketingCampaign | undefined>;
   deleteMarketingCampaign(id: string): Promise<boolean>;
   getUserMarketingCampaigns(userId: string): Promise<MarketingCampaign[]>;
+
+  // Research session operations
+  getResearchSession(id: string): Promise<ResearchSession | undefined>;
+  createResearchSession(session: InsertResearchSession): Promise<ResearchSession>;
+  updateResearchSession(id: string, updates: Partial<ResearchSession>): Promise<ResearchSession | undefined>;
+  deleteResearchSession(id: string): Promise<boolean>;
+  getUserResearchSessions(userId: string): Promise<ResearchSession[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -495,6 +505,27 @@ export class MemStorage implements IStorage {
 
   async getUserMarketingCampaigns(userId: string): Promise<MarketingCampaign[]> {
     throw new Error("Use DatabaseStorage for marketing campaign operations");
+  }
+
+  // Research session operations (MemStorage stub implementations)
+  async getResearchSession(id: string): Promise<ResearchSession | undefined> {
+    throw new Error("Use DatabaseStorage for research session operations");
+  }
+
+  async createResearchSession(session: InsertResearchSession): Promise<ResearchSession> {
+    throw new Error("Use DatabaseStorage for research session operations");
+  }
+
+  async updateResearchSession(id: string, updates: Partial<ResearchSession>): Promise<ResearchSession | undefined> {
+    throw new Error("Use DatabaseStorage for research session operations");
+  }
+
+  async deleteResearchSession(id: string): Promise<boolean> {
+    throw new Error("Use DatabaseStorage for research session operations");
+  }
+
+  async getUserResearchSessions(userId: string): Promise<ResearchSession[]> {
+    throw new Error("Use DatabaseStorage for research session operations");
   }
 
   // Subscription tier operations (MemStorage stub implementations)
@@ -1187,6 +1218,38 @@ export class DatabaseStorage implements IStorage {
       .from(marketingCampaigns)
       .where(eq(marketingCampaigns.userId, userId))
       .orderBy(desc(marketingCampaigns.createdAt));
+  }
+
+  async getResearchSession(id: string): Promise<ResearchSession | undefined> {
+    const [session] = await db.select().from(researchSessions).where(eq(researchSessions.id, id));
+    return session;
+  }
+
+  async createResearchSession(session: InsertResearchSession): Promise<ResearchSession> {
+    const [created] = await db.insert(researchSessions).values(session).returning();
+    return created;
+  }
+
+  async updateResearchSession(id: string, updates: Partial<ResearchSession>): Promise<ResearchSession | undefined> {
+    const [updated] = await db
+      .update(researchSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(researchSessions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteResearchSession(id: string): Promise<boolean> {
+    await db.delete(researchSessions).where(eq(researchSessions.id, id));
+    return true;
+  }
+
+  async getUserResearchSessions(userId: string): Promise<ResearchSession[]> {
+    return await db
+      .select()
+      .from(researchSessions)
+      .where(eq(researchSessions.userId, userId))
+      .orderBy(desc(researchSessions.createdAt));
   }
 }
 

@@ -13,6 +13,7 @@ import { nonFictionSubtypes } from "@shared/schema";
 interface NovelGeneratorProps {
   onStartGeneration: (request: NovelGenerationRequest) => void;
   isGenerating: boolean;
+  prefilledData?: Partial<NovelGenerationRequest>;
 }
 
 const NON_FICTION_SUBTYPE_LABELS: Record<string, string> = {
@@ -35,7 +36,7 @@ const NON_FICTION_SUBTYPE_LABELS: Record<string, string> = {
   "reference": "Reference & Guides",
 };
 
-export default function NovelGenerator({ onStartGeneration, isGenerating }: NovelGeneratorProps) {
+export default function NovelGenerator({ onStartGeneration, isGenerating, prefilledData }: NovelGeneratorProps) {
   const [formData, setFormData] = useState<NovelGenerationRequest>({
     genre: "Fantasy",
     title: "",
@@ -53,6 +54,7 @@ export default function NovelGenerator({ onStartGeneration, isGenerating }: Nove
     nonFictionTopic: "",
     targetAudience: "",
     excludedSources: ["wikipedia.org", "wiki"],
+    ...(prefilledData || {}),
   });
 
   const isNonFiction = formData.contentType === "non-fiction";

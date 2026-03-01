@@ -58,6 +58,7 @@ Each chapter starts on a new page.
 - **Export & Preview**: DOCX (native JS library), PDF, Markdown, TXT with customizable formatting.
 - **Development Workflow**: Monorepo structure with end-to-end TypeScript.
 - **Marketing & Promotion Module**: AI-powered toolkit for generating marketing content (descriptions, social media, emails, etc.) using GPT-4.1-mini.
+- **Research Module**: Thorough subject matter research from credible academic, journalistic, and expert sources (excludes Wikipedia, Reddit, Quora, etc.). Results can be used to generate a fiction plot structure or a non-fiction book outline, which then pre-fills the manuscript generator. Research sessions are persisted per user in the `research_sessions` table. Accessed via the "Research" tab in the Create Hub.
 
 ### UI/UX Decisions
 - **Design System**: Tailwind CSS with custom variables.
