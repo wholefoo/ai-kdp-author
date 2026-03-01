@@ -20,7 +20,9 @@ import {
   HelpCircle,
   Mail,
   Globe,
-  Rocket
+  Rocket,
+  FlaskConical,
+  Search
 } from "lucide-react";
 
 export default function MarketingLanding() {
@@ -30,76 +32,88 @@ export default function MarketingLanding() {
       title: "Complete Book Generation",
       description: "Generate full 50,000-80,000 word fiction and non-fiction books with 20-30 professionally structured chapters using GPT-5.2, ready for Amazon KDP publishing.",
       details: [
-        "Powered by GPT-5.2 with GPT-4o fallback",
-        "Fiction and non-fiction support with 17+ categories",
+        "Powered by GPT-5.2 — the most advanced AI writing model available",
+        "Fiction and non-fiction support across 17+ genre categories",
         "Customizable word count (30K-120K) and chapter count (10-50)",
-        "Non-fiction includes source verification and automatic bibliography"
+        "Non-fiction includes multi-source fact verification and automatic APA bibliography"
+      ]
+    },
+    {
+      icon: FlaskConical,
+      title: "Research Module",
+      description: "Conduct thorough, verified subject matter research from credible academic, journalistic, and expert sources — then use it to generate a complete fiction plot or non-fiction book outline.",
+      details: [
+        "Research any topic using credible academic papers, books, and reputable publications",
+        "Automatically excludes unreliable sources (Wikipedia, Reddit, Quora, etc.)",
+        "Convert research findings into a complete fiction plot with characters and chapter structure",
+        "Convert research findings into a full non-fiction book outline with chapter-by-chapter key points",
+        "Pre-fills the manuscript generator so you can write from a foundation of real facts"
       ]
     },
     {
       icon: FileText,
       title: "Professional Manuscript Formatting",
-      description: "Format your manuscripts to professional publishing standards with automated layout, typography, and export options for multiple platforms.",
+      description: "Every book is automatically formatted to professional publishing standards — Aptos font, 6×9 trade paperback layout, proper front matter, chapter headings, and KDP-ready exports.",
       details: [
-        "Industry-standard formatting with proper margins and typography",
-        "Automated front matter, chapter headings, and page breaks",
-        "Non-fiction bibliography with APA-style citations",
-        "Multiple format exports optimized for different platforms"
+        "6×9 trade paperback format with Aptos 11pt font and proper margins",
+        "Automated front matter: title page, copyright, dedication, acknowledgements, table of contents",
+        "Chapter headings formatted as 'Chapter 1: Title Name' — each starting on a new page",
+        "Export as DOCX (KDP-ready), PDF, TXT, or Markdown"
       ]
     },
     {
       icon: Sparkles,
       title: "Advanced AI Analysis Tools",
-      description: "Comprehensive manuscript analysis including character consistency, narrative arc visualization, and style checking.",
+      description: "Comprehensive manuscript analysis including character consistency, narrative arc visualization, style and tone checking, proofreading, and readability scoring.",
       details: [
-        "Character consistency analyzer with detailed reports",
-        "Narrative arc visualization with emotional journey mapping",
-        "Style and tone consistency checker",
-        "Grammar and readability analysis"
+        "Character consistency analyzer — catches contradictions across all chapters",
+        "Narrative arc visualization — see your story's emotional journey plotted across chapters",
+        "Style and tone consistency checker — ensures your voice stays uniform throughout",
+        "Advanced grammar, proofreading, and readability analysis with actionable suggestions"
       ]
     },
     {
       icon: PenTool,
-      title: "Interactive Writing Tools",
-      description: "Character Development Workshop, Plot Inspiration Vault, and AI-powered writing assistance for creative enhancement.",
+      title: "Character Development Workshop",
+      description: "Build compelling, well-rounded characters with AI-powered tools — from detailed profiles and backstories to emotional journey mapping and AI interview sessions.",
       details: [
-        "Character Interview Mode with AI guidance",
-        "Plot idea generation and management",
-        "Chapter revision suggestions",
-        "Writing style customization"
+        "AI Interview Mode — have a guided conversation to flesh out each character's voice and history",
+        "Emotional Journey Mapping — visualize how characters evolve chapter by chapter",
+        "Character growth suggestions to deepen arcs and avoid flat portrayals",
+        "Character consistency reports tied to your manuscript"
       ]
     },
     {
       icon: Target,
-      title: "Publishing-Ready Output",
-      description: "Export books in multiple professional formats optimized for different publishing platforms and use cases.",
+      title: "Plot Inspiration & Genre Wizard",
+      description: "Overcome creative blocks with the Plot Inspiration Vault and Genre Exploration Wizard — get AI-generated plot concepts by genre and save the ones you love.",
       details: [
-        "Amazon KDP-ready DOCX formatting",
-        "Non-fiction bibliography with APA-style citations",
-        "Multiple export formats (PDF, TXT, Markdown)",
-        "Professional manuscript submission formatting"
+        "Genre Exploration Wizard covers all major fiction genres with tailored plot suggestions",
+        "Plot Inspiration Vault to save, organize, and revisit your best ideas",
+        "One-click transfer from saved plots to the manuscript generator",
+        "AI-powered premise and plot concept generation on demand"
       ]
     },
     {
       icon: BarChart3,
-      title: "Quality Control & Analytics",
-      description: "Advanced quality analysis, readability scoring, and comprehensive manuscript improvement suggestions.",
+      title: "Manuscript Quality Analyzer",
+      description: "Run a full quality audit of any manuscript — whether generated here or uploaded from elsewhere — and get specific, actionable improvement suggestions.",
       details: [
-        "Manuscript Quality Analyzer with actionable feedback",
-        "Readability scoring and improvement tips",
-        "Content quality validation",
-        "Progress tracking and metrics"
+        "Comprehensive quality scoring across multiple dimensions",
+        "Grammar, style, and readability analysis with improvement tips",
+        "Content quality validation and pacing feedback",
+        "Available to trial users — test it free before subscribing"
       ]
     },
     {
       icon: Megaphone,
-      title: "Marketing & Promotion Tools",
-      description: "AI-powered marketing toolkit to help promote your books with professional marketing content.",
+      title: "Marketing & Promotion Toolkit",
+      description: "AI-powered marketing content generation to help you launch and promote your book across all major channels.",
       details: [
-        "Book description and blurb generator",
-        "Social media post creation for multiple platforms",
-        "Email marketing content and newsletters",
-        "Launch strategy and promotional materials"
+        "Amazon KDP book descriptions, keywords, and category recommendations",
+        "Social media posts for Instagram, Twitter, Facebook, and LinkedIn",
+        "Email newsletters and launch announcements",
+        "Press releases, book blurbs, elevator pitches, and launch strategy timelines"
       ]
     }
   ];
@@ -111,6 +125,11 @@ export default function MarketingLanding() {
       steps: ["Choose fiction or non-fiction", "Set word count and style preferences", "Generate outline and review", "Create chapters automatically", "Export for publishing"]
     },
     {
+      title: "Research-to-Book Workflow",
+      description: "Use the Research Module to build books grounded in verified facts — ideal for both historically-accurate fiction and authoritative non-fiction.",
+      steps: ["Enter a topic in the Research tab", "AI gathers findings from credible sources", "Generate a fiction plot or non-fiction outline from the research", "Review and refine the structure", "Send directly to the book generator — pre-filled and ready to go"]
+    },
+    {
       title: "Publishing to Amazon KDP",
       description: "Prepare and format your completed manuscript for successful publication on Amazon Kindle Direct Publishing.",
       steps: ["Format manuscript to KDP standards", "Generate front matter and table of contents", "Export as KDP-ready DOCX", "Create marketing description and metadata", "Upload to Amazon KDP"]
@@ -118,12 +137,17 @@ export default function MarketingLanding() {
     {
       title: "Character Development Workshop",
       description: "Use AI-powered tools to create compelling, consistent characters with detailed backstories and development arcs.",
-      steps: ["Create character profiles", "Use AI Interview Mode", "Map emotional journeys", "Analyze character consistency", "Export character guides"]
+      steps: ["Create character profiles", "Use AI Interview Mode for guided character building", "Map emotional journeys across chapters", "Run character consistency analysis", "Apply growth suggestions to deepen arcs"]
     },
     {
       title: "Manuscript Quality Analysis",
       description: "Analyze and improve your books with comprehensive quality checking, style analysis, and improvement suggestions.",
-      steps: ["Upload or select manuscript", "Run quality analyzer", "Review detailed feedback", "Apply suggested improvements", "Re-analyze and compare"]
+      steps: ["Upload or select manuscript", "Run quality analyzer", "Review detailed feedback", "Apply suggested improvements", "Re-analyze and compare results"]
+    },
+    {
+      title: "Marketing Your Book",
+      description: "Generate a complete marketing package for your book — from Amazon descriptions and keywords to social media posts and launch strategy.",
+      steps: ["Select your completed book", "Open the Promote section", "Generate Amazon description and keywords", "Create social media posts for all platforms", "Download your complete marketing package"]
     }
   ];
 
@@ -146,6 +170,10 @@ export default function MarketingLanding() {
     {
       question: "Can AI-generated books be published on Amazon KDP?",
       answer: "Yes, AI-generated content can be published on Amazon KDP. According to Amazon's content guidelines, you must have the rights to publish the content and it must meet their quality standards. AI KDP Author generates original content that you own full rights to publish. We recommend reviewing Amazon's latest KDP Content Guidelines before publishing."
+    },
+    {
+      question: "What is the Research Module and how does it work?",
+      answer: "The Research Module lets you conduct deep, structured research on any subject — and then use those findings to build either a fiction plot or a non-fiction book outline. You enter a topic, and the AI gathers key findings, themes, verified sources, statistics, historical context, and suggested angles from credible academic papers, books, official publications, and reputable news sources. Unreliable sources (Wikipedia, Reddit, Quora, etc.) are automatically excluded. Once research is complete, you can convert it into a fiction plot with a full three-act structure and character profiles, or a non-fiction book outline with chapter-by-chapter key points and source citations. One click then pre-fills the manuscript generator, ready to write."
     },
     {
       question: "How long does it take to generate a complete book?",
@@ -224,7 +252,7 @@ export default function MarketingLanding() {
     "name": "AI KDP Author",
     "url": "https://aikdpauthor.com",
     "logo": "https://aikdpauthor.com/logo.png",
-    "description": "Professional AI-powered novel generation and publishing tools for Amazon KDP authors.",
+    "description": "Professional AI-powered book writing platform for Amazon KDP authors — fiction and non-fiction, with research, formatting, quality analysis, and marketing tools.",
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "customer support",
@@ -237,7 +265,7 @@ export default function MarketingLanding() {
     "@type": "WebSite",
     "name": "AI KDP Author",
     "url": "https://aikdpauthor.com",
-    "description": "Create professional, publishable novels of 50,000-80,000 words with AI for Amazon KDP publishing."
+    "description": "Create professional, publishable fiction and non-fiction books of 50,000-80,000 words with AI. Research any topic, generate a complete manuscript, format it for KDP, and market it — all in one platform."
   };
 
   const jsonLdSoftwareApplication = {
@@ -246,16 +274,18 @@ export default function MarketingLanding() {
     "name": "AI KDP Author",
     "applicationCategory": "Writing Assistant",
     "operatingSystem": "Web Browser",
-    "description": "AI-powered novel generation platform that creates complete 50,000-80,000 word novels with 20-30 chapters, professional manuscript formatting, and KDP-ready exports.",
+    "description": "Complete AI-powered book writing platform for Amazon KDP. Research any topic from credible sources, generate 50,000-80,000 word fiction or non-fiction manuscripts, format to KDP standards, and launch with professional marketing content.",
     "featureList": [
-      "Complete novel generation (50,000-80,000 words)",
-      "20-30 professionally structured chapters",
+      "Research Module — verified subject matter research from credible academic and journalistic sources",
+      "Complete fiction and non-fiction book generation (50,000-80,000 words)",
+      "Research-to-fiction plot generation and research-to-nonfiction outline generation",
       "GPT-5.2 powered content generation",
       "KDP-ready DOCX, PDF, TXT, Markdown exports",
-      "Professional manuscript formatting",
-      "Character consistency analyzer",
-      "Narrative arc visualization",
-      "AI-powered marketing content generation"
+      "Professional 6×9 manuscript formatting with Aptos font and front matter",
+      "Character Development Workshop with AI Interview Mode and Emotional Journey Mapping",
+      "Character consistency analyzer and narrative arc visualization",
+      "Manuscript Quality Analyzer, proofreading, style and tone checker",
+      "AI-powered marketing content generation (Amazon, social media, email, press release)"
     ],
     "offers": {
       "@type": "Offer",
@@ -282,17 +312,17 @@ export default function MarketingLanding() {
   return (
     <div className="min-h-screen bg-white">
       <Helmet>
-        <title>AI KDP Author - Generate Complete Novels for Amazon KDP Publishing</title>
-        <meta name="description" content="Create professional, publishable novels of 50,000-80,000 words with GPT-5.2. Generate complete manuscripts with 20-30 chapters, professional formatting, and marketing content. Perfect for Amazon KDP publishing." />
+        <title>AI KDP Author - Generate Complete Fiction & Non-Fiction Books for Amazon KDP</title>
+        <meta name="description" content="Create professional, publishable fiction and non-fiction books of 50,000-80,000 words with GPT-5.2. Research any topic from credible sources, generate a complete manuscript, format it for KDP, and launch with AI-powered marketing tools." />
         <link rel="canonical" href="https://aikdpauthor.com/home" />
-        <meta property="og:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP Publishing" />
-        <meta property="og:description" content="Create professional, publishable novels of 50,000-80,000 words with AI. Generate complete manuscripts with professional formatting and quality analysis tools." />
+        <meta property="og:title" content="AI KDP Author - Generate Complete Fiction & Non-Fiction Books for Amazon KDP" />
+        <meta property="og:description" content="From research to published book in minutes. AI-verified research, 50K-80K word manuscripts, professional KDP formatting, character tools, quality analysis, and a full marketing toolkit — all powered by GPT-5.2." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aikdpauthor.com/home" />
         <meta property="og:site_name" content="AI KDP Author" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="AI KDP Author - Generate Complete Novels for Amazon KDP" />
-        <meta name="twitter:description" content="Create 50,000-80,000 word novels with GPT-5.2. Professional manuscript formatting. KDP-ready exports." />
+        <meta name="twitter:title" content="AI KDP Author - Complete AI Book Writing Platform for Amazon KDP" />
+        <meta name="twitter:description" content="Research, write, format, and market your book — fiction or non-fiction. GPT-5.2 powered. 50K-80K words. KDP-ready." />
         <script type="application/ld+json">{JSON.stringify(jsonLdOrganization)}</script>
         <script type="application/ld+json">{JSON.stringify(jsonLdWebsite)}</script>
         <script type="application/ld+json">{JSON.stringify(jsonLdSoftwareApplication)}</script>
@@ -316,11 +346,11 @@ export default function MarketingLanding() {
           </a>
           
           <p className="text-2xl lg:text-3xl text-gray-600 mb-4 max-w-4xl mx-auto">
-            Generate complete, publishable novels for Amazon KDP
+            Generate complete, publishable fiction and non-fiction books for Amazon KDP
           </p>
           
           <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
-            From idea to publication-ready manuscript in minutes. Create 50,000-80,000 word novels with professional formatting and marketing content - all powered by GPT-5.2.
+            From research and idea to publication-ready manuscript in minutes. 50,000-80,000 word books with AI-verified research, professional formatting, and a full marketing toolkit — all powered by GPT-5.2.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -367,19 +397,19 @@ export default function MarketingLanding() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="space-y-2">
               <div className="text-3xl font-bold text-blue-600">50K-80K</div>
-              <div className="text-sm text-gray-600">Words per novel</div>
+              <div className="text-sm text-gray-600">Words per book</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-purple-600">20-30</div>
-              <div className="text-sm text-gray-600">Chapters generated</div>
+              <div className="text-3xl font-bold text-purple-600">17+</div>
+              <div className="text-sm text-gray-600">Fiction & non-fiction categories</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-green-600">17+</div>
-              <div className="text-sm text-gray-600">Genre categories</div>
+              <div className="text-3xl font-bold text-green-600">8+</div>
+              <div className="text-sm text-gray-600">Integrated AI tools</div>
             </div>
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-orange-600">Multiple</div>
-              <div className="text-sm text-gray-600">Export formats</div>
+              <div className="text-3xl font-bold text-orange-600">4</div>
+              <div className="text-sm text-gray-600">Export formats (DOCX, PDF, TXT, MD)</div>
             </div>
           </div>
         </div>
@@ -389,9 +419,9 @@ export default function MarketingLanding() {
       <section id="features" className="py-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-6">Everything You Need to Publish Novels</h2>
+            <h2 className="text-4xl font-bold mb-6">Everything You Need to Publish Your Book</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Professional-grade AI tools for novel creation, analysis, and publication preparation
+              A complete AI-powered suite — from research and writing to analysis, formatting, and marketing
             </p>
           </div>
           
@@ -433,7 +463,7 @@ export default function MarketingLanding() {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-6">Complete Tutorials & Guides</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Step-by-step guides to master every aspect of AI novel creation and publishing
+              Step-by-step guides to master every aspect of AI book creation, research, and publishing
             </p>
           </div>
           
