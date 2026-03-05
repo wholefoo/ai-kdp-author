@@ -811,7 +811,7 @@ export default function Library() {
                       Select how long you want your book trailer to be, then generate the script.
                     </p>
                     <div className="grid grid-cols-2 gap-2 mb-5">
-                      {["30 seconds", "60 seconds", "90 seconds", "2 minutes"].map((dur) => (
+                      {["30 seconds", "60 seconds", "90 seconds", "2 minutes", "3 minutes", "5 minutes", "7 minutes", "10 minutes"].map((dur) => (
                         <button
                           key={dur}
                           onClick={() => setVideoDuration(dur)}

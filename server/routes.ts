@@ -6139,7 +6139,16 @@ TONE & MOOD: ${novel.toneAndMood || "adventurous"}
 ${outlineText ? `\nOUTLINE SUMMARY:\n${outlineText}` : ""}
 ${chapterSummaries ? `\nOPENING CHAPTERS:\n${chapterSummaries}` : ""}
 
-TARGET LENGTH: ${requestedDuration}. Scale the number of scenes, voiceover density, and pacing to fit this exact duration. A 30-second script should have 4-5 quick scenes; 60 seconds should have 6-8 scenes; 90 seconds should have 8-10 scenes; 2 minutes should have 10-12 scenes. Scene durations must add up to approximately ${requestedDuration}.
+TARGET LENGTH: ${requestedDuration}. Scale the number of scenes, voiceover density, and pacing to fit this exact duration. Use this as a guide:
+- 30 seconds → 4-5 quick scenes
+- 60 seconds → 6-8 scenes
+- 90 seconds → 8-10 scenes
+- 2 minutes → 10-12 scenes
+- 3 minutes → 14-18 scenes
+- 5 minutes → 22-28 scenes
+- 7 minutes → 30-38 scenes
+- 10 minutes → 45-55 scenes
+For longer formats (3 minutes and above), structure the script like a short film: an extended hook, a deep narrative journey through key plot beats or themes, character moments, emotional climaxes, and a strong closing. Scene durations must add up to approximately ${requestedDuration}.
 
 Create a professional video script with dramatic pacing, strong emotional pull, and a clear call to action. The script should work as a cinematic trailer — vivid visuals, a compelling narrator voice, and building tension or curiosity.
 
