@@ -38,6 +38,7 @@ export default function Library() {
   const [videoScriptNovel, setVideoScriptNovel] = useState<Novel | null>(null);
   const [videoScript, setVideoScript] = useState<any | null>(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [videoDuration, setVideoDuration] = useState("60 seconds");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
@@ -203,13 +204,18 @@ export default function Library() {
     });
   };
 
-  const generateVideoScript = async (novel: Novel) => {
+  const generateVideoScript = (novel: Novel) => {
     setVideoScriptNovel(novel);
     setVideoScript(null);
+    setIsGeneratingScript(false);
     setShowVideoScript(true);
+  };
+
+  const startScriptGeneration = async () => {
+    if (!videoScriptNovel) return;
     setIsGeneratingScript(true);
     try {
-      const result = await apiRequest(`/api/novels/${novel.id}/video-script`, "POST");
+      const result = await apiRequest(`/api/novels/${videoScriptNovel.id}/video-script`, "POST", { duration: videoDuration });
       setVideoScript(result.script);
     } catch (err: any) {
       toast({
@@ -217,7 +223,6 @@ export default function Library() {
         description: err.message || "Failed to generate video script. Please try again.",
         variant: "destructive",
       });
-      setShowVideoScript(false);
     } finally {
       setIsGeneratingScript(false);
     }
@@ -795,8 +800,41 @@ export default function Library() {
             </div>
 
             {/* Modal Body */}
-            <ScrollArea className="flex-1 p-6">
-              {isGeneratingScript ? (
+            <div className="flex-1 overflow-y-auto min-h-0 p-6">
+              {!isGeneratingScript && !videoScript ? (
+                /* Duration picker — shown before generation starts */
+                <div className="flex flex-col items-center justify-center py-16 gap-6">
+                  <div className="bg-purple-50 rounded-xl p-5 border border-purple-100 text-center max-w-sm w-full">
+                    <Video className="h-8 w-8 text-purple-500 mx-auto mb-3" />
+                    <h3 className="font-semibold text-slate-800 mb-1">Choose trailer length</h3>
+                    <p className="text-sm text-slate-500 mb-5">
+                      Select how long you want your book trailer to be, then generate the script.
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 mb-5">
+                      {["30 seconds", "60 seconds", "90 seconds", "2 minutes"].map((dur) => (
+                        <button
+                          key={dur}
+                          onClick={() => setVideoDuration(dur)}
+                          className={`py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                            videoDuration === dur
+                              ? "border-purple-600 bg-purple-600 text-white"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-purple-300"
+                          }`}
+                        >
+                          {dur}
+                        </button>
+                      ))}
+                    </div>
+                    <Button
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={startScriptGeneration}
+                    >
+                      <Video className="h-4 w-4 mr-2" />
+                      Generate Script
+                    </Button>
+                  </div>
+                </div>
+              ) : isGeneratingScript ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <div className="relative">
                     <div className="animate-spin rounded-full h-14 w-14 border-4 border-purple-200 border-t-purple-600"></div>
@@ -804,7 +842,7 @@ export default function Library() {
                   </div>
                   <p className="text-slate-700 font-medium">Writing your trailer script...</p>
                   <p className="text-sm text-slate-500 text-center max-w-xs">
-                    GPT-5.2 is crafting a cinematic scene-by-scene script based on your manuscript.
+                    GPT-5.2 is crafting a cinematic {videoDuration} script based on your manuscript.
                   </p>
                 </div>
               ) : videoScript ? (
@@ -916,7 +954,7 @@ export default function Library() {
                   )}
                 </div>
               ) : null}
-            </ScrollArea>
+            </div>
           </div>
         </div>
       )}

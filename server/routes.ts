@@ -6107,6 +6107,7 @@ Return ONLY valid JSON, no additional text.`;
 
       const { UnifiedAIService } = await import("./services/aiService");
       const ai = new UnifiedAIService();
+      const requestedDuration: string = req.body?.duration || "60 seconds";
 
       const outlineText = novel.outline
         ? typeof novel.outline === "string"
@@ -6128,7 +6129,7 @@ Return ONLY valid JSON, no additional text.`;
 
 Respond ONLY with valid JSON matching the specified structure.`;
 
-      const userPrompt = `Write a complete 60-90 second book trailer video script for the following book:
+      const userPrompt = `Write a complete ${requestedDuration} book trailer video script for the following book:
 
 TITLE: ${novel.title}
 GENRE: ${novel.genre}
@@ -6137,6 +6138,8 @@ PLOT / TOPIC: ${novel.plotIdea || novel.nonFictionTopic || ""}
 TONE & MOOD: ${novel.toneAndMood || "adventurous"}
 ${outlineText ? `\nOUTLINE SUMMARY:\n${outlineText}` : ""}
 ${chapterSummaries ? `\nOPENING CHAPTERS:\n${chapterSummaries}` : ""}
+
+TARGET LENGTH: ${requestedDuration}. Scale the number of scenes, voiceover density, and pacing to fit this exact duration. A 30-second script should have 4-5 quick scenes; 60 seconds should have 6-8 scenes; 90 seconds should have 8-10 scenes; 2 minutes should have 10-12 scenes. Scene durations must add up to approximately ${requestedDuration}.
 
 Create a professional video script with dramatic pacing, strong emotional pull, and a clear call to action. The script should work as a cinematic trailer — vivid visuals, a compelling narrator voice, and building tension or curiosity.
 
