@@ -6097,6 +6097,95 @@ Return ONLY valid JSON, no additional text.`;
   });
 
   // ============================================================
+  // VIDEO TRAILER SCRIPT ROUTE
+  // ============================================================
+
+  app.post("/api/novels/:id/video-script", isAuthenticated, async (req: any, res) => {
+    try {
+      const novel = await storage.getNovel(req.params.id);
+      if (!novel) return res.status(404).json({ error: "Novel not found" });
+
+      const { UnifiedAIService } = await import("./services/aiService");
+      const ai = new UnifiedAIService();
+
+      const outlineText = novel.outline
+        ? typeof novel.outline === "string"
+          ? novel.outline
+          : JSON.stringify(novel.outline, null, 2).substring(0, 3000)
+        : "";
+
+      const chapterSummaries = Array.isArray(novel.chapters)
+        ? novel.chapters
+            .slice(0, 5)
+            .map((ch: any, i: number) => {
+              const text = typeof ch === "string" ? ch : JSON.stringify(ch);
+              return `Chapter ${i + 1}: ${text.substring(0, 400)}`;
+            })
+            .join("\n\n")
+        : "";
+
+      const systemPrompt = `You are an expert screenwriter specialising in cinematic book trailers. You write punchy, emotionally resonant video scripts that hook viewers in the first 3 seconds and drive them to buy the book. Your scripts are structured for real video production — clear scene descriptions, compelling voiceover, and precise timing.
+
+Respond ONLY with valid JSON matching the specified structure.`;
+
+      const userPrompt = `Write a complete 60-90 second book trailer video script for the following book:
+
+TITLE: ${novel.title}
+GENRE: ${novel.genre}
+CONTENT TYPE: ${novel.contentType || "fiction"}
+PLOT / TOPIC: ${novel.plotIdea || novel.nonFictionTopic || ""}
+TONE & MOOD: ${novel.toneAndMood || "adventurous"}
+${outlineText ? `\nOUTLINE SUMMARY:\n${outlineText}` : ""}
+${chapterSummaries ? `\nOPENING CHAPTERS:\n${chapterSummaries}` : ""}
+
+Create a professional video script with dramatic pacing, strong emotional pull, and a clear call to action. The script should work as a cinematic trailer — vivid visuals, a compelling narrator voice, and building tension or curiosity.
+
+Return a JSON object with this exact structure:
+{
+  "title": "Book trailer title (can differ slightly from book title for marketing punch)",
+  "totalDuration": "Estimated total runtime, e.g. '75 seconds'",
+  "tone": "Overall tone of the trailer (e.g. 'Dark and suspenseful', 'Warm and inspiring')",
+  "musicDirection": "Description of the music style and arc across the trailer",
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "duration": "0:00 - 0:08",
+      "type": "Hook",
+      "visualDescription": "What viewers see on screen — setting, imagery, motion, text overlays",
+      "voiceover": "Exact words spoken by the narrator (or 'NO VOICEOVER' if silent)",
+      "onScreenText": "Any text that appears on screen (or 'NONE')",
+      "soundDirection": "Specific music/sound instruction for this scene"
+    }
+  ],
+  "callToAction": {
+    "visualDescription": "What appears on screen for the final CTA scene",
+    "onScreenText": "The final text shown (e.g. 'Available now on Amazon')",
+    "duration": "e.g. '0:75 - 0:90'"
+  },
+  "productionNotes": "Key production tips — colour palette, editing style, camera suggestions, mood board direction",
+  "voiceoverStyle": "Description of the ideal narrator voice (gender, accent, tone, pace)"
+}
+
+Provide 6-10 scenes. Each scene should be vivid, specific, and buildable by a video editor. Make the script genuinely cinematic — not generic.`;
+
+      const response = await ai.generateContent({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.75,
+        responseFormat: { type: "json_object" },
+      });
+
+      const script = JSON.parse(response.content);
+      res.json({ script });
+    } catch (error: any) {
+      console.error("Video script generation error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate video script" });
+    }
+  });
+
+  // ============================================================
   // RESEARCH ROUTES
   // ============================================================
   const { researchService } = await import("./services/researchService");

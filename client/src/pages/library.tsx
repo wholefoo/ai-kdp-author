@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Download, Search, Calendar, FileText, Eye, Trash2, Filter, Users, TrendingUp, Headphones, Upload, Plus, Zap } from "lucide-react";
+import { BookOpen, Download, Search, Calendar, FileText, Eye, Trash2, Filter, Users, TrendingUp, Headphones, Upload, Plus, Zap, Video, Copy, Clock, Music, Mic, Monitor, ChevronRight } from "lucide-react";
 import { Novel } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,10 @@ export default function Library() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [showVideoScript, setShowVideoScript] = useState(false);
+  const [videoScriptNovel, setVideoScriptNovel] = useState<Novel | null>(null);
+  const [videoScript, setVideoScript] = useState<any | null>(null);
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
@@ -196,6 +200,62 @@ export default function Library() {
     toast({
       title: "Download Started",
       description: `Downloading ${novel.title} as ${format?.toUpperCase() || 'MD'}`,
+    });
+  };
+
+  const generateVideoScript = async (novel: Novel) => {
+    setVideoScriptNovel(novel);
+    setVideoScript(null);
+    setShowVideoScript(true);
+    setIsGeneratingScript(true);
+    try {
+      const result = await apiRequest(`/api/novels/${novel.id}/video-script`, "POST");
+      setVideoScript(result.script);
+    } catch (err: any) {
+      toast({
+        title: "Script Generation Failed",
+        description: err.message || "Failed to generate video script. Please try again.",
+        variant: "destructive",
+      });
+      setShowVideoScript(false);
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  };
+
+  const copyScriptToClipboard = () => {
+    if (!videoScript) return;
+    const lines: string[] = [
+      `BOOK TRAILER SCRIPT: ${videoScript.title}`,
+      `Total Duration: ${videoScript.totalDuration}`,
+      `Tone: ${videoScript.tone}`,
+      `Music Direction: ${videoScript.musicDirection}`,
+      `Voiceover Style: ${videoScript.voiceoverStyle}`,
+      "",
+      "--- SCENES ---",
+      "",
+    ];
+    videoScript.scenes?.forEach((scene: any) => {
+      lines.push(`SCENE ${scene.sceneNumber} — ${scene.type} [${scene.duration}]`);
+      lines.push(`VISUAL: ${scene.visualDescription}`);
+      lines.push(`VOICEOVER: ${scene.voiceover}`);
+      lines.push(`ON-SCREEN TEXT: ${scene.onScreenText}`);
+      lines.push(`SOUND: ${scene.soundDirection}`);
+      lines.push("");
+    });
+    if (videoScript.callToAction) {
+      lines.push("--- CALL TO ACTION ---");
+      lines.push(`VISUAL: ${videoScript.callToAction.visualDescription}`);
+      lines.push(`ON-SCREEN TEXT: ${videoScript.callToAction.onScreenText}`);
+      lines.push(`DURATION: ${videoScript.callToAction.duration}`);
+      lines.push("");
+    }
+    if (videoScript.productionNotes) {
+      lines.push("--- PRODUCTION NOTES ---");
+      lines.push(videoScript.productionNotes);
+    }
+    navigator.clipboard.writeText(lines.join("\n")).then(() => {
+      toast({ title: "Copied!", description: "Script copied to clipboard." });
     });
   };
 
@@ -580,6 +640,17 @@ export default function Library() {
                             <Users className="h-3 w-3 mr-1" />
                             Characters
                           </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => generateVideoScript(novel)}
+                              className="min-w-0 flex-shrink-0"
+                              data-testid={`button-video-script-${novel.id}`}
+                            >
+                              <Video className="h-3 w-3 mr-1" />
+                              Trailer Script
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -684,6 +755,168 @@ export default function Library() {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Video Trailer Script Modal */}
+      {showVideoScript && videoScriptNovel && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <Video className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Book Trailer Script</h2>
+                  <p className="text-sm text-slate-500">{videoScriptNovel.title}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {videoScript && (
+                  <Button size="sm" variant="outline" onClick={copyScriptToClipboard}>
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy Script
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowVideoScript(false);
+                    setVideoScriptNovel(null);
+                    setVideoScript(null);
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <ScrollArea className="flex-1 p-6">
+              {isGeneratingScript ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="relative">
+                    <div className="animate-spin rounded-full h-14 w-14 border-4 border-purple-200 border-t-purple-600"></div>
+                    <Video className="absolute inset-0 m-auto h-5 w-5 text-purple-600" />
+                  </div>
+                  <p className="text-slate-700 font-medium">Writing your trailer script...</p>
+                  <p className="text-sm text-slate-500 text-center max-w-xs">
+                    GPT-5.2 is crafting a cinematic scene-by-scene script based on your manuscript.
+                  </p>
+                </div>
+              ) : videoScript ? (
+                <div className="space-y-6">
+                  {/* Overview Bar */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                      <div className="flex items-center gap-1.5 text-xs text-purple-600 font-medium mb-1">
+                        <Clock className="h-3 w-3" /> Duration
+                      </div>
+                      <p className="text-sm font-semibold text-slate-800">{videoScript.totalDuration}</p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                      <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium mb-1">
+                        <Monitor className="h-3 w-3" /> Tone
+                      </div>
+                      <p className="text-sm font-semibold text-slate-800">{videoScript.tone}</p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                      <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium mb-1">
+                        <Music className="h-3 w-3" /> Music
+                      </div>
+                      <p className="text-sm font-semibold text-slate-800 line-clamp-2">{videoScript.musicDirection}</p>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
+                      <div className="flex items-center gap-1.5 text-xs text-orange-600 font-medium mb-1">
+                        <Mic className="h-3 w-3" /> Narrator
+                      </div>
+                      <p className="text-sm font-semibold text-slate-800 line-clamp-2">{videoScript.voiceoverStyle}</p>
+                    </div>
+                  </div>
+
+                  {/* Script Title */}
+                  {videoScript.title && videoScript.title !== videoScriptNovel.title && (
+                    <div className="text-center py-2">
+                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Trailer Title</p>
+                      <h3 className="text-2xl font-bold text-slate-900 italic">"{videoScript.title}"</h3>
+                    </div>
+                  )}
+
+                  {/* Scenes */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Scenes</h4>
+                    <div className="space-y-3">
+                      {videoScript.scenes?.map((scene: any) => (
+                        <div key={scene.sceneNumber} className="border border-slate-200 rounded-lg overflow-hidden">
+                          {/* Scene header */}
+                          <div className="flex items-center justify-between bg-slate-50 px-4 py-2 border-b border-slate-200">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded">
+                                {scene.sceneNumber}
+                              </span>
+                              <span className="font-semibold text-slate-800 text-sm">{scene.type}</span>
+                            </div>
+                            <span className="text-xs text-slate-500 font-mono">{scene.duration}</span>
+                          </div>
+                          {/* Scene content */}
+                          <div className="p-4 space-y-3">
+                            <div>
+                              <p className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+                                <Monitor className="h-3 w-3" /> VISUAL
+                              </p>
+                              <p className="text-sm text-slate-700">{scene.visualDescription}</p>
+                            </div>
+                            {scene.voiceover && scene.voiceover !== "NO VOICEOVER" && (
+                              <div className="bg-slate-50 rounded p-3">
+                                <p className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+                                  <Mic className="h-3 w-3" /> VOICEOVER
+                                </p>
+                                <p className="text-sm text-slate-800 italic">"{scene.voiceover}"</p>
+                              </div>
+                            )}
+                            {scene.onScreenText && scene.onScreenText !== "NONE" && (
+                              <div>
+                                <p className="text-xs font-medium text-slate-500 mb-1">ON-SCREEN TEXT</p>
+                                <p className="text-sm font-semibold text-purple-700">{scene.onScreenText}</p>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                              <Music className="h-3 w-3" />
+                              <span>{scene.soundDirection}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Call to Action */}
+                  {videoScript.callToAction && (
+                    <div className="border-2 border-purple-300 rounded-lg bg-purple-50 overflow-hidden">
+                      <div className="bg-purple-600 text-white px-4 py-2 flex items-center gap-2">
+                        <ChevronRight className="h-4 w-4" />
+                        <span className="font-semibold text-sm">Call to Action — {videoScript.callToAction.duration}</span>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <p className="text-sm text-slate-700">{videoScript.callToAction.visualDescription}</p>
+                        <p className="text-lg font-bold text-purple-800">{videoScript.callToAction.onScreenText}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Production Notes */}
+                  {videoScript.productionNotes && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-amber-800 mb-2">Production Notes</h4>
+                      <p className="text-sm text-amber-900">{videoScript.productionNotes}</p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </ScrollArea>
           </div>
         </div>
       )}
