@@ -14,9 +14,25 @@ echo "Cleaning up workspace..."
 rm -rf node_modules dist
 rm -f *.log *.sql *.zip *.backup
 
-# Install all dependencies (including devDependencies needed for build)
+# Install all dependencies with retry logic
 echo "Installing dependencies..."
-npm install --legacy-peer-deps --no-audit --no-fund
+MAX_RETRIES=3
+RETRY_DELAY=15
+
+for i in $(seq 1 $MAX_RETRIES); do
+  echo "Install attempt $i of $MAX_RETRIES..."
+  if npm ci --legacy-peer-deps --no-audit --no-fund; then
+    echo "Dependencies installed successfully."
+    break
+  else
+    if [ "$i" -eq "$MAX_RETRIES" ]; then
+      echo "ERROR: Failed to install dependencies after $MAX_RETRIES attempts."
+      exit 1
+    fi
+    echo "Attempt $i failed. Retrying in ${RETRY_DELAY}s..."
+    sleep $RETRY_DELAY
+  fi
+done
 
 # Verify vite is installed
 echo "Verifying build tools..."
