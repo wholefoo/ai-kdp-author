@@ -15,9 +15,9 @@ const AGE_GROUPS = [
     label: "Elementary K–2",
     ages: "Ages 5–7",
     lexile: "Lexile 100–300",
-    defaultWordCount: 5000,
-    defaultChapters: 6,
-    defaultChapterLength: 800,
+    defaultWordCount: 2000,
+    defaultChapters: 5,
+    defaultChapterLength: 400,
     color: "bg-green-50 border-green-200 text-green-800",
     activeColor: "bg-green-600 border-green-600 text-white",
   },
@@ -26,9 +26,9 @@ const AGE_GROUPS = [
     label: "Elementary 3–5",
     ages: "Ages 8–11",
     lexile: "Lexile 400–700",
-    defaultWordCount: 15000,
-    defaultChapters: 12,
-    defaultChapterLength: 1250,
+    defaultWordCount: 8000,
+    defaultChapters: 8,
+    defaultChapterLength: 1000,
     color: "bg-blue-50 border-blue-200 text-blue-800",
     activeColor: "bg-blue-600 border-blue-600 text-white",
   },
@@ -80,12 +80,15 @@ const EDUCATIONAL_SUBJECTS = {
 };
 
 const WORD_COUNT_OPTIONS = [
-  { label: "Short (5K)", value: 5000 },
+  { label: "Early Reader (1K)", value: 1000 },
+  { label: "Early Chapter (2K)", value: 2000 },
+  { label: "Short Chapter (5K)", value: 5000 },
+  { label: "Chapter Book (8K)", value: 8000 },
   { label: "Standard (15K)", value: 15000 },
-  { label: "Chapter Book (25K)", value: 25000 },
-  { label: "Middle Grade (35K)", value: 35000 },
+  { label: "Middle Grade (25K)", value: 25000 },
+  { label: "Full Novel (35K)", value: 35000 },
   { label: "YA Novel (50K)", value: 50000 },
-  { label: "Full Novel (65K)", value: 65000 },
+  { label: "Extended (65K)", value: 65000 },
 ];
 
 interface Props {
