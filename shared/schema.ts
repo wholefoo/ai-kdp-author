@@ -27,13 +27,21 @@ export const novels = pgTable("novels", {
   sourceContent: text("source_content"), // For novel composer source material
   error: text("error"),
   // Non-fiction specific fields
-  contentType: varchar("content_type").default("fiction"), // fiction, non-fiction
+  contentType: varchar("content_type").default("fiction"), // fiction, non-fiction, educational
   nonFictionSubtype: varchar("non_fiction_subtype"), // self-help, business, history, science, biography, how-to, etc.
   nonFictionTopic: text("non_fiction_topic"), // Main topic/subject for non-fiction
   targetAudience: text("target_audience"), // Who is this book for?
   bibliography: jsonb("bibliography").default([]), // Array of source citations
   excludedSources: jsonb("excluded_sources").default(["wikipedia.org", "wiki"]), // Sources to exclude
   verificationStatus: varchar("verification_status"), // pending, verified, partial
+  // Educational specific fields
+  ageGroup: varchar("age_group"), // elementary-k2, elementary-35, middle-school, high-school
+  educationalSubject: varchar("educational_subject"), // stem, history, biography, language-arts, etc.
+  seriesId: varchar("series_id"), // UUID linking all books in a series
+  seriesTitle: varchar("series_title"), // The overall series name
+  seriesPosition: integer("series_position"), // 1-indexed position in series
+  totalBooksInSeries: integer("total_books_in_series"), // total planned books
+  seriesBible: jsonb("series_bible"), // Shared series bible JSON (themes, characters, objectives)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -57,6 +65,12 @@ export const insertNovelSchema = createInsertSchema(novels).pick({
   nonFictionTopic: true,
   targetAudience: true,
   excludedSources: true,
+  ageGroup: true,
+  educationalSubject: true,
+  seriesId: true,
+  seriesTitle: true,
+  seriesPosition: true,
+  totalBooksInSeries: true,
 });
 
 export const updateNovelSchema = createInsertSchema(novels).pick({
@@ -70,6 +84,8 @@ export const updateNovelSchema = createInsertSchema(novels).pick({
   error: true,
   bibliography: true,
   verificationStatus: true,
+  seriesBible: true,
+  title: true,
 }).partial();
 
 export type InsertNovel = z.infer<typeof insertNovelSchema>;

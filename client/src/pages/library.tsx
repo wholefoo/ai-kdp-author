@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Download, Search, Calendar, FileText, Eye, Trash2, Filter, Users, TrendingUp, Headphones, Upload, Plus, Zap, Video, Copy, Clock, Music, Mic, Monitor, ChevronRight } from "lucide-react";
+import { BookOpen, Download, Search, Calendar, FileText, Eye, Trash2, Filter, Users, TrendingUp, Headphones, Upload, Plus, Zap, Video, Copy, Clock, Music, Mic, Monitor, ChevronRight, GraduationCap, BookMarked } from "lucide-react";
 import { Novel } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -464,6 +464,24 @@ export default function Library() {
                         {novel.title}
                       </CardTitle>
                       <CardDescription className="text-slate-600">{novel.genre}</CardDescription>
+                      {/* Educational / Series badges */}
+                      {(novel.contentType === "educational-fiction" || novel.contentType === "educational-nonfiction") && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          <span className="inline-flex items-center gap-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                            <GraduationCap className="h-3 w-3" />
+                            {(novel as any).ageGroup === "elementary-k2" ? "K–2" :
+                             (novel as any).ageGroup === "elementary-35" ? "Gr. 3–5" :
+                             (novel as any).ageGroup === "middle-school" ? "Middle School" :
+                             (novel as any).ageGroup === "high-school" ? "High School" : "Educational"}
+                          </span>
+                          {(novel as any).seriesTitle && (novel as any).totalBooksInSeries > 1 && (
+                            <span className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+                              <BookMarked className="h-3 w-3" />
+                              Book {(novel as any).seriesPosition} of {(novel as any).totalBooksInSeries}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <Badge className={`ml-2 ${getStatusColor(novel.status)}`} data-testid={`badge-status-${novel.id}`}>
                       {getStatusText(novel.status)}

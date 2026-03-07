@@ -44,6 +44,7 @@ export interface IStorage {
   updateNovel(id: string, updates: UpdateNovel): Promise<Novel | undefined>;
   deleteNovel(id: string): Promise<boolean>;
   getAllNovels(userId?: string): Promise<Novel[]>;
+  getNovelsBySeries(seriesId: string): Promise<Novel[]>;
   
   // Plot Inspiration Vault operations
   getSavedPlot(id: string): Promise<SavedPlot | undefined>;
@@ -217,6 +218,12 @@ export class MemStorage implements IStorage {
 
   async getAllNovels(): Promise<Novel[]> {
     return Array.from(this.novels.values());
+  }
+
+  async getNovelsBySeries(seriesId: string): Promise<Novel[]> {
+    return Array.from(this.novels.values())
+      .filter(n => n.seriesId === seriesId)
+      .sort((a, b) => (a.seriesPosition || 0) - (b.seriesPosition || 0));
   }
 
   // Plot Inspiration Vault operations
@@ -615,6 +622,12 @@ export class DatabaseStorage implements IStorage {
   async getAllNovels(userId?: string): Promise<Novel[]> {
     // For now, return all novels regardless of userId to fix the immediate issue
     return await db.select().from(novels).orderBy(desc(novels.createdAt));
+  }
+
+  async getNovelsBySeries(seriesId: string): Promise<Novel[]> {
+    return await db.select().from(novels)
+      .where(eq(novels.seriesId, seriesId))
+      .orderBy(novels.seriesPosition);
   }
 
   // Plot Inspiration Vault operations

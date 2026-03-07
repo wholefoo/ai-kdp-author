@@ -6198,6 +6198,285 @@ Provide 6-10 scenes. Each scene should be vivid, specific, and buildable by a vi
   });
 
   // ============================================================
+  // EDUCATIONAL SERIES ROUTES
+  // ============================================================
+
+  app.post("/api/novels/educational-series", isAuthenticated, async (req: any, res) => {
+    try {
+      const {
+        seriesTitle,
+        subject,
+        contentType, // "educational-fiction" | "educational-nonfiction"
+        ageGroup,
+        topic,
+        numberOfBooks = 1,
+        targetWordCount,
+        targetChapterCount,
+        targetChapterLength,
+        customInstructions,
+        titles = [], // optional pre-set titles per book
+      } = req.body;
+
+      if (!seriesTitle || !subject || !ageGroup || !topic) {
+        return res.status(400).json({ error: "seriesTitle, subject, ageGroup, and topic are required" });
+      }
+
+      const { randomUUID } = await import("crypto");
+      const seriesId = randomUUID();
+      const userId = req.user?.claims?.sub || req.user?.id;
+
+      const {
+        AGE_GROUP_CONFIGS,
+        requiresFactChecking,
+        EXCLUDED_SOURCES,
+      } = await import("./services/educationalService");
+
+      const ageConfig = AGE_GROUP_CONFIGS[ageGroup as keyof typeof AGE_GROUP_CONFIGS];
+      if (!ageConfig) return res.status(400).json({ error: "Invalid age group" });
+
+      const wc = targetWordCount || ageConfig.defaultWordCount;
+      const cc = targetChapterCount || ageConfig.defaultChapters;
+      const cl = targetChapterLength || ageConfig.defaultChapterLength;
+      const factCheck = requiresFactChecking(subject);
+
+      // Create a placeholder title for book N if not provided
+      const bookTitle = (i: number) =>
+        titles[i] ? titles[i] : `${seriesTitle} — Book ${i + 1}`;
+
+      // Create all novel records at once
+      const createdNovels: any[] = [];
+      for (let i = 0; i < numberOfBooks; i++) {
+        const novel = await storage.createNovel({
+          userId,
+          title: bookTitle(i),
+          genre: subject,
+          plotIdea: topic,
+          targetWordCount: wc,
+          targetChapterCount: cc,
+          targetChapterLength: cl,
+          contentType: contentType,
+          targetAudience: ageConfig.label,
+          customInstructions: customInstructions || null,
+          excludedSources: factCheck ? EXCLUDED_SOURCES : ["wikipedia.org", "wiki"],
+          ageGroup,
+          educationalSubject: subject,
+          seriesId,
+          seriesTitle,
+          seriesPosition: i + 1,
+          totalBooksInSeries: numberOfBooks,
+          writingStyle: "balanced",
+          toneAndMood: "informative",
+          contentRating: "g",
+          pointOfView: "third-person-limited",
+        });
+        createdNovels.push(novel);
+      }
+
+      // Respond immediately with all created novel IDs
+      res.json({ seriesId, novels: createdNovels });
+
+      // Run the full series generation in the background
+      setImmediate(async () => {
+        const {
+          generateSeriesBible,
+          generateEducationalOutline,
+          generateEducationalChapter,
+          compileEducationalManuscript,
+        } = await import("./services/educationalService");
+
+        try {
+          // Step 1: Generate the series bible
+          console.log(`📚 Generating series bible for: ${seriesTitle} (${numberOfBooks} books)`);
+          for (const n of createdNovels) {
+            await storage.updateNovel(n.id, {
+              status: "generating_outline",
+              progress: { overall: 2, step1: 5, step2: 0, currentStatus: "Generating series bible..." },
+            });
+          }
+
+          const seriesBible = await generateSeriesBible({
+            seriesTitle,
+            subject,
+            contentType,
+            ageGroup,
+            topic,
+            numberOfBooks,
+            customInstructions,
+          });
+
+          // Update all novels with the series bible and refined titles
+          for (let i = 0; i < createdNovels.length; i++) {
+            const bookData = seriesBible.books?.[i];
+            await storage.updateNovel(createdNovels[i].id, {
+              seriesBible,
+              title: bookData?.title || createdNovels[i].title,
+              status: "pending",
+              progress: { overall: 5, step1: 10, step2: 0, currentStatus: "Series bible ready" },
+            });
+          }
+
+          console.log(`✅ Series bible generated for: ${seriesTitle}`);
+
+          // Step 2: Generate each book sequentially
+          for (let i = 0; i < createdNovels.length; i++) {
+            const novelRecord = await storage.getNovel(createdNovels[i].id);
+            if (!novelRecord) continue;
+
+            const bookPosition = i + 1;
+            console.log(`📖 Generating educational book ${bookPosition}/${numberOfBooks}: ${novelRecord.title}`);
+
+            await storage.updateNovel(novelRecord.id, {
+              status: "generating_outline",
+              progress: { overall: 10 + (i * 80 / numberOfBooks), step1: 20, step2: 0, currentStatus: `Generating outline for Book ${bookPosition}...`, totalChapters: cc },
+            });
+
+            // Generate outline
+            const outline = await generateEducationalOutline({
+              novelTitle: novelRecord.title,
+              seriesTitle,
+              seriesPosition: bookPosition,
+              totalBooks: numberOfBooks,
+              seriesBible,
+              subject,
+              contentType,
+              ageGroup,
+              topic,
+              targetWordCount: wc,
+              targetChapterCount: cc,
+              targetChapterLength: cl,
+              customInstructions,
+            });
+
+            await storage.updateNovel(novelRecord.id, {
+              outline,
+              status: "generating_chapters",
+              progress: { overall: 15 + (i * 80 / numberOfBooks), step1: 100, step2: 5, currentStatus: "Starting chapter generation...", totalChapters: outline.chapters?.length || cc, currentChapter: 1 },
+            });
+
+            // Generate each chapter
+            const chapters: string[] = [];
+            let previousContent = "";
+            const allCitations: any[] = [];
+            const totalChapters = outline.chapters?.length || cc;
+
+            for (let c = 1; c <= totalChapters; c++) {
+              const chapterInfo = outline.chapters?.[c - 1];
+              if (!chapterInfo) continue;
+
+              const chapterProgress = Math.round(15 + (i * 80 / numberOfBooks) + (c / totalChapters) * (75 / numberOfBooks));
+
+              await storage.updateNovel(novelRecord.id, {
+                progress: {
+                  overall: chapterProgress,
+                  step1: 100,
+                  step2: Math.round((c / totalChapters) * 100),
+                  currentStatus: `Writing Chapter ${c}: ${chapterInfo.title}`,
+                  currentChapter: c,
+                  totalChapters,
+                },
+              });
+
+              const { content, citations } = await generateEducationalChapter({
+                chapterNumber: c,
+                chapterTitle: chapterInfo.title,
+                chapterSummary: chapterInfo.summary,
+                educationalContent: chapterInfo.educationalContent,
+                novelTitle: novelRecord.title,
+                seriesTitle,
+                seriesPosition: bookPosition,
+                subject,
+                ageGroup,
+                contentType,
+                outline,
+                previousContent,
+                targetLength: cl,
+                factCheck,
+              });
+
+              chapters.push(content);
+              allCitations.push(...citations);
+              previousContent = content.substring(0, 600);
+
+              await storage.updateNovel(novelRecord.id, {
+                chapters,
+                actualChapterCount: chapters.length,
+              });
+            }
+
+            // Compile manuscript
+            await storage.updateNovel(novelRecord.id, {
+              status: "compiling",
+              progress: { overall: 90 + (i * 8 / numberOfBooks), step1: 100, step2: 100, currentStatus: "Compiling manuscript..." },
+            });
+
+            const freshNovel = await storage.getNovel(novelRecord.id);
+
+            const bibliographyEntries = allCitations.map((cit, idx) => ({
+              id: `edu-${novelRecord.id}-${idx}`,
+              title: cit.title || cit.claim,
+              author: cit.author || "Unknown",
+              source: cit.source || "",
+              publishDate: cit.publishDate || String(new Date().getFullYear()),
+              accessDate: new Date().toISOString().split("T")[0],
+              chapterNumber: cit.chapterNumber,
+              claimText: cit.claim,
+              verified: true,
+            }));
+
+            const manuscriptContent = await compileEducationalManuscript({
+              novel: freshNovel,
+              chapters,
+              outline,
+              seriesBible,
+              bibliography: bibliographyEntries,
+            });
+
+            const totalWords = chapters.join(" ").split(/\s+/).length;
+
+            await storage.updateNovel(novelRecord.id, {
+              manuscriptContent,
+              chapters,
+              bibliography: bibliographyEntries,
+              verificationStatus: factCheck ? "verified" : "pending",
+              wordCount: totalWords,
+              actualChapterCount: chapters.length,
+              status: "completed",
+              progress: { overall: 100, step1: 100, step2: 100, currentStatus: "Complete!" },
+            });
+
+            console.log(`✅ Completed educational book ${bookPosition}/${numberOfBooks}: ${novelRecord.title}`);
+          }
+
+          console.log(`🎉 Full educational series "${seriesTitle}" complete!`);
+        } catch (error: any) {
+          console.error("Educational series generation error:", error);
+          for (const n of createdNovels) {
+            const current = await storage.getNovel(n.id);
+            if (current && current.status !== "completed") {
+              await storage.updateNovel(n.id, {
+                status: "error",
+                error: error.message || "Series generation failed",
+              });
+            }
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error("Educational series creation error:", error);
+      res.status(500).json({ error: error.message || "Failed to create educational series" });
+    }
+  });
+
+  app.get("/api/novels/series/:seriesId", isAuthenticated, async (req: any, res) => {
+    try {
+      const seriesNovels = await storage.getNovelsBySeries(req.params.seriesId);
+      res.json(seriesNovels);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ============================================================
   // RESEARCH ROUTES
   // ============================================================
   const { researchService } = await import("./services/researchService");

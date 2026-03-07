@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wand2, BookOpen, Users, FileEdit, Lightbulb, FlaskConical } from "lucide-react";
+import { Wand2, BookOpen, Users, FileEdit, Lightbulb, FlaskConical, GraduationCap } from "lucide-react";
 import NovelGenerator from "./novel-generator";
 import GenreWizard from "./genre-wizard";
 import PlotInspirationVault from "./plot-inspiration-vault";
 import CharacterWorkshop from "./character-workshop";
 import { NovelComposer } from "./novel-composer";
 import ResearchHub from "./research-hub";
+import EducationalGenerator from "./educational-generator";
 import type { Novel, NovelGenerationRequest } from "@shared/schema";
 
 interface CreateHubProps {
@@ -70,10 +71,14 @@ export default function CreateHub({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="generator" className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
             Generate
+          </TabsTrigger>
+          <TabsTrigger value="educational" className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Educational
           </TabsTrigger>
           <TabsTrigger value="research" className="flex items-center gap-2">
             <FlaskConical className="h-4 w-4" />
@@ -115,6 +120,24 @@ export default function CreateHub({
                 isGenerating={isGenerating}
                 prefilledData={prefilledGeneratorData}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="educational" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Educational Book & Series Generator
+              </CardTitle>
+              <CardDescription>
+                Generate complete educational books or cohesive series for Elementary through High School.
+                Choose age group, subject, and series length — fact-checked for applicable subjects.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EducationalGenerator onSeriesCreated={() => {}} />
             </CardContent>
           </Card>
         </TabsContent>
