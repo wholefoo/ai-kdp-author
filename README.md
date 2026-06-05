@@ -2,8 +2,6 @@
 
 An AI-powered full-stack web application that automates the creation of complete, publish-ready books for Amazon Kindle Direct Publishing (KDP). From a simple idea or topic, the app generates full manuscripts (50,000–80,000 words, 20–30 chapters) using OpenAI GPT-5.2, formats them to KDP standards, and provides a full suite of authoring tools.
 
-**Live at:** [aikdpauthor.com](https://aikdpauthor.com)
-
 ---
 
 ## Features
